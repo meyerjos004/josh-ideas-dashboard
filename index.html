@@ -258,69 +258,67 @@
             -webkit-backface-visibility: hidden;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, rgba(100, 150, 255, 0.1), rgba(100, 150, 255, 0.05));
-            border: 1px solid rgba(100, 150, 255, 0.2);
+            background: linear-gradient(180deg, #6496ff 0%, rgba(100, 150, 255, 0.15) 40%, rgba(100, 150, 255, 0.08) 100%);
+            border: 1px solid rgba(100, 150, 255, 0.3);
             border-radius: 16px;
-            padding: 40px 20px;
-            text-align: center;
+            overflow: hidden;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(10px);
         }
 
+        .category-card-front-banner {
+            background: #6496ff;
+            padding: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .category-card-front-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
         .category-card-3d.granola .category-card-front {
-            background: linear-gradient(135deg, rgba(74, 222, 128, 0.1), rgba(74, 222, 128, 0.05));
-            border-color: rgba(74, 222, 128, 0.2);
+            background: linear-gradient(180deg, #4ade80 0%, rgba(74, 222, 128, 0.15) 40%, rgba(74, 222, 128, 0.08) 100%);
+            border-color: rgba(74, 222, 128, 0.3);
+        }
+
+        .category-card-3d.granola .category-card-front-banner {
+            background: #4ade80;
         }
 
         .category-card-3d.littlebird .category-card-front {
-            background: linear-gradient(135deg, rgba(192, 132, 252, 0.1), rgba(192, 132, 252, 0.05));
-            border-color: rgba(192, 132, 252, 0.2);
+            background: linear-gradient(180deg, #c084fc 0%, rgba(192, 132, 252, 0.15) 40%, rgba(192, 132, 252, 0.08) 100%);
+            border-color: rgba(192, 132, 252, 0.3);
+        }
+
+        .category-card-3d.littlebird .category-card-front-banner {
+            background: #c084fc;
         }
 
         .category-circle-large {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
-            border: 2px solid rgba(100, 150, 255, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4rem;
-            margin-bottom: 20px;
-            box-shadow: 0 0 40px rgba(100, 150, 255, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .category-card-3d.granola .category-circle-large {
-            border-color: rgba(74, 222, 128, 0.4);
-            box-shadow: 0 0 40px rgba(74, 222, 128, 0.3);
-        }
-
-        .category-card-3d.littlebird .category-circle-large {
-            border-color: rgba(192, 132, 252, 0.4);
-            box-shadow: 0 0 40px rgba(192, 132, 252, 0.3);
-        }
-
-        .category-card-3d:hover .category-circle-large {
-            transform: scale(1.1);
-            box-shadow: 0 0 60px rgba(100, 150, 255, 0.5);
+            display: none;
         }
 
         .category-name-large {
-            font-size: 2rem;
+            font-size: 1.4rem;
             font-weight: 800;
-            color: #f0f0f0;
-            margin-bottom: 10px;
+            color: #ffffff;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
         }
 
         .category-count {
-            color: #a0a0a8;
-            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.85rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
+            font-weight: 600;
         }
 
         .category-card-back {
@@ -795,9 +793,12 @@
                         <div class="category-card-inner">
                             <!-- Front Face -->
                             <div class="category-card-front">
-                                <div class="category-circle-large">${icon}</div>
-                                <div class="category-name-large">${escapeHtml(category)}</div>
-                                <div class="category-count">${ideas.length} ideas</div>
+                                <div class="category-card-front-banner">
+                                    <div class="category-name-large">${escapeHtml(category)}</div>
+                                    <div class="category-count">${ideas.length} ideas</div>
+                                </div>
+                                <div class="category-card-front-content">
+                                </div>
                             </div>
                             <!-- Back Face (Ideas List) -->
                             <div class="category-card-back">

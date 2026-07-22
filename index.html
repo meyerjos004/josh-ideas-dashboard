@@ -285,27 +285,10 @@
             transform-origin: center center;
             transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
             cursor: pointer;
-            transform: rotateY(45deg) translateZ(-300px);
-            opacity: 0.4;
-            z-index: 0;
-        }
-
-        .idea-card-carousel.next {
-            transform: rotateY(45deg) translateZ(-300px);
-            opacity: 0.4;
-            z-index: 1;
         }
 
         .idea-card-carousel.active {
-            transform: rotateY(0deg) translateZ(0px);
-            opacity: 1;
-            z-index: 100;
-        }
-
-        .idea-card-carousel.prev {
-            transform: rotateY(45deg) translateZ(-300px);
-            z-index: 0;
-            opacity: 0.4;
+            opacity: 1 !important;
         }
 
         .idea-card-carousel.hovering {
@@ -879,15 +862,33 @@
 
         function updateCarousel(carousel, ideas, activeIdx) {
             const cards = carousel.querySelectorAll('.idea-card-carousel');
-            cards.forEach((card, idx) => {
-                card.classList.remove('active', 'next', 'prev');
+            const totalCards = ideas.length;
 
-                if (idx === activeIdx) {
+            cards.forEach((card, idx) => {
+                // Calculate offset from active card (position in the wheel)
+                const offset = (idx - activeIdx + totalCards) % totalCards;
+
+                // Calculate rotation angle for scroll wheel effect (45 degrees per card)
+                const rotationAngle = offset * 45;
+
+                // Calculate depth spacing so cards are visible behind each other
+                const depth = -offset * 60;
+
+                // Calculate opacity to fade back cards
+                const opacity = Math.max(0.3, 1 - (offset * 0.12));
+
+                // Calculate z-index to ensure proper layering
+                const zIndex = totalCards - offset;
+
+                // Apply transform and styles directly
+                card.style.transform = `rotateY(${rotationAngle}deg) translateZ(${depth}px)`;
+                card.style.opacity = opacity;
+                card.style.zIndex = zIndex;
+
+                // Mark active card for hover effects
+                card.classList.remove('active', 'next', 'prev');
+                if (offset === 0) {
                     card.classList.add('active');
-                } else if (idx === (activeIdx + 1) % ideas.length) {
-                    card.classList.add('next');
-                } else if (idx === (activeIdx - 1 + ideas.length) % ideas.length) {
-                    card.classList.add('prev');
                 }
             });
         }

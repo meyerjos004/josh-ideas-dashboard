@@ -253,6 +253,11 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 80px;
+            cursor: grab;
+        }
+
+        .carousel-3d:active {
+            cursor: grabbing;
         }
 
         .carousel-3d-inner {
@@ -299,15 +304,9 @@
         }
 
         .idea-card-carousel:hover {
-            transform: rotateY(40deg) translateZ(20px);
             opacity: 1;
-            z-index: 150;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
-        }
-
-        .idea-card-carousel.active:hover {
-            transform: rotateY(8deg) translateZ(60px) scale(1.02);
-            z-index: 200;
+            transform: rotateY(8deg) translateZ(60px) scale(1.02) !important;
+            z-index: 300;
             box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
         }
 
@@ -649,6 +648,7 @@
         let allIdeas = [];
         let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
         const activeFilters = new Map();
+        let carouselIndices = {}; // Track current index per category
 
         const toolInfo = {
             'Wisprflow': { brand: 'wisprflow', status: 'IDEATING', tags: ['Voice-to-text', 'AI', 'Productivity'], metrics: { impact: 9, difficulty: 'Medium' } },
@@ -793,7 +793,51 @@
             }).join('');
 
             content.innerHTML = html;
+
+            // Add scroll listeners to all carousels
+            document.querySelectorAll('.carousel-3d').forEach((carousel, idx) => {
+                const categoryKey = categories[idx];
+                if (!carouselIndices[categoryKey]) {
+                    carouselIndices[categoryKey] = 0;
+                }
+
+                carousel.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const ideas = grouped[categoryKey];
+                    const currentIdx = carouselIndices[categoryKey];
+
+                    // Scroll down/right = next card, scroll up/left = prev card
+                    if (e.deltaY > 0 || e.deltaX > 0) {
+                        carouselIndices[categoryKey] = (currentIdx + 1) % ideas.length;
+                    } else {
+                        carouselIndices[categoryKey] = (currentIdx - 1 + ideas.length) % ideas.length;
+                    }
+
+                    updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
+                });
+            });
+
             renderStats();
+        }
+
+        function updateCarousel(carousel, ideas, activeIdx) {
+            const cards = carousel.querySelectorAll('.idea-card-carousel');
+            cards.forEach((card, idx) => {
+                card.classList.remove('active', 'next', 'prev');
+
+                if (idx === activeIdx) {
+                    card.classList.add('active');
+                    card.style.transform = 'rotateY(45deg) translateZ(0px)';
+                } else if (idx === (activeIdx + 1) % ideas.length) {
+                    card.classList.add('next');
+                    card.style.transform = 'rotateY(45deg) translateZ(-60px)';
+                } else if (idx === (activeIdx - 1 + ideas.length) % ideas.length) {
+                    card.classList.add('prev');
+                    card.style.transform = 'rotateY(45deg) translateZ(-140px)';
+                } else {
+                    card.style.transform = 'rotateY(45deg) translateZ(-200px)';
+                }
+            });
         }
 
         function renderStats() {

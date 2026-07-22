@@ -331,7 +331,7 @@
             padding: 30px;
             background: linear-gradient(180deg, #6496ff 0%, rgba(100, 150, 255, 0.1) 100%);
             border: 1px solid rgba(100, 150, 255, 0.3);
-            cursor: pointer;
+            pointer-events: none;
         }
 
         .idea-card-carousel.active .idea-card-face:hover,
@@ -769,8 +769,8 @@
                     const isPrev = idx === ideas.length - 1;
 
                     return `
-                        <div class="idea-card-carousel ${idea.brand} ${isActive ? 'active' : isPrev ? 'prev' : 'next'}">
-                            <div class="idea-card-face" onclick="openModal(event, ${idea.id})">
+                        <div class="idea-card-carousel ${idea.brand} ${isActive ? 'active' : isPrev ? 'prev' : 'next'}" onclick="openModal(event, ${idea.id})">
+                            <div class="idea-card-face">
                                 <div class="card-header">
                                     <div class="card-name">${escapeHtml(idea.name)}</div>
                                     <span class="card-status">${idea.status}</span>

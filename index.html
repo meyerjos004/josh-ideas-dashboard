@@ -752,17 +752,9 @@
                 const cardsHtml = ideas.map((idea, idx) => {
                     const isActive = idx === 0;
                     const isPrev = idx === ideas.length - 1;
-                    let transform = `rotateY(85deg) rotateX(0deg) translateZ(0px)`;
-
-                    if (isActive) {
-                        transform = `rotateY(0deg) rotateX(0deg) translateZ(0px)`;
-                    } else if (isPrev) {
-                        transform = `rotateY(-85deg) rotateX(0deg) translateZ(0px)`;
-                    }
 
                     return `
                         <div class="idea-card-carousel ${idea.brand} ${isActive ? 'active' : isPrev ? 'prev' : 'next'}"
-                             style="transform: ${transform};"
                              onclick="openModal(event, ${idea.id})">
                             <div class="idea-card-face">
                                 <div class="card-header">

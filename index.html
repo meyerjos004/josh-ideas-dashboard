@@ -28,7 +28,7 @@
 
         header {
             text-align: center;
-            margin-bottom: 80px;
+            margin-bottom: 40px;
             animation: slideDown 0.8s ease-out;
         }
 
@@ -247,7 +247,7 @@
         }
 
         .category-card-3d:hover .category-card-inner {
-            transform: rotateY(15deg) rotateX(-5deg);
+            transform: rotateY(8deg) rotateX(-2deg);
         }
 
         .category-card-front {
@@ -299,10 +299,6 @@
 
         .category-card-3d.littlebird .category-card-front-banner {
             background: #c084fc;
-        }
-
-        .category-circle-large {
-            display: none;
         }
 
         .category-name-large {
@@ -662,9 +658,6 @@
         let allIdeas = [];
         let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
         const activeFilters = new Map();
-        const categoryIcons = {
-            'AI Tools': '🤖'
-        };
 
         const toolInfo = {
             'Wisprflow': { brand: 'wisprflow', status: 'IDEATING', tags: ['Voice-to-text', 'AI', 'Productivity'], metrics: { impact: 9, difficulty: 'Medium' } },
@@ -676,20 +669,20 @@
             try {
                 const response = await fetch(QUERY_URL);
                 const text = await response.text();
-                const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\((.*)\);/);
 
+                // Parse Google Visualization API response
+                const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
                 if (!jsonMatch) {
-                    console.error('No data found');
-                    return;
+                    throw new Error('Invalid response format');
                 }
 
                 const data = JSON.parse(jsonMatch[1]);
                 if (data.status !== 'ok') {
-                    console.error('Query error:', data.message);
-                    return;
+                    throw new Error(data.message || 'Query failed');
                 }
 
-                allIdeas = data.table.rows.slice(1).map((row, idx) => {
+                // Extract ideas from table rows (skip header)
+                allIdeas = (data.table.rows || []).map((row, idx) => {
                     const category = row.c[0]?.v || 'Other';
                     const name = row.c[1]?.v || '';
                     const description = row.c[2]?.v || '';
@@ -778,6 +771,7 @@
 
             if (sorted.length === 0) {
                 content.innerHTML = '<div class="empty-state"><p>No ideas match your filters.</p></div>';
+                renderStats();
                 return;
             }
 
@@ -786,10 +780,10 @@
 
             const html = categories.map(category => {
                 const ideas = grouped[category];
-                const icon = categoryIcons[category] || '✨';
+                const brandClass = ideas.length > 0 ? ideas[0].brand : 'default';
 
                 return `
-                    <div class="category-card-3d ${ideas[0].brand}">
+                    <div class="category-card-3d ${brandClass}">
                         <div class="category-card-inner">
                             <!-- Front Face -->
                             <div class="category-card-front">

@@ -246,7 +246,7 @@
 
         /* 3D Carousel */
         .carousel-3d {
-            perspective: 1200px;
+            perspective: 2500px;
             height: 420px;
             width: 100%;
             position: relative;
@@ -285,27 +285,27 @@
             transform-origin: center center;
             transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
             cursor: pointer;
-            transform: rotateY(-45deg) translateZ(-60px);
-            opacity: 0.6;
-            z-index: 0;
+            transform: rotateY(0deg) translateZ(-500px) scale(0.7);
+            opacity: 0.3;
+            z-index: -1;
         }
 
         .idea-card-carousel.next {
-            transform: rotateY(45deg) translateZ(-60px);
-            opacity: 0.6;
+            transform: rotateY(45deg) translateZ(-200px);
+            opacity: 0.5;
             z-index: 2;
         }
 
         .idea-card-carousel.active {
-            transform: rotateY(45deg) translateZ(0px);
+            transform: rotateY(0deg) translateZ(0px);
             opacity: 1;
             z-index: 100;
         }
 
         .idea-card-carousel.prev {
-            transform: rotateY(45deg) translateZ(-140px);
-            z-index: 0;
-            opacity: 0.2;
+            transform: rotateY(-45deg) translateZ(-200px);
+            z-index: 1;
+            opacity: 0.5;
         }
 
         .idea-card-carousel.hovering {
@@ -330,8 +330,7 @@
             padding: 30px;
             background: linear-gradient(180deg, #6496ff 0%, rgba(100, 150, 255, 0.1) 100%);
             border: 1px solid rgba(100, 150, 255, 0.3);
-            border: 3px solid yellow;
-            box-shadow: inset 0 0 0 2px yellow, 0 20px 60px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
         }
 
         .idea-card-carousel.active .idea-card-face:hover,
@@ -668,7 +667,13 @@
         const toolInfo = {
             'Wisprflow': { brand: 'wisprflow', status: 'IDEATING', tags: ['Voice-to-text', 'AI', 'Productivity'], metrics: { impact: 9, difficulty: 'Medium' } },
             'Granola': { brand: 'granola', status: 'IDEATING', tags: ['Meeting Notes', 'Transcription', 'Search'], metrics: { impact: 8, difficulty: 'Medium' } },
-            'Littlebird': { brand: 'littlebird', status: 'IDEATING', tags: ['AI Assistant', 'Screen Reading', 'Memory'], metrics: { impact: 10, difficulty: 'Hard' } }
+            'Littlebird': { brand: 'littlebird', status: 'IDEATING', tags: ['AI Assistant', 'Screen Reading', 'Memory'], metrics: { impact: 10, difficulty: 'Hard' } },
+            'Cursor': { brand: 'default', status: 'LIVE', tags: ['Code Editor', 'AI', 'Development'], metrics: { impact: 9, difficulty: 'Hard' } },
+            'Perplexity': { brand: 'default', status: 'LIVE', tags: ['Search', 'AI', 'Research'], metrics: { impact: 8, difficulty: 'Medium' } },
+            'Midjourney': { brand: 'default', status: 'LIVE', tags: ['Image Gen', 'AI', 'Design'], metrics: { impact: 9, difficulty: 'Hard' } },
+            'Replit': { brand: 'default', status: 'LIVE', tags: ['IDE', 'Code', 'Collaboration'], metrics: { impact: 7, difficulty: 'Medium' } },
+            'Claude': { brand: 'default', status: 'LIVE', tags: ['AI Assistant', 'Chat', 'Reasoning'], metrics: { impact: 10, difficulty: 'Hard' } },
+            'Figma': { brand: 'default', status: 'LIVE', tags: ['Design', 'Collaboration', 'UI/UX'], metrics: { impact: 8, difficulty: 'Hard' } }
         };
 
         async function fetchIdeas() {
@@ -692,6 +697,17 @@
 
                     return { id: idx, category, name, description, fullDescription, priority, ...info };
                 });
+
+                // Add 6 more mock ideas
+                const mockIdeas = [
+                    { id: allIdeas.length, category: 'Dev Tools', name: 'Cursor', description: 'AI-powered code editor with inline suggestions and context awareness', priority: 2, fullDescription: 'Advanced code editor that uses Claude to understand your codebase and provide intelligent suggestions inline as you type. Supports multi-file edits, debugging, and testing with AI assistance.', ...toolInfo['Cursor'] },
+                    { id: allIdeas.length + 1, category: 'Search & Research', name: 'Perplexity', description: 'AI search engine with real-time web access and source citations', priority: 2, fullDescription: 'Next-generation search that uses AI to understand complex questions and provide detailed answers with proper source attribution. Perfect for research, learning, and staying informed.', ...toolInfo['Perplexity'] },
+                    { id: allIdeas.length + 2, category: 'Creative', name: 'Midjourney', description: 'Text-to-image AI generation with artistic style control', priority: 3, fullDescription: 'Create stunning images from text descriptions. Features advanced style parameters, upscaling, and community features. Used by designers and artists worldwide for rapid concept generation.', ...toolInfo['Midjourney'] },
+                    { id: allIdeas.length + 3, category: 'Dev Tools', name: 'Replit', description: 'Cloud IDE with built-in AI code completion and collaboration features', priority: 3, fullDescription: 'Full-featured IDE in the browser with support for 50+ languages, AI copilot assistance, and real-time collaboration. Perfect for learning, teaching, and rapid prototyping.', ...toolInfo['Replit'] },
+                    { id: allIdeas.length + 4, category: 'AI Assistants', name: 'Claude', description: 'Advanced AI assistant with reasoning and code capabilities', priority: 1, fullDescription: 'General-purpose AI assistant by Anthropic with strong reasoning abilities, code generation, analysis, and creative writing. Available via API, web, and desktop applications.', ...toolInfo['Claude'] },
+                    { id: allIdeas.length + 5, category: 'Design', name: 'Figma', description: 'Collaborative design tool with AI-powered features for prototyping', priority: 2, fullDescription: 'Cloud-based design platform enabling real-time collaboration on UI/UX design projects. Recent AI features help with layout generation, design suggestions, and user testing synthesis.', ...toolInfo['Figma'] }
+                ];
+                allIdeas = [...allIdeas, ...mockIdeas];
 
                 renderIdeas();
             } catch (error) {

@@ -279,9 +279,6 @@
             transform-origin: left center;
             transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
             cursor: pointer;
-        }
-
-        .idea-card-carousel {
             transform: rotateY(45deg) translateZ(-100px);
             opacity: 0.4;
             z-index: 1;
@@ -304,11 +301,14 @@
             opacity: 0.2;
         }
 
+        .idea-card-carousel.active:hover,
+        .idea-card-carousel.next:hover,
+        .idea-card-carousel.prev:hover,
         .idea-card-carousel:hover {
-            opacity: 1;
+            opacity: 1 !important;
             transform: rotateY(8deg) translateZ(60px) scale(1.02) !important;
-            z-index: 300;
-            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
+            z-index: 300 !important;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7) !important;
         }
 
         .idea-card-face {

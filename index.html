@@ -221,23 +221,45 @@
         }
 
         /* 3D Carousel Container */
-        .carousel-3d-container {
-            perspective: 1200px;
-            margin-bottom: 60px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 40px;
-            padding: 20px 0;
+        .carousel-section {
+            margin-bottom: 80px;
         }
 
-        .category-card-3d {
+        .carousel-section-header {
+            margin-bottom: 30px;
+        }
+
+        .carousel-section-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #f0f0f0;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .carousel-section-count {
+            color: #a0a0a8;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .carousel-3d-container {
             perspective: 1200px;
-            height: 550px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 40px;
+            padding: 0;
+        }
+
+        .idea-card-3d {
+            perspective: 1200px;
+            height: 400px;
             position: relative;
             cursor: pointer;
         }
 
-        .category-card-inner {
+        .idea-card-inner {
             position: relative;
             width: 100%;
             height: 100%;
@@ -246,11 +268,11 @@
             transform: rotateX(0deg) rotateY(0deg);
         }
 
-        .category-card-3d:hover .category-card-inner {
+        .idea-card-3d:hover .idea-card-inner {
             transform: rotateY(8deg) rotateX(-2deg);
         }
 
-        .category-card-front {
+        .idea-card-front {
             position: absolute;
             width: 100%;
             height: 100%;
@@ -264,60 +286,58 @@
             overflow: hidden;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(10px);
+            padding: 30px 20px;
         }
 
-        .category-card-front-banner {
+        .idea-card-front-banner {
             background: #6496ff;
             padding: 20px;
+            margin: -30px -20px 20px -20px;
             text-align: center;
             flex-shrink: 0;
         }
 
-        .category-card-front-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex: 1;
-            padding: 30px 20px;
-            text-align: center;
-        }
-
-        .category-card-3d.granola .category-card-front {
+        .idea-card-3d.granola .idea-card-front {
             background: linear-gradient(180deg, #4ade80 0%, rgba(74, 222, 128, 0.15) 40%, rgba(74, 222, 128, 0.08) 100%);
             border-color: rgba(74, 222, 128, 0.3);
         }
 
-        .category-card-3d.granola .category-card-front-banner {
+        .idea-card-3d.granola .idea-card-front-banner {
             background: #4ade80;
         }
 
-        .category-card-3d.littlebird .category-card-front {
+        .idea-card-3d.littlebird .idea-card-front {
             background: linear-gradient(180deg, #c084fc 0%, rgba(192, 132, 252, 0.15) 40%, rgba(192, 132, 252, 0.08) 100%);
             border-color: rgba(192, 132, 252, 0.3);
         }
 
-        .category-card-3d.littlebird .category-card-front-banner {
+        .idea-card-3d.littlebird .idea-card-front-banner {
             background: #c084fc;
         }
 
-        .category-name-large {
-            font-size: 1.4rem;
+        .idea-name-banner {
+            font-size: 1.3rem;
             font-weight: 800;
             color: #ffffff;
             margin-bottom: 4px;
             letter-spacing: -0.5px;
         }
 
-        .category-count {
+        .idea-status-badge {
             color: rgba(255, 255, 255, 0.85);
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 1.5px;
             font-weight: 600;
         }
 
-        .category-card-back {
+        .idea-card-front-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .idea-card-back {
             position: absolute;
             width: 100%;
             height: 100%;
@@ -339,6 +359,7 @@
             flex-direction: column;
             height: 100%;
             overflow-y: auto;
+            font-size: 0.9rem;
         }
 
         .back-content::-webkit-scrollbar {
@@ -359,57 +380,20 @@
             background: rgba(100, 150, 255, 0.5);
         }
 
-        .ideas-list {
+        .back-description {
+            color: #c0c0c8;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .back-meta {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-        }
-
-        .idea-item-compact {
-            background: rgba(255, 255, 255, 0.04);
-            border-left: 3px solid #6496ff;
-            border-radius: 8px;
-            padding: 12px 14px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.85rem;
-        }
-
-        .idea-item-compact.granola {
-            border-left-color: #4ade80;
-        }
-
-        .idea-item-compact.littlebird {
-            border-left-color: #c084fc;
-        }
-
-        .idea-item-compact:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateX(4px);
-        }
-
-        .idea-item-name {
-            font-weight: 700;
-            color: #f0f0f0;
-            margin-bottom: 4px;
-        }
-
-        .idea-item-desc {
+            gap: 10px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
             color: #a0a0a8;
-            font-size: 0.8rem;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .idea-item-meta {
-            display: flex;
-            gap: 8px;
-            margin-top: 6px;
-            font-size: 0.75rem;
-            color: #888;
+            font-size: 0.85rem;
         }
 
         .empty-state {
@@ -780,49 +764,62 @@
 
             const html = categories.map(category => {
                 const ideas = grouped[category];
-                const brandClass = ideas.length > 0 ? ideas[0].brand : 'default';
-
-                return `
-                    <div class="category-card-3d ${brandClass}">
-                        <div class="category-card-inner">
+                const ideasHtml = ideas.map(idea => `
+                    <div class="idea-card-3d ${idea.brand}">
+                        <div class="idea-card-inner">
                             <!-- Front Face -->
-                            <div class="category-card-front">
-                                <div class="category-card-front-banner">
-                                    <div class="category-name-large">${escapeHtml(category)}</div>
-                                    <div class="category-count">${ideas.length} ideas</div>
+                            <div class="idea-card-front">
+                                <div class="idea-card-front-banner">
+                                    <div class="idea-name-banner">${escapeHtml(idea.name)}</div>
+                                    <div class="idea-status-badge">${idea.status}</div>
                                 </div>
-                                <div class="category-card-front-content">
+                                <div class="idea-card-front-content">
+                                    <p style="color: #c0c0c8; line-height: 1.6; flex: 1;">${escapeHtml(idea.description)}</p>
+                                    <div style="display: flex; gap: 10px; font-size: 0.85rem; color: #a0a0a8; margin-top: 15px;">
+                                        <span>P${idea.priority}</span>
+                                        <span>Impact: ${idea.metrics?.impact || 5}/10</span>
+                                    </div>
                                 </div>
                             </div>
-                            <!-- Back Face (Ideas List) -->
-                            <div class="category-card-back">
+                            <!-- Back Face -->
+                            <div class="idea-card-back">
                                 <div class="back-content">
-                                    <div class="ideas-list">
-                                        ${ideas.map(idea => `
-                                            <div class="idea-item-compact ${idea.brand}" onclick="openModal(event, ${idea.id})">
-                                                <div class="idea-item-name">${escapeHtml(idea.name)}</div>
-                                                <div class="idea-item-desc">${escapeHtml(idea.description)}</div>
-                                                <div class="idea-item-meta">
-                                                    <span>P${idea.priority}</span>
-                                                    <span>Impact: ${idea.metrics?.impact || 5}/10</span>
-                                                </div>
-                                            </div>
-                                        `).join('')}
+                                    <div class="back-description">${escapeHtml(idea.fullDescription)}</div>
+                                    <div class="back-meta">
+                                        <div><strong>Priority:</strong> P${idea.priority}</div>
+                                        <div><strong>Impact:</strong> ${idea.metrics?.impact || 5}/10</div>
+                                        <div><strong>Difficulty:</strong> ${idea.metrics?.difficulty || 'Medium'}</div>
+                                        ${idea.tags && idea.tags.length > 0 ? `<div><strong>Skills:</strong> ${idea.tags.join(', ')}</div>` : ''}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                `).join('');
+
+                return `
+                    <div class="carousel-section">
+                        <div class="carousel-section-header">
+                            <div class="carousel-section-title">${escapeHtml(category)}</div>
+                            <div class="carousel-section-count">${ideas.length} ideas</div>
+                        </div>
+                        <div class="carousel-3d-container">
+                            ${ideasHtml}
+                        </div>
+                    </div>
                 `;
             }).join('');
 
-            content.innerHTML = `<div class="carousel-3d-container">${html}</div>`;
+            content.innerHTML = html;
             renderStats();
         }
 
         function renderStats() {
             const total = allIdeas.length;
             const favorited = allIdeas.filter(i => favorites.includes(i.id)).length;
+            const shipped = allIdeas.filter(i => i.status === 'SHIPPED').length;
+            const building = allIdeas.filter(i => i.status === 'BUILDING').length;
+            const ideating = allIdeas.filter(i => i.status === 'IDEATING').length;
 
             document.getElementById('statsBar').innerHTML = `
                 <div class="stat-card">
@@ -832,6 +829,18 @@
                 <div class="stat-card">
                     <div class="stat-number">${favorited}</div>
                     <div class="stat-label">Favorites</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${shipped}</div>
+                    <div class="stat-label">Shipped</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${building}</div>
+                    <div class="stat-label">Building</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${ideating}</div>
+                    <div class="stat-label">Ideating</div>
                 </div>
             `;
         }

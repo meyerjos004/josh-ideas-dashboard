@@ -301,12 +301,11 @@
             opacity: 0.2;
         }
 
-        .idea-card-carousel:hover {
+        .idea-card-carousel.hovering {
             opacity: 1 !important;
             transform: rotateY(8deg) translateZ(60px) scale(1.02) !important;
             z-index: 300 !important;
             box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7) !important;
-            background-color: rgba(255, 100, 100, 0.3) !important;
         }
 
         .idea-card-face {
@@ -324,7 +323,15 @@
             padding: 30px;
             background: linear-gradient(180deg, #6496ff 0%, rgba(100, 150, 255, 0.1) 100%);
             border: 1px solid rgba(100, 150, 255, 0.3);
-            pointer-events: none;
+            cursor: pointer;
+        }
+
+        .idea-card-carousel.active .idea-card-face:hover,
+        .idea-card-carousel.next .idea-card-face:hover,
+        .idea-card-carousel.prev .idea-card-face:hover,
+        .idea-card-face:hover {
+            opacity: 1 !important;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7) !important;
         }
 
         .idea-card-carousel.granola .idea-card-face {
@@ -754,9 +761,8 @@
                     const isPrev = idx === ideas.length - 1;
 
                     return `
-                        <div class="idea-card-carousel ${idea.brand} ${isActive ? 'active' : isPrev ? 'prev' : 'next'}"
-                             onclick="openModal(event, ${idea.id})">
-                            <div class="idea-card-face">
+                        <div class="idea-card-carousel ${idea.brand} ${isActive ? 'active' : isPrev ? 'prev' : 'next'}">
+                            <div class="idea-card-face" onclick="openModal(event, ${idea.id})">
                                 <div class="card-header">
                                     <div class="card-name">${escapeHtml(idea.name)}</div>
                                     <span class="card-status">${idea.status}</span>
@@ -814,6 +820,17 @@
                     }
 
                     updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
+                });
+
+                // Add hover listeners to card faces
+                carousel.querySelectorAll('.idea-card-face').forEach(face => {
+                    const card = face.closest('.idea-card-carousel');
+                    face.addEventListener('mouseenter', () => {
+                        card.classList.add('hovering');
+                    });
+                    face.addEventListener('mouseleave', () => {
+                        card.classList.remove('hovering');
+                    });
                 });
             });
 

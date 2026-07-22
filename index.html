@@ -868,8 +868,9 @@
                 // Calculate offset from active card (position in the wheel)
                 const offset = (idx - activeIdx + totalCards) % totalCards;
 
-                // Calculate rotation angle for scroll wheel effect (45 degrees per card)
-                const rotationAngle = offset * 45;
+                // Calculate rotation angle for scroll wheel effect
+                // Negative rotation so cards go to the right and show their right side
+                const rotationAngle = offset * -45;
 
                 // Calculate depth spacing so cards are visible behind each other
                 const depth = -offset * 60;

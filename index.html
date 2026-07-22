@@ -899,8 +899,8 @@
                     depth = -distance * 50;
                 }
 
-                // Opacity fades cards on the sides
-                const opacity = offset === 0 ? 1 : 0.6;
+                // Active card is transparent (glass effect), stack cards are opaque
+                const opacity = offset === 0 ? 0.65 : 1;
 
                 // Apply transforms
                 card.style.transform = `translateX(${translateX}px) rotateY(${rotationAngle}deg) translateZ(${depth}px)`;

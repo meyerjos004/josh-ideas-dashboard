@@ -828,15 +828,10 @@
 
                 if (idx === activeIdx) {
                     card.classList.add('active');
-                    card.style.transform = 'rotateY(45deg) translateZ(0px)';
                 } else if (idx === (activeIdx + 1) % ideas.length) {
                     card.classList.add('next');
-                    card.style.transform = 'rotateY(45deg) translateZ(-60px)';
                 } else if (idx === (activeIdx - 1 + ideas.length) % ideas.length) {
                     card.classList.add('prev');
-                    card.style.transform = 'rotateY(45deg) translateZ(-140px)';
-                } else {
-                    card.style.transform = 'rotateY(45deg) translateZ(-200px)';
                 }
             });
         }

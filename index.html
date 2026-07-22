@@ -285,15 +285,14 @@
             transform-origin: left center;
             transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
             cursor: pointer;
-            transform: rotateY(0deg) translateZ(0px);
-            opacity: 1;
-            z-index: 1;
-            background: rgba(255, 0, 0, 0.3);
-            border: 3px solid red;
+            transform: rotateY(-45deg) translateZ(-60px);
+            opacity: 0.6;
+            z-index: 0;
         }
 
         .idea-card-carousel.next {
             transform: rotateY(45deg) translateZ(-60px);
+            opacity: 0.6;
             z-index: 2;
         }
 
@@ -331,7 +330,6 @@
             padding: 30px;
             background: linear-gradient(180deg, #6496ff 0%, rgba(100, 150, 255, 0.1) 100%);
             border: 1px solid rgba(100, 150, 255, 0.3);
-            pointer-events: none;
         }
 
         .idea-card-carousel.active .idea-card-face:hover,

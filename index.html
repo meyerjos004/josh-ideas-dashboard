@@ -865,29 +865,44 @@
             const totalCards = ideas.length;
 
             cards.forEach((card, idx) => {
-                // Calculate offset from active card (position in the wheel)
+                // Calculate offset from active card
                 const offset = (idx - activeIdx + totalCards) % totalCards;
 
-                // Calculate rotation angle for scroll wheel effect
-                // Negative rotation so cards go to the right and show their right side
-                const rotationAngle = offset * -45;
+                // Determine position: left (incoming), center (active), or right (outgoing)
+                let translateX = 0;
+                let rotationAngle = 0;
+                let zIndex = 0;
 
-                // Calculate depth spacing so cards are visible behind each other
+                if (offset === 0) {
+                    // Active card in center, facing forward
+                    translateX = 0;
+                    rotationAngle = 0;
+                    zIndex = totalCards;
+                } else if (offset < totalCards / 2) {
+                    // Next cards coming from left at 45 degrees
+                    translateX = -520;
+                    rotationAngle = 45;
+                    zIndex = totalCards - offset;
+                } else {
+                    // Previous cards exiting to right at -45 degrees
+                    translateX = 520;
+                    rotationAngle = -45;
+                    zIndex = totalCards - offset;
+                }
+
+                // Depth spacing so stacked cards are visible
                 const depth = -offset * 60;
 
-                // Calculate opacity to fade back cards
-                const opacity = Math.max(0.3, 1 - (offset * 0.12));
+                // Opacity fades cards on the sides
+                const opacity = offset === 0 ? 1 : 0.6;
 
-                // Calculate z-index to ensure proper layering
-                const zIndex = totalCards - offset;
-
-                // Apply transform and styles directly
-                card.style.transform = `rotateY(${rotationAngle}deg) translateZ(${depth}px)`;
+                // Apply transforms
+                card.style.transform = `translateX(${translateX}px) rotateY(${rotationAngle}deg) translateZ(${depth}px)`;
                 card.style.opacity = opacity;
                 card.style.zIndex = zIndex;
 
-                // Mark active card for hover effects
-                card.classList.remove('active', 'next', 'prev');
+                // Mark active card
+                card.classList.remove('active');
                 if (offset === 0) {
                     card.classList.add('active');
                 }

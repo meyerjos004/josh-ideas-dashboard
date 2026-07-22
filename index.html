@@ -12,47 +12,70 @@
         }
 
         body {
-            background-color: #0a0a0a;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 100%);
             color: #f0f0f0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
             line-height: 1.6;
             overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(100, 50, 150, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(50, 100, 200, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 40px 20px;
+            padding: 60px 20px;
+            position: relative;
+            z-index: 1;
         }
 
         header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 60px;
             position: relative;
+            animation: slideDown 0.8s ease-out;
         }
 
         h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            letter-spacing: -1px;
-            background: linear-gradient(135deg, #f0f0f0 0%, #a0a0a0 100%);
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            letter-spacing: -2px;
+            background: linear-gradient(135deg, #00ffff 0%, #ff00ff 50%, #00ffff 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            text-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            animation: glow 3s ease-in-out infinite;
         }
 
         .subtitle {
-            color: #888;
-            font-size: 0.95rem;
+            color: #00ffff;
+            font-size: 1rem;
             font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.8;
         }
 
         .controls {
             display: flex;
             flex-direction: column;
             gap: 20px;
-            margin-bottom: 40px;
+            margin-bottom: 50px;
         }
 
         .search-bar {
@@ -62,19 +85,25 @@
 
         input[type="text"] {
             flex: 1;
-            padding: 12px 16px;
-            background-color: #1a1a1a;
-            border: 1px solid #2a2a2a;
+            padding: 14px 18px;
+            background-color: rgba(26, 26, 26, 0.7);
+            border: 2px solid rgba(0, 255, 255, 0.3);
             color: #f0f0f0;
-            border-radius: 4px;
+            border-radius: 8px;
             font-size: 1rem;
-            transition: all 0.15s ease;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
         }
 
         input[type="text"]:focus {
             outline: none;
-            border-color: #4a4a4a;
-            background-color: #151515;
+            border-color: #00ffff;
+            background-color: rgba(26, 26, 26, 0.9);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+        }
+
+        input[type="text"]::placeholder {
+            color: #666;
         }
 
         .filter-buttons {
@@ -85,52 +114,102 @@
         }
 
         button {
-            padding: 10px 16px;
-            background-color: #1a1a1a;
-            color: #f0f0f0;
-            border: 1px solid #2a2a2a;
-            border-radius: 4px;
+            padding: 11px 18px;
+            background-color: rgba(26, 26, 26, 0.7);
+            color: #ccc;
+            border: 1px solid rgba(100, 100, 200, 0.3);
+            border-radius: 6px;
             cursor: pointer;
             font-size: 0.9rem;
             font-weight: 500;
-            transition: all 0.15s ease;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
         }
 
         button:hover {
-            background-color: #242424;
-            border-color: #3a3a3a;
+            background-color: rgba(26, 26, 26, 0.9);
+            border-color: rgba(0, 255, 255, 0.5);
+            color: #00ffff;
         }
 
         button.active {
-            background-color: #3a3a3a;
-            border-color: #5a5a5a;
-            color: #ffffff;
+            background-color: rgba(0, 255, 255, 0.1);
+            border-color: #00ffff;
+            color: #00ffff;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
         }
 
         .filter-label {
-            color: #666;
+            color: #888;
             font-size: 0.85rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
             margin-right: 10px;
+        }
+
+        .category-section {
+            margin-bottom: 60px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(0, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 255, 0.2));
+            border: 2px solid rgba(0, 255, 255, 0.4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .category-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #00ffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            flex: 1;
+        }
+
+        .category-count {
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #00ffff;
         }
 
         .ideas-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 25px;
         }
 
         .idea-card {
-            background-color: #141414;
-            border: 1px solid #2a2a2a;
-            border-radius: 6px;
-            padding: 24px;
+            background: linear-gradient(135deg, rgba(20, 20, 30, 0.8), rgba(30, 15, 45, 0.8));
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 28px;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
         }
 
         .idea-card::before {
@@ -140,73 +219,120 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
-            transition: left 0.3s ease;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+            transition: left 0.4s ease;
+        }
+
+        .idea-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(0, 255, 255, 0.1) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
         }
 
         .idea-card:hover {
-            border-color: #3a3a3a;
-            background-color: #1a1a1a;
+            border-color: rgba(0, 255, 255, 0.5);
+            background: linear-gradient(135deg, rgba(20, 20, 30, 0.95), rgba(30, 15, 45, 0.95));
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.2), inset 0 0 30px rgba(0, 255, 255, 0.05);
+            transform: translateY(-5px);
+        }
+
+        .idea-card:hover::after {
+            opacity: 1;
         }
 
         .idea-card:hover::before {
             left: 100%;
         }
 
-        .card-header {
+        .card-content {
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-category {
+            display: inline-block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #00ffff;
             margin-bottom: 12px;
+            opacity: 0.8;
+            font-weight: 600;
+        }
+
+        .card-header {
+            margin-bottom: 15px;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             gap: 10px;
         }
 
-        .card-category {
-            display: inline-block;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #888;
-            margin-bottom: 8px;
-        }
-
         .card-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 8px;
+            font-size: 1.4rem;
+            font-weight: 700;
             color: #f0f0f0;
+            flex: 1;
+            line-height: 1.3;
         }
 
         .card-priority {
-            background-color: #1f1f1f;
-            color: #888;
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 0.8rem;
-            font-weight: 600;
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 255, 0.1));
+            color: #00ffff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
             white-space: nowrap;
             flex-shrink: 0;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .card-description {
-            font-size: 0.9rem;
-            color: #aaa;
-            line-height: 1.5;
-            margin-bottom: 12px;
+            font-size: 0.95rem;
+            color: #bbb;
+            line-height: 1.6;
+            margin-bottom: 16px;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            flex: 1;
         }
 
         .card-expand {
-            color: #666;
-            font-size: 0.8rem;
-            transition: color 0.15s ease;
+            color: #00ffff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-expand::after {
+            content: '→';
+            transition: transform 0.2s ease;
         }
 
         .idea-card:hover .card-expand {
-            color: #888;
+            gap: 10px;
+        }
+
+        .idea-card:hover .card-expand::after {
+            transform: translateX(3px);
         }
 
         .modal {
@@ -216,141 +342,129 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.85);
             z-index: 1000;
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(5px);
         }
 
         .modal.active {
             display: flex;
             align-items: center;
             justify-content: center;
+            animation: fadeIn 0.3s ease-out;
         }
 
         .modal-content {
-            background-color: #141414;
-            border: 1px solid #2a2a2a;
-            border-radius: 8px;
-            max-width: 600px;
+            background: linear-gradient(135deg, rgba(20, 20, 30, 0.95), rgba(30, 15, 45, 0.95));
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            border-radius: 12px;
+            max-width: 650px;
             width: 90%;
-            max-height: 80vh;
+            max-height: 85vh;
             overflow-y: auto;
-            padding: 32px;
+            padding: 40px;
             position: relative;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
         }
 
         .modal-close {
             position: absolute;
-            top: 16px;
-            right: 16px;
+            top: 20px;
+            right: 20px;
             background: none;
             border: none;
             color: #666;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             cursor: pointer;
             padding: 0;
-            width: 32px;
-            height: 32px;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: color 0.15s ease;
+            transition: all 0.2s ease;
+            border-radius: 4px;
         }
 
         .modal-close:hover {
-            color: #aaa;
+            color: #00ffff;
+            background: rgba(0, 255, 255, 0.1);
         }
 
         .modal-category {
             font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #888;
-            margin-bottom: 12px;
+            letter-spacing: 1.5px;
+            color: #00ffff;
+            margin-bottom: 15px;
+            font-weight: 600;
         }
 
         .modal-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 12px;
+            font-size: 2.3rem;
+            font-weight: 800;
+            margin-bottom: 15px;
             color: #f0f0f0;
+            line-height: 1.2;
         }
 
         .modal-meta {
             display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #2a2a2a;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid rgba(0, 255, 255, 0.2);
         }
 
         .modal-priority {
-            background-color: #1f1f1f;
-            color: #888;
-            padding: 6px 12px;
-            border-radius: 3px;
-            font-size: 0.85rem;
-            font-weight: 600;
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 255, 0.1));
+            color: #00ffff;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border: 1px solid rgba(0, 255, 255, 0.3);
         }
 
         .modal-description {
-            font-size: 1rem;
-            color: #aaa;
-            line-height: 1.8;
+            font-size: 1.05rem;
+            color: #ccc;
+            line-height: 1.9;
             white-space: pre-wrap;
         }
 
         .empty-state {
             text-align: center;
-            padding: 40px 20px;
+            padding: 60px 20px;
             color: #666;
         }
 
         .empty-state p {
-            font-size: 1rem;
+            font-size: 1.1rem;
         }
 
         .loading {
             text-align: center;
-            padding: 40px;
-            color: #666;
-            font-size: 1rem;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-            }
-
-            h1 {
-                font-size: 1.8rem;
-            }
-
-            .ideas-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .controls {
-                flex-direction: column;
-            }
-
-            .search-bar {
-                flex-direction: column;
-            }
-
-            .modal-content {
-                padding: 24px;
-            }
-
-            .modal-title {
-                font-size: 1.5rem;
-            }
+            padding: 60px 20px;
+            color: #00ffff;
+            font-size: 1.1rem;
+            animation: pulse 2s ease-in-out infinite;
         }
 
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
@@ -358,15 +472,71 @@
             }
         }
 
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                text-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            }
+            50% {
+                text-shadow: 0 0 40px rgba(0, 255, 255, 0.6);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.8;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
         .idea-card {
-            animation: fadeIn 0.3s ease-out;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 15px;
+            }
+
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            .ideas-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .category-title {
+                font-size: 1.3rem;
+            }
+
+            .modal-content {
+                padding: 30px;
+                width: 95%;
+            }
+
+            .modal-title {
+                font-size: 1.8rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Ideas Dashboard</h1>
+            <h1>IDEAS</h1>
             <p class="subtitle">Live from Google Sheets • Auto-updating</p>
         </header>
 
@@ -409,6 +579,15 @@
         let currentFilter = 'all';
         let currentSearch = '';
 
+        const categoryIcons = {
+            'AI Tools': '🤖',
+            'Business': '💼',
+            'Technology': '⚡',
+            'Design': '🎨',
+            'Marketing': '📊',
+            'Other': '✨'
+        };
+
         async function fetchIdeas() {
             try {
                 const response = await fetch(SHEET_URL);
@@ -432,7 +611,7 @@
                 rows.forEach((row, index) => {
                     if (row.c && row.c.length >= 5) {
                         const idea = {
-                            category: row.c[0]?.v || '',
+                            category: row.c[0]?.v || 'Other',
                             name: row.c[1]?.v || '',
                             description: row.c[2]?.v || '',
                             priority: parseInt(row.c[3]?.v) || 0,
@@ -461,6 +640,17 @@
             });
         }
 
+        function groupByCategory(ideas) {
+            const grouped = {};
+            ideas.forEach(idea => {
+                if (!grouped[idea.category]) {
+                    grouped[idea.category] = [];
+                }
+                grouped[idea.category].push(idea);
+            });
+            return grouped;
+        }
+
         function renderIdeas() {
             const filtered = filterIdeas();
             const content = document.getElementById('content');
@@ -470,19 +660,40 @@
                 return;
             }
 
-            content.innerHTML = `<div class="ideas-grid">${filtered.map(idea => `
-                <div class="idea-card" onclick="openModal('${escapeHtml(idea.name)}', '${escapeHtml(idea.category)}', ${idea.priority}, '${escapeHtml(idea.description)}', '${escapeHtml(idea.fullDescription)}')">
-                    <div class="card-category">${escapeHtml(idea.category)}</div>
-                    <div class="card-header">
-                        <div style="flex: 1;">
-                            <h2 class="card-title">${escapeHtml(idea.name)}</h2>
+            const grouped = groupByCategory(filtered);
+            const categories = Object.keys(grouped).sort();
+
+            const html = categories.map(category => {
+                const ideas = grouped[category];
+                const icon = categoryIcons[category] || '✨';
+
+                return `
+                    <div class="category-section">
+                        <div class="category-header">
+                            <div class="category-icon">${icon}</div>
+                            <h2 class="category-title">${escapeHtml(category)}</h2>
+                            <div class="category-count">${ideas.length} ${ideas.length === 1 ? 'idea' : 'ideas'}</div>
                         </div>
-                        <div class="card-priority">P${idea.priority}</div>
+                        <div class="ideas-grid">
+                            ${ideas.map(idea => `
+                                <div class="idea-card" onclick="openModal('${escapeHtml(idea.name)}', '${escapeHtml(idea.category)}', ${idea.priority}, '${escapeHtml(idea.description)}', '${escapeHtml(idea.fullDescription)}')">
+                                    <div class="card-content">
+                                        <div class="card-category">${escapeHtml(idea.category)}</div>
+                                        <div class="card-header">
+                                            <h2 class="card-title">${escapeHtml(idea.name)}</h2>
+                                            <div class="card-priority">P${idea.priority}</div>
+                                        </div>
+                                        <p class="card-description">${escapeHtml(idea.description)}</p>
+                                        <div class="card-expand">View details</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
-                    <p class="card-description">${escapeHtml(idea.description)}</p>
-                    <div class="card-expand">Click to view full description →</div>
-                </div>
-            `).join('')}</div>`;
+                `;
+            }).join('');
+
+            content.innerHTML = html;
         }
 
         function openModal(name, category, priority, description, fullDescription) {

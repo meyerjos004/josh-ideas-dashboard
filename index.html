@@ -818,11 +818,11 @@
                     const ideas = grouped[categoryKey];
                     const currentIdx = carouselIndices[categoryKey];
 
-                    // Scroll down/right = prev card, scroll up/left = next card
+                    // Scroll down/right = next card, scroll up/left = prev card
                     if (e.deltaY > 0 || e.deltaX > 0) {
-                        carouselIndices[categoryKey] = (currentIdx - 1 + ideas.length) % ideas.length;
-                    } else {
                         carouselIndices[categoryKey] = (currentIdx + 1) % ideas.length;
+                    } else {
+                        carouselIndices[categoryKey] = (currentIdx - 1 + ideas.length) % ideas.length;
                     }
 
                     updateCarousel(carousel, ideas, carouselIndices[categoryKey]);

@@ -889,14 +889,14 @@
                     zIndex = totalCards - offset;
                 }
 
-                // Depth stacking toward inside: cards closer to center go deeper
+                // Depth stacking toward inside: cards closer to center are shallower
                 let depth;
                 if (offset === 0) {
                     depth = 0;
                 } else {
                     const distance = Math.min(offset, totalCards - offset);
-                    // Closer to center = further back in depth
-                    depth = -(totalCards / 2 - distance) * 50;
+                    // Closer to center = closer to viewer in depth (shallower)
+                    depth = -distance * 50;
                 }
 
                 // Opacity fades cards on the sides

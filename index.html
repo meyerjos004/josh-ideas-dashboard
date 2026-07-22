@@ -879,18 +879,25 @@
                     zIndex = totalCards;
                 } else if (offset < totalCards / 2) {
                     // Next cards coming from left at 45 degrees
-                    translateX = -520;
+                    translateX = -380;
                     rotationAngle = 45;
                     zIndex = totalCards - offset;
                 } else {
                     // Previous cards exiting to right at -45 degrees
-                    translateX = 520;
+                    translateX = 380;
                     rotationAngle = -45;
                     zIndex = totalCards - offset;
                 }
 
-                // Depth spacing so stacked cards are visible
-                const depth = -offset * 60;
+                // Depth stacking toward inside: cards closer to center go deeper
+                let depth;
+                if (offset === 0) {
+                    depth = 0;
+                } else {
+                    const distance = Math.min(offset, totalCards - offset);
+                    // Closer to center = further back in depth
+                    depth = -(totalCards / 2 - distance) * 50;
+                }
 
                 // Opacity fades cards on the sides
                 const opacity = offset === 0 ? 1 : 0.6;

@@ -305,14 +305,19 @@
             -webkit-backface-visibility: hidden;
             display: flex;
             flex-direction: column;
-            border-radius: 16px;
+            border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(30px);
             padding: 30px;
-            background: linear-gradient(180deg, #6496ff 0%, rgba(100, 150, 255, 0.1) 100%);
-            border: 1px solid rgba(100, 150, 255, 0.3);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(135deg,
+                rgba(100, 150, 255, 0.15) 0%,
+                rgba(100, 150, 255, 0.05) 50%,
+                rgba(100, 150, 255, 0.08) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+                0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         .idea-card-carousel.active .idea-card-face:hover,
@@ -900,7 +905,7 @@
                 }
 
                 // Active card is transparent (glass effect), stack cards are opaque
-                const opacity = offset === 0 ? 0.65 : 1;
+                const opacity = offset === 0 ? 0.45 : 1;
 
                 // Apply transforms
                 card.style.transform = `translateX(${translateX}px) rotateY(${rotationAngle}deg) translateZ(${depth}px)`;

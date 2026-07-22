@@ -220,328 +220,212 @@
             border-color: rgba(100, 150, 255, 0.5);
         }
 
-        .carousel-container {
-            display: flex;
-            flex-direction: column;
+        /* 3D Carousel Container */
+        .carousel-3d-container {
+            perspective: 1200px;
+            margin-bottom: 60px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 40px;
+            padding: 20px 0;
         }
 
-        .carousel-item {
-            animation: fadeInUp 0.8s ease-out;
-        }
-
-        .carousel-trigger {
-            cursor: pointer;
-            padding: 32px;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 14px;
-            transition: all 0.3s ease;
+        .category-card-3d {
+            perspective: 1200px;
+            height: 550px;
             position: relative;
-            overflow: hidden;
+            cursor: pointer;
         }
 
-        .carousel-trigger::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
+        .category-card-inner {
+            position: relative;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
-            transition: left 0.4s ease;
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transform-style: preserve-3d;
+            transform: rotateX(0deg) rotateY(0deg);
         }
 
-        .carousel-trigger:hover {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
-            border-color: rgba(100, 150, 255, 0.3);
-            box-shadow: 0 10px 40px rgba(100, 150, 255, 0.15);
-            transform: translateY(-4px);
+        .category-card-3d:hover .category-card-inner {
+            transform: rotateY(15deg) rotateX(-5deg);
         }
 
-        .carousel-trigger:hover::before {
-            left: 100%;
-        }
-
-        .carousel-content {
+        .category-card-front {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 24px;
-            position: relative;
-            z-index: 2;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(100, 150, 255, 0.1), rgba(100, 150, 255, 0.05));
+            border: 1px solid rgba(100, 150, 255, 0.2);
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
         }
 
-        .category-circle {
-            width: 80px;
-            height: 80px;
+        .category-card-3d.granola .category-card-front {
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.1), rgba(74, 222, 128, 0.05));
+            border-color: rgba(74, 222, 128, 0.2);
+        }
+
+        .category-card-3d.littlebird .category-card-front {
+            background: linear-gradient(135deg, rgba(192, 132, 252, 0.1), rgba(192, 132, 252, 0.05));
+            border-color: rgba(192, 132, 252, 0.2);
+        }
+
+        .category-circle-large {
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+            border: 2px solid rgba(100, 150, 255, 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.5rem;
-            flex-shrink: 0;
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            font-size: 4rem;
+            margin-bottom: 20px;
+            box-shadow: 0 0 40px rgba(100, 150, 255, 0.3);
+            transition: all 0.3s ease;
         }
 
-        .category-info {
-            flex: 1;
+        .category-card-3d.granola .category-circle-large {
+            border-color: rgba(74, 222, 128, 0.4);
+            box-shadow: 0 0 40px rgba(74, 222, 128, 0.3);
         }
 
-        .category-name {
-            font-size: 1.6rem;
+        .category-card-3d.littlebird .category-circle-large {
+            border-color: rgba(192, 132, 252, 0.4);
+            box-shadow: 0 0 40px rgba(192, 132, 252, 0.3);
+        }
+
+        .category-card-3d:hover .category-circle-large {
+            transform: scale(1.1);
+            box-shadow: 0 0 60px rgba(100, 150, 255, 0.5);
+        }
+
+        .category-name-large {
+            font-size: 2rem;
             font-weight: 800;
             color: #f0f0f0;
-            margin-bottom: 6px;
+            margin-bottom: 10px;
         }
 
-        .category-meta {
-            display: flex;
-            gap: 15px;
-            font-size: 0.9rem;
+        .category-count {
             color: #a0a0a8;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .carousel-chevron {
-            font-size: 1.8rem;
-            color: #6496ff;
-            transition: transform 0.3s ease;
-            flex-shrink: 0;
-        }
-
-        .carousel-trigger.expanded .carousel-chevron {
-            transform: rotate(90deg);
-        }
-
-        .ideas-carousel {
-            display: none;
-            margin-top: 30px;
-        }
-
-        .ideas-carousel.active {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-            gap: 30px;
-            animation: slideOut 0.5s ease-out;
-        }
-
-        @keyframes slideOut {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .idea-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 12px;
-            padding: 28px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-
-        .idea-card::before {
-            content: '';
+        .category-card-back {
             position: absolute;
-            top: 0;
-            left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
-            transition: left 0.4s ease;
-        }
-
-        .idea-card:hover {
-            border-color: rgba(100, 150, 255, 0.3);
-            background: linear-gradient(135deg, rgba(100, 150, 255, 0.08), rgba(100, 150, 255, 0.04));
-            box-shadow: 0 12px 48px rgba(100, 150, 255, 0.25);
-            transform: translateY(-8px);
-        }
-
-        .idea-card:hover::before {
-            left: 100%;
-        }
-
-        .idea-card.wisprflow {
-            border-left: 4px solid #6496ff;
-        }
-
-        .idea-card.granola {
-            border-left: 4px solid #4ade80;
-        }
-
-        .idea-card.littlebird {
-            border-left: 4px solid #c084fc;
-        }
-
-        .card-content {
-            position: relative;
-            z-index: 2;
-            flex: 1;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
             display: flex;
             flex-direction: column;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 30px 25px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
         }
 
-        .card-header-top {
+        .back-content {
             display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 16px;
+            flex-direction: column;
+            height: 100%;
+            overflow-y: auto;
         }
 
-        .card-color-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            margin-top: 6px;
+        .back-content::-webkit-scrollbar {
+            width: 6px;
         }
 
-        .card-color-dot.wisprflow {
-            background: #6496ff;
-            box-shadow: 0 0 12px rgba(100, 150, 255, 0.4);
+        .back-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
         }
 
-        .card-color-dot.granola {
-            background: #4ade80;
-            box-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
+        .back-content::-webkit-scrollbar-thumb {
+            background: rgba(100, 150, 255, 0.3);
+            border-radius: 10px;
         }
 
-        .card-color-dot.littlebird {
-            background: #c084fc;
-            box-shadow: 0 0 12px rgba(192, 132, 252, 0.4);
+        .back-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 150, 255, 0.5);
         }
 
-        .card-title-section {
-            flex: 1;
+        .ideas-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
-        .card-title {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: #f0f0f0;
-            margin-bottom: 6px;
-            line-height: 1.2;
+        .idea-item-compact {
+            background: rgba(255, 255, 255, 0.04);
+            border-left: 3px solid #6496ff;
+            border-radius: 8px;
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
         }
 
-        .card-status {
-            display: inline-block;
-            padding: 4px 10px;
-            background: rgba(100, 150, 255, 0.15);
-            border: 1px solid rgba(100, 150, 255, 0.3);
-            border-radius: 20px;
-            font-size: 0.75rem;
+        .idea-item-compact.granola {
+            border-left-color: #4ade80;
+        }
+
+        .idea-item-compact.littlebird {
+            border-left-color: #c084fc;
+        }
+
+        .idea-item-compact:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(4px);
+        }
+
+        .idea-item-name {
             font-weight: 700;
-            color: #6496ff;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            color: #f0f0f0;
+            margin-bottom: 4px;
         }
 
-        .card-description {
-            font-size: 0.95rem;
-            color: #b0b0b8;
-            line-height: 1.6;
-            margin-bottom: 18px;
+        .idea-item-desc {
+            color: #a0a0a8;
+            font-size: 0.8rem;
+            line-height: 1.4;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            flex: 1;
         }
 
-        .card-meta {
+        .idea-item-meta {
             display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 16px;
-            padding-top: 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.85rem;
-            color: #a0a0a8;
-        }
-
-        .meta-label {
-            font-weight: 600;
-            color: #b0b0b8;
-        }
-
-        .priority-badge {
-            background: rgba(100, 150, 255, 0.15);
-            color: #6496ff;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: 700;
-            font-size: 0.8rem;
-        }
-
-        .card-tags {
-            display: flex;
-            flex-wrap: wrap;
             gap: 8px;
-            margin-bottom: 16px;
+            margin-top: 6px;
+            font-size: 0.75rem;
+            color: #888;
         }
 
-        .tag {
-            background: rgba(255, 255, 255, 0.08);
-            color: #b0b0b8;
-            padding: 4px 10px;
-            border-radius: 16px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a0a0a8;
+            font-size: 1.1rem;
         }
 
-        .card-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: auto;
-            padding-top: 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .card-expand {
-            color: #6496ff;
-            font-size: 0.9rem;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .favorite-btn {
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-            padding: 0;
-            color: #666;
-        }
-
-        .favorite-btn:hover {
-            transform: scale(1.2);
-        }
-
-        .favorite-btn.starred {
-            color: #fbbf24;
-        }
-
+        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -551,166 +435,142 @@
             bottom: 0;
             background: rgba(0, 0, 0, 0.7);
             z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
             backdrop-filter: blur(5px);
         }
 
         .modal.active {
             display: flex;
-            align-items: center;
-            justify-content: center;
             animation: fadeIn 0.3s ease-out;
         }
 
         .modal-content {
-            background: linear-gradient(135deg, rgba(30, 30, 40, 0.95), rgba(25, 25, 35, 0.95));
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 16px;
+            padding: 40px;
             max-width: 700px;
-            width: 90%;
+            width: 100%;
             max-height: 90vh;
             overflow-y: auto;
-            padding: 40px;
-            position: relative;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(10px);
         }
 
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+
+        .modal-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #f0f0f0;
+        }
+
         .modal-close {
-            position: absolute;
-            top: 20px;
-            right: 20px;
             background: none;
             border: none;
+            color: #a0a0a8;
             font-size: 1.8rem;
             cursor: pointer;
-            color: #a0a0a8;
+            padding: 0;
             width: 40px;
             height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s ease;
-            border-radius: 6px;
         }
 
         .modal-close:hover {
-            color: #6496ff;
-            background: rgba(100, 150, 255, 0.1);
-        }
-
-        .modal-title {
-            font-size: 2.2rem;
-            font-weight: 800;
             color: #f0f0f0;
-            margin-bottom: 20px;
-            line-height: 1.2;
+            transform: rotate(90deg);
         }
 
         .modal-meta-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 20px;
-            margin-bottom: 24px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-            flex-wrap: wrap;
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .modal-meta-item {
-            flex: 1;
-            min-width: 150px;
+            display: flex;
+            flex-direction: column;
         }
 
         .modal-meta-label {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
+            color: #a0a0a8;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #a0a0a8;
-            font-weight: 700;
+            font-weight: 600;
             margin-bottom: 6px;
         }
 
         .modal-meta-value {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: 700;
             color: #6496ff;
         }
 
         .modal-description {
-            font-size: 1.05rem;
-            color: #b0b0b8;
-            line-height: 1.9;
-            white-space: pre-wrap;
-            margin-bottom: 24px;
+            font-size: 1rem;
+            color: #c0c0c8;
+            line-height: 1.8;
+            margin-bottom: 30px;
         }
 
         .modal-tags-section {
-            margin-bottom: 24px;
+            margin-top: 30px;
         }
 
         .modal-tags-label {
+            display: block;
             font-size: 0.85rem;
+            color: #a0a0a8;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #a0a0a8;
-            font-weight: 700;
+            font-weight: 600;
             margin-bottom: 12px;
-            display: block;
         }
 
         .modal-tags {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
         }
 
         .modal-tag {
             background: rgba(100, 150, 255, 0.15);
             color: #6496ff;
-            padding: 6px 14px;
+            padding: 6px 12px;
             border-radius: 20px;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            border: 1px solid rgba(100, 150, 255, 0.3);
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #a0a0a8;
-        }
-
-        .empty-state p {
-            font-size: 1.1rem;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6496ff;
-            font-size: 1.1rem;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
+        /* Animations */
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
             }
         }
 
         @keyframes slideDown {
             from {
                 opacity: 0;
-                transform: translateY(-20px);
+                transform: translateY(-30px);
             }
             to {
                 opacity: 1;
@@ -718,58 +578,43 @@
             }
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 0.8; }
-            50% { opacity: 1; }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 30px 15px;
-            }
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
 
-            h1 {
-                font-size: 2.2rem;
-            }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
 
-            .ideas-carousel.active {
-                grid-template-columns: 1fr;
-            }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 150, 255, 0.3);
+            border-radius: 10px;
+        }
 
-            .carousel-content {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .modal-content {
-                padding: 30px;
-                width: 95%;
-            }
-
-            .modal-title {
-                font-size: 1.8rem;
-            }
-
-            .stat-card {
-                padding: 16px;
-            }
-
-            .stat-number {
-                font-size: 2rem;
-            }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 150, 255, 0.5);
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>IDEAS</h1>
-            <p class="subtitle">Live from Google Sheets • Auto-updating</p>
+            <h1>Josh's Ideas</h1>
+            <p class="subtitle">3D Carousel of Innovation</p>
             <div class="header-controls">
-                <button class="refresh-btn" id="refreshBtn">
-                    <span>↻</span>
-                    <span>Refresh</span>
-                </button>
+                <button class="refresh-btn" onclick="refreshIdeas()">🔄 Refresh</button>
             </div>
         </header>
 
@@ -777,219 +622,155 @@
 
         <div class="controls">
             <div class="search-bar">
-                <input
-                    type="text"
-                    id="searchInput"
-                    placeholder="Search ideas by name or description..."
-                    autocomplete="off"
-                />
-                <div class="sort-controls">
-                    <label for="sortBy" class="filter-label">Sort:</label>
-                    <select id="sortBy">
-                        <option value="date">Date Added</option>
-                        <option value="priority">Priority</option>
-                        <option value="status">Status</option>
-                        <option value="name">Alphabetical</option>
-                    </select>
-                </div>
+                <input type="text" id="searchInput" placeholder="Search ideas..." onkeyup="renderIdeas()">
             </div>
-
             <div class="filter-buttons">
                 <span class="filter-label">Priority:</span>
-                <button class="filter-btn active" data-priority="all">All</button>
-                <button class="filter-btn" data-priority="1">P1</button>
-                <button class="filter-btn" data-priority="2">P2</button>
-                <button class="filter-btn" data-priority="3">P3</button>
-                <button class="filter-btn" data-priority="4">P4</button>
-                <button class="filter-btn" data-priority="5">P5</button>
+                <button onclick="toggleFilter('priority', 'P1')" data-filter="priority-P1">P1</button>
+                <button onclick="toggleFilter('priority', 'P2')" data-filter="priority-P2">P2</button>
+                <button onclick="toggleFilter('priority', 'P3')" data-filter="priority-P3">P3</button>
+                <button onclick="toggleFilter('priority', 'P4')" data-filter="priority-P4">P4</button>
+                <button onclick="toggleFilter('priority', 'P5')" data-filter="priority-P5">P5</button>
+            </div>
+            <div class="sort-controls">
+                <span class="filter-label">Sort by:</span>
+                <select id="sortBy" onchange="renderIdeas()">
+                    <option value="name">Name (A-Z)</option>
+                    <option value="priority">Priority</option>
+                    <option value="impact">Impact (High)</option>
+                </select>
             </div>
         </div>
 
-        <div id="content" class="loading">Loading ideas...</div>
+        <div id="content"></div>
+    </div>
 
-        <div id="modal" class="modal">
-            <div class="modal-content">
-                <button class="modal-close" id="modalClose">&times;</button>
-                <div id="modalBody"></div>
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 class="modal-title" id="modalTitle"></h2>
+                </div>
+                <button class="modal-close" onclick="closeModal()">×</button>
             </div>
+            <div id="modalBody"></div>
         </div>
     </div>
 
     <script>
         const SHEET_ID = '1UA_TX0lA3xwHQHY9k0gIprfkZ9W05nD2tSBEURamuqQ';
-        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+        const QUERY_URL = `https://docs.google.com/visualization/query?key=AIzaSyDaRWvjT4XYFEOpag03Z8XZtnHxJ0rmVDY&gid=0&tq=SELECT%20A%2CB%2CC%2CD%2CE&key=AIzaSyDaRWvjT4XYFEOpag03Z8XZtnHxJ0rmVDY&url=https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`;
 
         let allIdeas = [];
-        let currentFilter = 'all';
-        let currentSearch = '';
-        let currentSort = 'date';
-        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-        let expandedCategories = new Set(JSON.parse(localStorage.getItem('expandedCategories') || '[]'));
-        let lastScrollPos = 0;
-        let isRefreshing = false;
-
+        let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+        const activeFilters = new Map();
         const categoryIcons = {
-            'AI Tools': '🤖',
-            'Business': '💼',
-            'Technology': '⚡',
-            'Design': '🎨',
-            'Marketing': '📊',
-            'Other': '✨'
+            'AI Tools': '🤖'
         };
 
         const toolInfo = {
-            'Wisprflow': {
-                status: 'Ideating',
-                tags: ['Voice-to-Text', 'AI', 'Productivity'],
-                metrics: { difficulty: 'Hard', impact: 9 },
-                brand: 'wisprflow'
-            },
-            'Granola': {
-                status: 'Ideating',
-                tags: ['Meeting Notes', 'Transcription', 'Search'],
-                metrics: { difficulty: 'Hard', impact: 8 },
-                brand: 'granola'
-            },
-            'Littlebird': {
-                status: 'Ideating',
-                tags: ['AI Assistant', 'Screen Reading', 'Memory'],
-                metrics: { difficulty: 'Very Hard', impact: 10 },
-                brand: 'littlebird'
-            }
+            'Wisprflow': { brand: 'wisprflow', status: 'IDEATING', tags: ['Voice-to-text', 'AI', 'Productivity'], metrics: { impact: 9, difficulty: 'Medium' } },
+            'Granola': { brand: 'granola', status: 'IDEATING', tags: ['Meeting Notes', 'Transcription', 'Search'], metrics: { impact: 8, difficulty: 'Medium' } },
+            'Littlebird': { brand: 'littlebird', status: 'IDEATING', tags: ['AI Assistant', 'Screen Reading', 'Memory'], metrics: { impact: 10, difficulty: 'Hard' } }
         };
 
         async function fetchIdeas() {
             try {
-                isRefreshing = true;
-                lastScrollPos = window.scrollY;
-                document.getElementById('refreshBtn').classList.add('loading');
-
-                const response = await fetch(SHEET_URL);
+                const response = await fetch(QUERY_URL);
                 const text = await response.text();
+                const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\((.*)\);/);
 
-                const match = text.match(/google\.visualization\.Query\.setResponse\((.*)\);/);
-                if (!match) throw new Error('Invalid response format');
-
-                const jsonStr = match[1];
-                const data = JSON.parse(jsonStr);
-
-                if (data.status === 'error') {
-                    console.error('Sheet API error:', data.errors);
-                    throw new Error('Failed to fetch sheet data');
+                if (!jsonMatch) {
+                    console.error('No data found');
+                    return;
                 }
 
-                allIdeas = [];
-                const rows = data.table.rows || [];
+                const data = JSON.parse(jsonMatch[1]);
+                if (data.status !== 'ok') {
+                    console.error('Query error:', data.message);
+                    return;
+                }
 
-                rows.forEach((row, index) => {
-                    if (row.c && row.c.length >= 5) {
-                        const name = row.c[1]?.v || '';
-                        const info = toolInfo[name] || {
-                            status: 'Ideating',
-                            tags: ['Idea'],
-                            metrics: { difficulty: 'Medium', impact: 5 },
-                            brand: 'default'
-                        };
+                allIdeas = data.table.rows.slice(1).map((row, idx) => {
+                    const category = row.c[0]?.v || 'Other';
+                    const name = row.c[1]?.v || '';
+                    const description = row.c[2]?.v || '';
+                    const priority = parseInt(row.c[3]?.v || '3');
+                    const fullDescription = row.c[4]?.v || description;
 
-                        const idea = {
-                            id: index,
-                            category: row.c[0]?.v || 'Other',
-                            name: name,
-                            description: row.c[2]?.v || '',
-                            priority: parseInt(row.c[3]?.v) || 0,
-                            fullDescription: row.c[4]?.v || '',
-                            status: info.status,
-                            tags: info.tags,
-                            metrics: info.metrics,
-                            brand: info.brand
-                        };
-                        if (idea.name) allIdeas.push(idea);
-                    }
+                    const info = toolInfo[name] || { brand: 'default', status: 'IDEATING', tags: [], metrics: { impact: 5, difficulty: 'Medium' } };
+
+                    return {
+                        id: idx,
+                        category,
+                        name,
+                        description,
+                        fullDescription,
+                        priority,
+                        ...info
+                    };
                 });
 
                 renderIdeas();
-                window.scrollTo(0, lastScrollPos);
-                document.getElementById('refreshBtn').classList.remove('loading');
-                isRefreshing = false;
-                return true;
             } catch (error) {
                 console.error('Error fetching ideas:', error);
-                showError('Failed to load ideas. Make sure the Google Sheet is publicly shared.');
-                document.getElementById('refreshBtn').classList.remove('loading');
-                isRefreshing = false;
-                return false;
+                document.getElementById('content').innerHTML = '<div class="empty-state"><p>Error loading ideas. Please refresh.</p></div>';
             }
+        }
+
+        function toggleFilter(type, value) {
+            const key = `${type}-${value}`;
+            const btn = document.querySelector(`[data-filter="${key}"]`);
+
+            if (activeFilters.has(key)) {
+                activeFilters.delete(key);
+                btn.classList.remove('active');
+            } else {
+                activeFilters.set(key, true);
+                btn.classList.add('active');
+            }
+            renderIdeas();
         }
 
         function filterIdeas() {
             return allIdeas.filter(idea => {
-                const matchPriority = currentFilter === 'all' || idea.priority.toString() === currentFilter;
-                const matchSearch = !currentSearch ||
-                    idea.name.toLowerCase().includes(currentSearch.toLowerCase()) ||
-                    idea.description.toLowerCase().includes(currentSearch.toLowerCase());
-                return matchPriority && matchSearch;
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+                const matchesSearch = idea.name.toLowerCase().includes(searchTerm) ||
+                                    idea.description.toLowerCase().includes(searchTerm);
+
+                const priorityFilters = Array.from(activeFilters.keys()).filter(k => k.startsWith('priority-'));
+                const matchesPriority = priorityFilters.length === 0 ||
+                                       priorityFilters.some(f => f === `priority-P${idea.priority}`);
+
+                return matchesSearch && matchesPriority;
             });
         }
 
         function sortIdeas(ideas) {
+            const sortBy = document.getElementById('sortBy').value;
             const sorted = [...ideas];
-            switch(currentSort) {
+
+            switch(sortBy) {
                 case 'priority':
-                    return sorted.sort((a, b) => a.priority - b.priority);
-                case 'status':
-                    const statusOrder = { 'Shipped': 0, 'Building': 1, 'Ideating': 2 };
-                    return sorted.sort((a, b) => (statusOrder[a.status] || 2) - (statusOrder[b.status] || 2));
+                    sorted.sort((a, b) => a.priority - b.priority);
+                    break;
+                case 'impact':
+                    sorted.sort((a, b) => (b.metrics?.impact || 5) - (a.metrics?.impact || 5));
+                    break;
                 case 'name':
-                    return sorted.sort((a, b) => a.name.localeCompare(b.name));
-                case 'date':
                 default:
-                    return sorted;
+                    sorted.sort((a, b) => a.name.localeCompare(b.name));
             }
+
+            return sorted;
         }
 
         function groupByCategory(ideas) {
-            const grouped = {};
-            ideas.forEach(idea => {
-                if (!grouped[idea.category]) {
-                    grouped[idea.category] = [];
-                }
-                grouped[idea.category].push(idea);
-            });
-            return grouped;
-        }
-
-        function renderStats() {
-            const total = allIdeas.length;
-            const byStatus = {};
-
-            allIdeas.forEach(idea => {
-                byStatus[idea.status] = (byStatus[idea.status] || 0) + 1;
-            });
-
-            const statHtml = `
-                <div class="stat-card">
-                    <div class="stat-number">${total}</div>
-                    <div class="stat-label">Total Ideas</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">${byStatus['Shipped'] || 0}</div>
-                    <div class="stat-label">Shipped</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">${byStatus['Building'] || 0}</div>
-                    <div class="stat-label">Building</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">${byStatus['Ideating'] || 0}</div>
-                    <div class="stat-label">Ideating</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">${favorites.length}</div>
-                    <div class="stat-label">Favorites</div>
-                </div>
-            `;
-
-            document.getElementById('statsBar').innerHTML = statHtml;
+            return ideas.reduce((acc, idea) => {
+                if (!acc[idea.category]) acc[idea.category] = [];
+                acc[idea.category].push(idea);
+                return acc;
+            }, {});
         }
 
         function renderIdeas() {
@@ -1008,98 +789,56 @@
             const html = categories.map(category => {
                 const ideas = grouped[category];
                 const icon = categoryIcons[category] || '✨';
-                const totalInCategory = allIdeas.filter(i => i.category === category).length;
-                const isExpanded = expandedCategories.has(category);
 
                 return `
-                    <div class="carousel-item">
-                        <div class="carousel-trigger ${isExpanded ? 'expanded' : ''}" onclick="toggleCategory('${escapeHtml(category)}')">
-                            <div class="carousel-content">
-                                <div class="category-circle">${icon}</div>
-                                <div class="category-info">
-                                    <div class="category-name">${escapeHtml(category)}</div>
-                                    <div class="category-meta">
-                                        <span>${ideas.length} of ${totalInCategory} ideas</span>
-                                    </div>
-                                </div>
-                                <div class="carousel-chevron">›</div>
+                    <div class="category-card-3d ${ideas[0].brand}">
+                        <div class="category-card-inner">
+                            <!-- Front Face -->
+                            <div class="category-card-front">
+                                <div class="category-circle-large">${icon}</div>
+                                <div class="category-name-large">${escapeHtml(category)}</div>
+                                <div class="category-count">${ideas.length} ideas</div>
                             </div>
-                        </div>
-                        <div class="ideas-carousel ${isExpanded ? 'active' : ''}" data-category="${escapeHtml(category)}">
-                            ${ideas.map(idea => `
-                                <div class="idea-card ${idea.brand}" onclick="openModal(event, ${idea.id})">
-                                    <div class="card-content">
-                                        <div class="card-header-top">
-                                            <div class="card-color-dot ${idea.brand}"></div>
-                                            <div class="card-title-section" style="flex: 1;">
-                                                <h3 class="card-title">${escapeHtml(idea.name)}</h3>
-                                                <span class="card-status">${idea.status}</span>
+                            <!-- Back Face (Ideas List) -->
+                            <div class="category-card-back">
+                                <div class="back-content">
+                                    <div class="ideas-list">
+                                        ${ideas.map(idea => `
+                                            <div class="idea-item-compact ${idea.brand}" onclick="openModal(event, ${idea.id})">
+                                                <div class="idea-item-name">${escapeHtml(idea.name)}</div>
+                                                <div class="idea-item-desc">${escapeHtml(idea.description)}</div>
+                                                <div class="idea-item-meta">
+                                                    <span>P${idea.priority}</span>
+                                                    <span>Impact: ${idea.metrics?.impact || 5}/10</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <p class="card-description">${escapeHtml(idea.description)}</p>
-                                        ${idea.tags && idea.tags.length > 0 ? `
-                                            <div class="card-tags">
-                                                ${idea.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
-                                            </div>
-                                        ` : ''}
-                                        <div class="card-meta">
-                                            <div class="meta-item">
-                                                <span class="meta-label">Priority:</span>
-                                                <span class="priority-badge">P${idea.priority}</span>
-                                            </div>
-                                            <div class="meta-item">
-                                                <span class="meta-label">Impact:</span>
-                                                <span>${idea.metrics?.impact || 5}/10</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="card-footer">
-                                        <span class="card-expand">View details →</span>
-                                        <button class="favorite-btn ${isFavorited(idea.id) ? 'starred' : ''}" onclick="toggleFavorite(event, ${idea.id})">
-                                            ${isFavorited(idea.id) ? '★' : '☆'}
-                                        </button>
+                                        `).join('')}
                                     </div>
                                 </div>
-                            `).join('')}
+                            </div>
                         </div>
                     </div>
                 `;
             }).join('');
 
-            content.innerHTML = `<div class="carousel-container">${html}</div>`;
+            content.innerHTML = `<div class="carousel-3d-container">${html}</div>`;
             renderStats();
         }
 
-        function toggleCategory(category) {
-            if (expandedCategories.has(category)) {
-                expandedCategories.delete(category);
-            } else {
-                expandedCategories.add(category);
-            }
-            localStorage.setItem('expandedCategories', JSON.stringify([...expandedCategories]));
+        function renderStats() {
+            const total = allIdeas.length;
+            const favorited = allIdeas.filter(i => favorites.includes(i.id)).length;
 
-            const trigger = event.target.closest('.carousel-trigger');
-            trigger.classList.toggle('expanded');
-            const carousel = trigger.nextElementSibling;
-            carousel.classList.toggle('active');
-        }
-
-        function isFavorited(id) {
-            return favorites.includes(id);
-        }
-
-        function toggleFavorite(event, id) {
-            event.stopPropagation();
-            if (favorites.includes(id)) {
-                favorites = favorites.filter(f => f !== id);
-            } else {
-                favorites.push(id);
-            }
-            localStorage.setItem('favorites', JSON.stringify(favorites));
-            const btn = event.target.closest('.favorite-btn');
-            btn.classList.toggle('starred');
-            btn.textContent = btn.classList.contains('starred') ? '★' : '☆';
-            renderStats();
+            document.getElementById('statsBar').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${total}</div>
+                    <div class="stat-label">Total Ideas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${favorited}</div>
+                    <div class="stat-label">Favorites</div>
+                </div>
+            `;
         }
 
         function openModal(event, id) {
@@ -1111,7 +850,6 @@
             const modalBody = document.getElementById('modalBody');
 
             modalBody.innerHTML = `
-                <h2 class="modal-title">${escapeHtml(idea.name)}</h2>
                 <div class="modal-meta-row">
                     <div class="modal-meta-item">
                         <div class="modal-meta-label">Status</div>
@@ -1148,51 +886,24 @@
             document.getElementById('modal').classList.remove('active');
         }
 
+        function refreshIdeas() {
+            const btn = document.querySelector('.refresh-btn');
+            btn.classList.add('loading');
+            fetchIdeas().finally(() => btn.classList.remove('loading'));
+        }
+
         function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
-        function showError(message) {
-            document.getElementById('content').innerHTML = `<div class="empty-state"><p>${message}</p></div>`;
-        }
-
-        // Event listeners
-        document.getElementById('refreshBtn').addEventListener('click', () => {
-            if (!isRefreshing) fetchIdeas();
-        });
-
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            currentSearch = e.target.value;
-            renderIdeas();
-        });
-
-        document.getElementById('sortBy').addEventListener('change', (e) => {
-            currentSort = e.target.value;
-            renderIdeas();
-        });
-
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                currentFilter = this.dataset.priority;
-                renderIdeas();
-            });
-        });
-
-        document.getElementById('modalClose').addEventListener('click', closeModal);
+        // Close modal on background click
         document.getElementById('modal').addEventListener('click', (e) => {
             if (e.target.id === 'modal') closeModal();
         });
 
-        // Initial fetch (no auto-refresh)
+        // Load ideas on page load
         fetchIdeas();
     </script>
 </body>

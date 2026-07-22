@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Josh's Ideas Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a0a0a;
+            color: #f0f0f0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #f0f0f0 0%, #a0a0a0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 0.95rem;
+            font-weight: 400;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            background-color: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            color: #f0f0f0;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: all 0.15s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4a4a4a;
+            background-color: #151515;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        button {
+            padding: 10px 16px;
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+            border: 1px solid #2a2a2a;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+
+        button:hover {
+            background-color: #242424;
+            border-color: #3a3a3a;
+        }
+
+        button.active {
+            background-color: #3a3a3a;
+            border-color: #5a5a5a;
+            color: #ffffff;
+        }
+
+        .filter-label {
+            color: #666;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-right: 10px;
+        }
+
+        .ideas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .idea-card {
+            background-color: #141414;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .idea-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+            transition: left 0.3s ease;
+        }
+
+        .idea-card:hover {
+            border-color: #3a3a3a;
+            background-color: #1a1a1a;
+        }
+
+        .idea-card:hover::before {
+            left: 100%;
+        }
+
+        .card-header {
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .card-category {
+            display: inline-block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #f0f0f0;
+        }
+
+        .card-priority {
+            background-color: #1f1f1f;
+            color: #888;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .card-description {
+            font-size: 0.9rem;
+            color: #aaa;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-expand {
+            color: #666;
+            font-size: 0.8rem;
+            transition: color 0.15s ease;
+        }
+
+        .idea-card:hover .card-expand {
+            color: #888;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: #141414;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 32px;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.15s ease;
+        }
+
+        .modal-close:hover {
+            color: #aaa;
+        }
+
+        .modal-category {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .modal-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #f0f0f0;
+        }
+
+        .modal-meta {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .modal-priority {
+            background-color: #1f1f1f;
+            color: #888;
+            padding: 6px 12px;
+            border-radius: 3px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .modal-description {
+            font-size: 1rem;
+            color: #aaa;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .ideas-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .search-bar {
+                flex-direction: column;
+            }
+
+            .modal-content {
+                padding: 24px;
+            }
+
+            .modal-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .idea-card {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Ideas Dashboard</h1>
+            <p class="subtitle">Live from Google Sheets • Auto-updating</p>
+        </header>
+
+        <div class="controls">
+            <div class="search-bar">
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search ideas by name or description..."
+                    autocomplete="off"
+                />
+            </div>
+
+            <div class="filter-buttons">
+                <span class="filter-label">Priority:</span>
+                <button class="filter-btn active" data-priority="all">All</button>
+                <button class="filter-btn" data-priority="1">P1</button>
+                <button class="filter-btn" data-priority="2">P2</button>
+                <button class="filter-btn" data-priority="3">P3</button>
+                <button class="filter-btn" data-priority="4">P4</button>
+                <button class="filter-btn" data-priority="5">P5</button>
+            </div>
+        </div>
+
+        <div id="content" class="loading">Loading ideas...</div>
+
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <button class="modal-close" id="modalClose">&times;</button>
+                <div id="modalBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_ID = '1gkazMdbclMFNsuwayNnv09Xw454eSPjm_2Y20PeSSLs';
+        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+
+        let allIdeas = [];
+        let currentFilter = 'all';
+        let currentSearch = '';
+
+        async function fetchIdeas() {
+            try {
+                const response = await fetch(SHEET_URL);
+                const text = await response.text();
+
+                // Parse Google Visualization Query response
+                const match = text.match(/google\.visualization\.Query\.setResponse\((.*)\);/);
+                if (!match) throw new Error('Invalid response format');
+
+                const jsonStr = match[1];
+                const data = JSON.parse(jsonStr);
+
+                if (data.status === 'error') {
+                    console.error('Sheet API error:', data.errors);
+                    throw new Error('Failed to fetch sheet data');
+                }
+
+                allIdeas = [];
+                const rows = data.table.rows || [];
+
+                rows.forEach((row, index) => {
+                    if (row.c && row.c.length >= 5) {
+                        const idea = {
+                            category: row.c[0]?.v || '',
+                            name: row.c[1]?.v || '',
+                            description: row.c[2]?.v || '',
+                            priority: parseInt(row.c[3]?.v) || 0,
+                            fullDescription: row.c[4]?.v || ''
+                        };
+                        if (idea.name) allIdeas.push(idea);
+                    }
+                });
+
+                renderIdeas();
+                return true;
+            } catch (error) {
+                console.error('Error fetching ideas:', error);
+                showError('Failed to load ideas. Make sure the Google Sheet is publicly shared.');
+                return false;
+            }
+        }
+
+        function filterIdeas() {
+            return allIdeas.filter(idea => {
+                const matchPriority = currentFilter === 'all' || idea.priority.toString() === currentFilter;
+                const matchSearch = !currentSearch ||
+                    idea.name.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                    idea.description.toLowerCase().includes(currentSearch.toLowerCase());
+                return matchPriority && matchSearch;
+            });
+        }
+
+        function renderIdeas() {
+            const filtered = filterIdeas();
+            const content = document.getElementById('content');
+
+            if (filtered.length === 0) {
+                content.innerHTML = '<div class="empty-state"><p>No ideas match your filters.</p></div>';
+                return;
+            }
+
+            content.innerHTML = `<div class="ideas-grid">${filtered.map(idea => `
+                <div class="idea-card" onclick="openModal('${escapeHtml(idea.name)}', '${escapeHtml(idea.category)}', ${idea.priority}, '${escapeHtml(idea.description)}', '${escapeHtml(idea.fullDescription)}')">
+                    <div class="card-category">${escapeHtml(idea.category)}</div>
+                    <div class="card-header">
+                        <div style="flex: 1;">
+                            <h2 class="card-title">${escapeHtml(idea.name)}</h2>
+                        </div>
+                        <div class="card-priority">P${idea.priority}</div>
+                    </div>
+                    <p class="card-description">${escapeHtml(idea.description)}</p>
+                    <div class="card-expand">Click to view full description →</div>
+                </div>
+            `).join('')}</div>`;
+        }
+
+        function openModal(name, category, priority, description, fullDescription) {
+            const modal = document.getElementById('modal');
+            const modalBody = document.getElementById('modalBody');
+
+            modalBody.innerHTML = `
+                <div class="modal-category">${escapeHtml(category)}</div>
+                <h2 class="modal-title">${escapeHtml(name)}</h2>
+                <div class="modal-meta">
+                    <div class="modal-priority">Priority: ${priority}</div>
+                </div>
+                <div class="modal-description">${escapeHtml(fullDescription)}</div>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
+        }
+
+        function showError(message) {
+            document.getElementById('content').innerHTML = `<div class="empty-state"><p>${message}</p></div>`;
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            currentSearch = e.target.value;
+            renderIdeas();
+        });
+
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.priority;
+                renderIdeas();
+            });
+        });
+
+        document.getElementById('modalClose').addEventListener('click', closeModal);
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') closeModal();
+        });
+
+        // Initial fetch and auto-refresh every 30 seconds
+        fetchIdeas();
+        setInterval(fetchIdeas, 30000);
+    </script>
+</body>
+</html>

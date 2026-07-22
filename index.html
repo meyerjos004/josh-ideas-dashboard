@@ -83,8 +83,8 @@
 
         .stats-bar {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
             margin-bottom: 60px;
         }
 
@@ -109,7 +109,7 @@
         }
 
         .stat-label {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: #a0a0a8;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -220,17 +220,17 @@
             border-color: rgba(100, 150, 255, 0.5);
         }
 
-        /* 3D Carousel Container */
         .carousel-section {
-            margin-bottom: 80px;
+            margin-bottom: 100px;
         }
 
         .carousel-section-header {
-            margin-bottom: 30px;
+            margin-bottom: 50px;
+            text-align: center;
         }
 
         .carousel-section-title {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: 800;
             color: #f0f0f0;
             margin-bottom: 10px;
@@ -244,35 +244,52 @@
             letter-spacing: 1px;
         }
 
-        .carousel-3d-container {
-            perspective: 1200px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 40px;
-            padding: 0;
-        }
-
-        .idea-card-3d {
-            perspective: 1200px;
-            height: 400px;
+        /* 3D Carousel */
+        .carousel-3d {
+            perspective: 1000px;
+            height: 600px;
             position: relative;
-            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 80px;
         }
 
-        .idea-card-inner {
+        .carousel-3d-inner {
             position: relative;
             width: 100%;
             height: 100%;
-            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             transform-style: preserve-3d;
-            transform: rotateX(0deg) rotateY(0deg);
         }
 
-        .idea-card-3d:hover .idea-card-inner {
-            transform: rotateY(8deg) rotateX(-2deg);
+        .idea-card-carousel {
+            position: absolute;
+            width: 340px;
+            height: 500px;
+            left: 50%;
+            top: 50%;
+            margin-left: -170px;
+            margin-top: -250px;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.23, 1, 0.320, 1), opacity 0.4s ease;
         }
 
-        .idea-card-front {
+        .idea-card-carousel.active {
+            z-index: 100;
+            opacity: 1;
+        }
+
+        .idea-card-carousel.prev {
+            z-index: 10;
+            opacity: 0.4;
+        }
+
+        .idea-card-carousel.next {
+            z-index: 10;
+            opacity: 0.4;
+        }
+
+        .idea-card-face {
             position: absolute;
             width: 100%;
             height: 100%;
@@ -280,120 +297,109 @@
             -webkit-backface-visibility: hidden;
             display: flex;
             flex-direction: column;
-            background: linear-gradient(180deg, #6496ff 0%, rgba(100, 150, 255, 0.15) 40%, rgba(100, 150, 255, 0.08) 100%);
-            border: 1px solid rgba(100, 150, 255, 0.3);
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(10px);
-            padding: 30px 20px;
+            padding: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(180deg, #6496ff 0%, rgba(100, 150, 255, 0.1) 100%);
+            border: 1px solid rgba(100, 150, 255, 0.3);
         }
 
-        .idea-card-front-banner {
-            background: #6496ff;
-            padding: 20px;
-            margin: -30px -20px 20px -20px;
-            text-align: center;
-            flex-shrink: 0;
-        }
-
-        .idea-card-3d.granola .idea-card-front {
-            background: linear-gradient(180deg, #4ade80 0%, rgba(74, 222, 128, 0.15) 40%, rgba(74, 222, 128, 0.08) 100%);
+        .idea-card-carousel.granola .idea-card-face {
+            background: linear-gradient(180deg, #4ade80 0%, rgba(74, 222, 128, 0.1) 100%);
             border-color: rgba(74, 222, 128, 0.3);
         }
 
-        .idea-card-3d.granola .idea-card-front-banner {
-            background: #4ade80;
-        }
-
-        .idea-card-3d.littlebird .idea-card-front {
-            background: linear-gradient(180deg, #c084fc 0%, rgba(192, 132, 252, 0.15) 40%, rgba(192, 132, 252, 0.08) 100%);
+        .idea-card-carousel.littlebird .idea-card-face {
+            background: linear-gradient(180deg, #c084fc 0%, rgba(192, 132, 252, 0.1) 100%);
             border-color: rgba(192, 132, 252, 0.3);
         }
 
-        .idea-card-3d.littlebird .idea-card-front-banner {
-            background: #c084fc;
+        .idea-card-carousel:hover .idea-card-face {
+            box-shadow: 0 30px 80px rgba(100, 150, 255, 0.4);
+            transform: translateY(-10px);
         }
 
-        .idea-name-banner {
-            font-size: 1.3rem;
+        .card-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .card-name {
+            font-size: 1.5rem;
             font-weight: 800;
             color: #ffffff;
-            margin-bottom: 4px;
-            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+            line-height: 1.2;
         }
 
-        .idea-status-badge {
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 0.75rem;
+        .card-status {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #ffffff;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            font-weight: 600;
+            letter-spacing: 0.5px;
         }
 
-        .idea-card-front-content {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-        }
-
-        .idea-card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            display: flex;
-            flex-direction: column;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 16px;
-            padding: 30px 25px;
-            overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(10px);
-        }
-
-        .back-content {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            overflow-y: auto;
+        .card-description {
             font-size: 0.9rem;
-        }
-
-        .back-content::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .back-content::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-        }
-
-        .back-content::-webkit-scrollbar-thumb {
-            background: rgba(100, 150, 255, 0.3);
-            border-radius: 10px;
-        }
-
-        .back-content::-webkit-scrollbar-thumb:hover {
-            background: rgba(100, 150, 255, 0.5);
-        }
-
-        .back-description {
-            color: #c0c0c8;
-            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.5;
             margin-bottom: 20px;
+            flex: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
-        .back-meta {
+        .card-tags {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            color: #a0a0a8;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .card-tag {
+            background: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.9);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-meta {
+            display: flex;
+            gap: 12px;
             font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .card-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .card-expand-hint {
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            font-style: italic;
         }
 
         .empty-state {
@@ -403,7 +409,7 @@
             font-size: 1.1rem;
         }
 
-        /* Modal Styles */
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -411,8 +417,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
             align-items: center;
             justify-content: center;
             padding: 20px;
@@ -425,7 +431,7 @@
         }
 
         .modal-content {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 16px;
             padding: 40px;
@@ -434,7 +440,7 @@
             max-height: 90vh;
             overflow-y: auto;
             box-shadow: 0 20px 80px rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
         }
 
         .modal-header {
@@ -535,14 +541,9 @@
             font-weight: 600;
         }
 
-        /* Animations */
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         @keyframes slideDown {
@@ -567,7 +568,6 @@
             }
         }
 
-        /* Scrollbar styling */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -642,6 +642,7 @@
         let allIdeas = [];
         let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
         const activeFilters = new Map();
+        let currentCarouselIndex = 0;
 
         const toolInfo = {
             'Wisprflow': { brand: 'wisprflow', status: 'IDEATING', tags: ['Voice-to-text', 'AI', 'Productivity'], metrics: { impact: 9, difficulty: 'Medium' } },
@@ -653,37 +654,22 @@
             try {
                 const response = await fetch(QUERY_URL);
                 const text = await response.text();
-
-                // Parse Google Visualization API response
                 const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
-                if (!jsonMatch) {
-                    throw new Error('Invalid response format');
-                }
+
+                if (!jsonMatch) throw new Error('Invalid response format');
 
                 const data = JSON.parse(jsonMatch[1]);
-                if (data.status !== 'ok') {
-                    throw new Error(data.message || 'Query failed');
-                }
+                if (data.status !== 'ok') throw new Error(data.message || 'Query failed');
 
-                // Extract ideas from table rows (skip header)
                 allIdeas = (data.table.rows || []).map((row, idx) => {
                     const category = row.c[0]?.v || 'Other';
                     const name = row.c[1]?.v || '';
                     const description = row.c[2]?.v || '';
                     const priority = parseInt(row.c[3]?.v || '3');
                     const fullDescription = row.c[4]?.v || description;
-
                     const info = toolInfo[name] || { brand: 'default', status: 'IDEATING', tags: [], metrics: { impact: 5, difficulty: 'Medium' } };
 
-                    return {
-                        id: idx,
-                        category,
-                        name,
-                        description,
-                        fullDescription,
-                        priority,
-                        ...info
-                    };
+                    return { id: idx, category, name, description, fullDescription, priority, ...info };
                 });
 
                 renderIdeas();
@@ -696,7 +682,6 @@
         function toggleFilter(type, value) {
             const key = `${type}-${value}`;
             const btn = document.querySelector(`[data-filter="${key}"]`);
-
             if (activeFilters.has(key)) {
                 activeFilters.delete(key);
                 btn.classList.remove('active');
@@ -710,13 +695,9 @@
         function filterIdeas() {
             return allIdeas.filter(idea => {
                 const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-                const matchesSearch = idea.name.toLowerCase().includes(searchTerm) ||
-                                    idea.description.toLowerCase().includes(searchTerm);
-
+                const matchesSearch = idea.name.toLowerCase().includes(searchTerm) || idea.description.toLowerCase().includes(searchTerm);
                 const priorityFilters = Array.from(activeFilters.keys()).filter(k => k.startsWith('priority-'));
-                const matchesPriority = priorityFilters.length === 0 ||
-                                       priorityFilters.some(f => f === `priority-P${idea.priority}`);
-
+                const matchesPriority = priorityFilters.length === 0 || priorityFilters.some(f => f === `priority-P${idea.priority}`);
                 return matchesSearch && matchesPriority;
             });
         }
@@ -724,7 +705,6 @@
         function sortIdeas(ideas) {
             const sortBy = document.getElementById('sortBy').value;
             const sorted = [...ideas];
-
             switch(sortBy) {
                 case 'priority':
                     sorted.sort((a, b) => a.priority - b.priority);
@@ -736,7 +716,6 @@
                 default:
                     sorted.sort((a, b) => a.name.localeCompare(b.name));
             }
-
             return sorted;
         }
 
@@ -764,38 +743,33 @@
 
             const html = categories.map(category => {
                 const ideas = grouped[category];
-                const ideasHtml = ideas.map(idea => `
-                    <div class="idea-card-3d ${idea.brand}">
-                        <div class="idea-card-inner">
-                            <!-- Front Face -->
-                            <div class="idea-card-front">
-                                <div class="idea-card-front-banner">
-                                    <div class="idea-name-banner">${escapeHtml(idea.name)}</div>
-                                    <div class="idea-status-badge">${idea.status}</div>
+                const cardsHtml = ideas.map((idea, idx) => {
+                    const isActive = idx === 0;
+                    const rotation = (idx - 1) * 25;
+                    return `
+                        <div class="idea-card-carousel ${idea.brand} ${isActive ? 'active' : idx === 1 ? 'next' : 'prev'}"
+                             style="transform: rotateY(${rotation}deg) translateZ(400px);"
+                             onclick="openModal(event, ${idea.id})">
+                            <div class="idea-card-face">
+                                <div class="card-header">
+                                    <div class="card-name">${escapeHtml(idea.name)}</div>
+                                    <span class="card-status">${idea.status}</span>
                                 </div>
-                                <div class="idea-card-front-content">
-                                    <p style="color: #c0c0c8; line-height: 1.6; flex: 1;">${escapeHtml(idea.description)}</p>
-                                    <div style="display: flex; gap: 10px; font-size: 0.85rem; color: #a0a0a8; margin-top: 15px;">
-                                        <span>P${idea.priority}</span>
-                                        <span>Impact: ${idea.metrics?.impact || 5}/10</span>
+                                <p class="card-description">${escapeHtml(idea.description)}</p>
+                                ${idea.tags && idea.tags.length > 0 ? `
+                                    <div class="card-tags">
+                                        ${idea.tags.slice(0, 3).map(tag => `<span class="card-tag">${escapeHtml(tag)}</span>`).join('')}
                                     </div>
+                                ` : ''}
+                                <div class="card-meta">
+                                    <div class="card-meta-item"><strong>P${idea.priority}</strong></div>
+                                    <div class="card-meta-item">Impact: <strong>${idea.metrics?.impact || 5}/10</strong></div>
                                 </div>
-                            </div>
-                            <!-- Back Face -->
-                            <div class="idea-card-back">
-                                <div class="back-content">
-                                    <div class="back-description">${escapeHtml(idea.fullDescription)}</div>
-                                    <div class="back-meta">
-                                        <div><strong>Priority:</strong> P${idea.priority}</div>
-                                        <div><strong>Impact:</strong> ${idea.metrics?.impact || 5}/10</div>
-                                        <div><strong>Difficulty:</strong> ${idea.metrics?.difficulty || 'Medium'}</div>
-                                        ${idea.tags && idea.tags.length > 0 ? `<div><strong>Skills:</strong> ${idea.tags.join(', ')}</div>` : ''}
-                                    </div>
-                                </div>
+                                <div class="card-expand-hint">Click to expand</div>
                             </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
 
                 return `
                     <div class="carousel-section">
@@ -803,8 +777,10 @@
                             <div class="carousel-section-title">${escapeHtml(category)}</div>
                             <div class="carousel-section-count">${ideas.length} ideas</div>
                         </div>
-                        <div class="carousel-3d-container">
-                            ${ideasHtml}
+                        <div class="carousel-3d">
+                            <div class="carousel-3d-inner" style="transform: rotateY(0deg); transform-style: preserve-3d;">
+                                ${cardsHtml}
+                            </div>
                         </div>
                     </div>
                 `;
@@ -902,12 +878,10 @@
             return div.innerHTML;
         }
 
-        // Close modal on background click
         document.getElementById('modal').addEventListener('click', (e) => {
             if (e.target.id === 'modal') closeModal();
         });
 
-        // Load ideas on page load
         fetchIdeas();
     </script>
 </body>

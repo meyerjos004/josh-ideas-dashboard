@@ -1253,7 +1253,7 @@
         }
 
         // ==================== ANIME.JS INTEGRATION ====================
-        // Updated carousel transitions with anime.js - proper 3D rotation
+        // Updated carousel transitions with anime.js - smooth opacity only
         function updateCarousel(carousel, ideas, activeIdx) {
             const cards = carousel.querySelectorAll('.idea-card-carousel');
             const totalCards = ideas.length;
@@ -1289,21 +1289,17 @@
 
                 const opacity = offset === 0 ? 0.45 : 1;
 
-                // ANIME.JS: Smooth transitions with proper 3D transforms
-                // Use anime's update callback to set the full 3D transform string
-                anime({
-                    targets: { progress: 0 },
-                    progress: 1,
-                    duration: 500,
-                    easing: 'easeOutCubic',
-                    update(anim) {
-                        // Interpolate values during animation
-                        card.style.transform = `translateX(${translateX * anim.progress}px) rotateY(${rotationAngle * anim.progress}deg) translateZ(${depth * anim.progress}px)`;
-                        card.style.opacity = 1 - (1 - opacity) * anim.progress;
-                    }
-                });
-
+                // Set 3D transform instantly (preserves the rotation)
+                card.style.transform = `translateX(${translateX}px) rotateY(${rotationAngle}deg) translateZ(${depth}px)`;
                 card.style.zIndex = zIndex;
+
+                // ANIME.JS: Only animate opacity smoothly
+                anime({
+                    targets: card,
+                    opacity: opacity,
+                    duration: 500,
+                    easing: 'easeOutCubic'
+                });
 
                 card.classList.remove('active');
                 if (offset === 0) {

@@ -360,6 +360,14 @@
             margin-bottom: 15px;
             padding-bottom: 12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .card-top-buttons {
+            display: flex;
+            gap: 6px;
         }
 
         .card-name {
@@ -420,46 +428,25 @@
             margin-bottom: 8px;
         }
 
-        .card-impact {
-            background: rgba(255, 255, 255, 0.08);
-            padding: 10px 12px;
-            border-radius: 6px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .impact-controls {
-            display: flex;
-            gap: 5px;
-        }
-
-        .impact-btn {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.25);
+        .impact-btn-inline {
+            background: transparent;
+            border: none;
             color: #e0e0e0;
-            border-radius: 4px;
-            width: 28px;
-            height: 28px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
+            padding: 0 4px;
             transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin-left: 4px;
         }
 
-        .impact-btn:hover {
-            background: rgba(255, 255, 255, 0.25);
-            border-color: rgba(255, 255, 255, 0.4);
+        .impact-btn-inline:hover {
             color: #fff;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
         }
 
-        .impact-btn:active {
-            transform: scale(0.95);
+        .impact-btn-inline:active {
+            transform: scale(0.9);
         }
 
         .card-expand-hint {
@@ -467,6 +454,28 @@
             color: rgba(255, 255, 255, 0.6);
             text-align: center;
             font-style: italic;
+            margin-top: auto;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .delete-btn {
+            padding: 6px 8px !important;
+            background: rgba(255, 100, 100, 0.15) !important;
+            border: 1px solid rgba(255, 100, 100, 0.3) !important;
+            color: #ff6464 !important;
+        }
+
+        .delete-btn:hover {
+            background: rgba(255, 100, 100, 0.25) !important;
+            border-color: rgba(255, 100, 100, 0.5) !important;
         }
 
         .card-buttons {
@@ -1015,6 +1024,14 @@
                             <div class="idea-card-face">
                                 <div class="card-header">
                                     <div class="card-name">${escapeHtml(idea.name)}</div>
+                                    <div class="card-top-buttons">
+                                        <button class="card-btn" onclick="cycleStatus(event, '${idea.id}')" title="Change status">
+                                            ⋮ ${ideaStatuses[idea.id] || 'IDEATING'}
+                                        </button>
+                                        <button class="card-btn favorite-btn" id="fav-${idea.id}" onclick="toggleFavorite(event, '${idea.id}')" title="Add to favorites">
+                                            ${favorites.includes(idea.id) ? '❤️' : '🤍'}
+                                        </button>
+                                    </div>
                                 </div>
                                 <p class="card-description">${escapeHtml(idea.description)}</p>
                                 ${idea.tags && idea.tags.length > 0 ? `
@@ -1024,23 +1041,16 @@
                                 ` : ''}
                                 <div class="card-meta">
                                     <div><strong>P${idea.priority}</strong></div>
-                                </div>
-                                <div class="card-impact">
-                                    <div>Impact: <strong id="impact-${idea.id}">${ideaImpacts[idea.id] || 5}</strong>/10</div>
-                                    <div class="impact-controls">
-                                        <button class="impact-btn" onclick="adjustImpact(event, '${idea.id}', -1)" title="Decrease impact">−</button>
-                                        <button class="impact-btn" onclick="adjustImpact(event, '${idea.id}', 1)" title="Increase impact">+</button>
+                                    <div>
+                                        Impact: <strong id="impact-${idea.id}">${ideaImpacts[idea.id] || 5}</strong>/10
+                                        <button class="impact-btn-inline" onclick="adjustImpact(event, '${idea.id}', -1)">−</button>
+                                        <button class="impact-btn-inline" onclick="adjustImpact(event, '${idea.id}', 1)">+</button>
                                     </div>
                                 </div>
-                                <div class="card-buttons">
-                                    <button class="card-btn" onclick="cycleStatus(event, '${idea.id}')" title="Change status">
-                                        ⋮ ${ideaStatuses[idea.id] || 'IDEATING'}
-                                    </button>
-                                    <button class="card-btn favorite-btn" id="fav-${idea.id}" onclick="toggleFavorite(event, '${idea.id}')" title="Add to favorites">
-                                        ${favorites.includes(idea.id) ? '❤️' : '🤍'}
-                                    </button>
+                                <div class="card-footer">
+                                    <div class="card-expand-hint">Click to expand</div>
+                                    <button class="card-btn delete-btn" onclick="confirmDelete(event, '${idea.id}')" title="Delete card">🗑️</button>
                                 </div>
-                                <div class="card-expand-hint">Click to expand</div>
                             </div>
                         </div>
                     `;
@@ -1065,19 +1075,25 @@
 
             // Apply custom colors from hex values
             document.querySelectorAll('.idea-card-carousel').forEach(card => {
-                const idea = allIdeas.find(i => i.id === parseInt(card.getAttribute('onclick').match(/\d+/)[0]));
-                if (idea && idea.hexColor) {
-                    const face = card.querySelector('.idea-card-face');
-                    if (face) {
-                        // Extract RGB values from hex
-                        const hex = idea.hexColor.replace('#', '');
-                        const r = parseInt(hex.substring(0, 2), 16);
-                        const g = parseInt(hex.substring(2, 4), 16);
-                        const b = parseInt(hex.substring(4, 6), 16);
+                // Extract id from onclick attribute
+                const onclickAttr = card.getAttribute('onclick');
+                const idMatch = onclickAttr.match(/openModal\(event, '([^']+)'\)/);
+                if (idMatch) {
+                    const ideaId = idMatch[1];
+                    const idea = allIdeas.find(i => i.id === ideaId);
+                    if (idea && idea.hexColor) {
+                        const face = card.querySelector('.idea-card-face');
+                        if (face) {
+                            // Extract RGB values from hex
+                            const hex = idea.hexColor.replace('#', '');
+                            const r = parseInt(hex.substring(0, 2), 16);
+                            const g = parseInt(hex.substring(2, 4), 16);
+                            const b = parseInt(hex.substring(4, 6), 16);
 
-                        // Apply color-based gradient
-                        face.style.background = `linear-gradient(180deg, ${idea.hexColor} 0%, rgba(${r}, ${g}, ${b}, 0.1) 100%)`;
-                        face.style.borderColor = `rgba(${r}, ${g}, ${b}, 0.3)`;
+                            // Apply color-based gradient
+                            face.style.background = `linear-gradient(180deg, ${idea.hexColor} 0%, rgba(${r}, ${g}, ${b}, 0.1) 100%)`;
+                            face.style.borderColor = `rgba(${r}, ${g}, ${b}, 0.3)`;
+                        }
                     }
                 }
             });
@@ -1392,6 +1408,31 @@
             // Optionally open add card modal with this category selected
             openAddCardModal();
             document.getElementById('cardCategory').value = categoryName;
+        }
+
+        function confirmDelete(event, ideaId) {
+            event.stopPropagation();
+            if (confirm(`Are you sure you want to delete this idea?`)) {
+                deleteCard(ideaId);
+            }
+        }
+
+        function deleteCard(ideaId) {
+            // Remove from local cards if it's a local card
+            if (ideaId.startsWith('local-')) {
+                localCards = localCards.filter(card => card.id !== ideaId);
+                localStorage.setItem('localCards', JSON.stringify(localCards));
+            }
+            // Remove related data
+            delete ideaStatuses[ideaId];
+            delete ideaImpacts[ideaId];
+            favorites = favorites.filter(id => id !== ideaId);
+            localStorage.setItem('ideaStatuses', JSON.stringify(ideaStatuses));
+            localStorage.setItem('ideaImpacts', JSON.stringify(ideaImpacts));
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+
+            // Re-render
+            renderIdeas();
         }
 
         function refreshIdeas() {

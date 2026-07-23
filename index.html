@@ -409,6 +409,29 @@
             font-style: italic;
         }
 
+        .card-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 8px;
+        }
+
+        .card-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 6px 10px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .card-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -617,12 +640,22 @@
                 <button onclick="toggleFilter('priority', 'P4')" data-filter="priority-P4">P4</button>
                 <button onclick="toggleFilter('priority', 'P5')" data-filter="priority-P5">P5</button>
             </div>
+            <div class="filter-buttons">
+                <span class="filter-label">Status:</span>
+                <button onclick="toggleFilter('status', 'IDEATING')" data-filter="status-IDEATING">Ideating</button>
+                <button onclick="toggleFilter('status', 'BUILDING')" data-filter="status-BUILDING">Building</button>
+                <button onclick="toggleFilter('status', 'SHIPPED')" data-filter="status-SHIPPED">Shipped</button>
+            </div>
+            <div class="filter-buttons">
+                <span class="filter-label">View:</span>
+                <button onclick="toggleFilter('view', 'favorites')" data-filter="view-favorites">❤️ Favorites</button>
+            </div>
             <div class="sort-controls">
                 <span class="filter-label">Sort by:</span>
                 <select id="sortBy" onchange="renderIdeas()">
                     <option value="name">Name (A-Z)</option>
-                    <option value="priority">Priority</option>
-                    <option value="impact">Impact (High)</option>
+                    <option value="impact">Impact (High to Low)</option>
+                    <option value="impact-low">Impact (Low to High)</option>
                 </select>
             </div>
         </div>
@@ -644,7 +677,7 @@
 
     <script>
         const SHEET_ID = '1UA_TX0lA3xwHQHY9k0gIprfkZ9W05nD2tSBEURamuqQ';
-        const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=0&tq=SELECT A,B,C,D,E,F`;
+        const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=0&tq=SELECT A,B,C,D,E,F,G,H`;
 
         let allIdeas = [];
         let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
@@ -652,9 +685,9 @@
         let carouselIndices = {}; // Track current index per category
 
         const toolInfo = {
-            'Wisprflow': { brand: 'wisprflow', status: 'IDEATING', tags: ['Voice-to-text', 'AI', 'Productivity'], metrics: { impact: 9, difficulty: 'Medium' } },
-            'Granola': { brand: 'granola', status: 'IDEATING', tags: ['Meeting Notes', 'Transcription', 'Search'], metrics: { impact: 8, difficulty: 'Medium' } },
-            'Littlebird': { brand: 'littlebird', status: 'IDEATING', tags: ['AI Assistant', 'Screen Reading', 'Memory'], metrics: { impact: 10, difficulty: 'Hard' } }
+            'Wisprflow': { brand: 'wisprflow', tags: ['Voice-to-text', 'AI', 'Productivity'], metrics: { difficulty: 'Medium' } },
+            'Granola': { brand: 'granola', tags: ['Meeting Notes', 'Transcription', 'Search'], metrics: { difficulty: 'Medium' } },
+            'Littlebird': { brand: 'littlebird', tags: ['AI Assistant', 'Screen Reading', 'Memory'], metrics: { difficulty: 'Hard' } }
         };
 
         async function fetchIdeas() {
@@ -675,9 +708,11 @@
                     const priority = parseInt(row.c[3]?.v || '3');
                     const fullDescription = row.c[4]?.v || description;
                     const hexColor = row.c[5]?.v || null; // Color column (F)
-                    const info = toolInfo[name] || { brand: 'default', status: 'IDEATING', tags: [], metrics: { impact: 5, difficulty: 'Medium' } };
+                    const status = row.c[6]?.v || 'IDEATING'; // Status column (G)
+                    const impact = parseInt(row.c[7]?.v || '5'); // Impact column (H)
+                    const info = toolInfo[name] || { brand: 'default', tags: [], metrics: { difficulty: 'Medium' } };
 
-                    return { id: idx, category, name, description, fullDescription, priority, hexColor, ...info };
+                    return { id: idx, category, name, description, fullDescription, priority, hexColor, status, impact, ...info };
                 });
 
                 renderIdeas();
@@ -704,9 +739,20 @@
             return allIdeas.filter(idea => {
                 const searchTerm = document.getElementById('searchInput').value.toLowerCase();
                 const matchesSearch = idea.name.toLowerCase().includes(searchTerm) || idea.description.toLowerCase().includes(searchTerm);
+
                 const priorityFilters = Array.from(activeFilters.keys()).filter(k => k.startsWith('priority-'));
                 const matchesPriority = priorityFilters.length === 0 || priorityFilters.some(f => f === `priority-P${idea.priority}`);
-                return matchesSearch && matchesPriority;
+
+                const statusFilters = Array.from(activeFilters.keys()).filter(k => k.startsWith('status-'));
+                const matchesStatus = statusFilters.length === 0 || statusFilters.some(f => f === `status-${idea.status}`);
+
+                const viewFilters = Array.from(activeFilters.keys()).filter(k => k.startsWith('view-'));
+                let matchesView = true;
+                if (viewFilters.some(f => f === 'view-favorites')) {
+                    matchesView = favorites.includes(idea.id);
+                }
+
+                return matchesSearch && matchesPriority && matchesStatus && matchesView;
             });
         }
 
@@ -714,11 +760,11 @@
             const sortBy = document.getElementById('sortBy').value;
             const sorted = [...ideas];
             switch(sortBy) {
-                case 'priority':
-                    sorted.sort((a, b) => a.priority - b.priority);
-                    break;
                 case 'impact':
-                    sorted.sort((a, b) => (b.metrics?.impact || 5) - (a.metrics?.impact || 5));
+                    sorted.sort((a, b) => b.impact - a.impact);
+                    break;
+                case 'impact-low':
+                    sorted.sort((a, b) => a.impact - b.impact);
                     break;
                 case 'name':
                 default:
@@ -771,9 +817,14 @@
                                 ` : ''}
                                 <div class="card-meta">
                                     <div><strong>P${idea.priority}</strong></div>
-                                    <div>Impact: <strong>${idea.metrics?.impact || 5}/10</strong></div>
+                                    <div>Impact: <strong>${idea.impact}/10</strong></div>
                                 </div>
-                                <div class="card-expand-hint">Hover to reveal • Click to expand</div>
+                                <div class="card-buttons">
+                                    <button class="card-btn favorite-btn" onclick="toggleFavorite(event, ${idea.id}, ${idea.id})" title="Add to favorites">
+                                        ${favorites.includes(idea.id) ? '❤️' : '🤍'}
+                                    </button>
+                                </div>
+                                <div class="card-expand-hint">Click to expand</div>
                             </div>
                         </div>
                     `;
@@ -927,9 +978,9 @@
         function renderStats() {
             const total = allIdeas.length;
             const favorited = allIdeas.filter(i => favorites.includes(i.id)).length;
-            const shipped = allIdeas.filter(i => i.status === 'SHIPPED').length;
-            const building = allIdeas.filter(i => i.status === 'BUILDING').length;
-            const ideating = allIdeas.filter(i => i.status === 'IDEATING').length;
+            const shipped = allIdeas.filter(i => i.status && i.status.toUpperCase() === 'SHIPPED').length;
+            const building = allIdeas.filter(i => i.status && i.status.toUpperCase() === 'BUILDING').length;
+            const ideating = allIdeas.filter(i => i.status && i.status.toUpperCase() === 'IDEATING').length;
 
             document.getElementById('statsBar').innerHTML = `
                 <div class="stat-card">
@@ -975,7 +1026,7 @@
                     </div>
                     <div class="modal-meta-item">
                         <div class="modal-meta-label">Impact</div>
-                        <div class="modal-meta-value">${idea.metrics?.impact || 5}/10</div>
+                        <div class="modal-meta-value">${idea.impact}/10</div>
                     </div>
                     <div class="modal-meta-item">
                         <div class="modal-meta-label">Difficulty</div>
@@ -998,6 +1049,17 @@
 
         function closeModal() {
             document.getElementById('modal').classList.remove('active');
+        }
+
+        function toggleFavorite(event, ideaId) {
+            event.stopPropagation();
+            if (favorites.includes(ideaId)) {
+                favorites = favorites.filter(id => id !== ideaId);
+            } else {
+                favorites.push(ideaId);
+            }
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            renderIdeas();
         }
 
         function refreshIdeas() {

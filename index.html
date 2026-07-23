@@ -1301,7 +1301,7 @@
             });
         }
 
-        // ==================== ANIME.JS: Stat Counter Animation ====================
+        // ==================== Stat Counter Animation ====================
         function renderStats() {
             const total = allIdeas.length;
             const favorited = allIdeas.filter(i => favorites.includes(i.id)).length;
@@ -1320,29 +1320,38 @@
             // Render HTML
             document.getElementById('statsBar').innerHTML = stats.map((stat, idx) => `
                 <div class="stat-card">
-                    <div class="stat-number" data-idx="${idx}" data-value="${stat.value}">0</div>
+                    <div class="stat-number">0</div>
                     <div class="stat-label">${stat.label}</div>
                 </div>
             `).join('');
 
-            // Animate each stat number
+            // Animate each stat number with simple counter
+            const elements = document.querySelectorAll('.stat-number');
             stats.forEach((stat, idx) => {
-                const element = document.querySelector(`[data-idx="${idx}"]`);
+                const element = elements[idx];
                 if (!element) return;
 
-                element.textContent = '0';  // Reset to 0 first
+                const startTime = Date.now() + (idx * 100);  // Stagger by 100ms
+                const duration = 800;
+                const target = stat.value;
 
-                anime({
-                    targets: { count: 0 },
-                    count: stat.value,
-                    duration: 800,
-                    easing: 'easeOutQuad',
-                    delay: idx * 100,
-                    round: 1,  // Round to nearest integer
-                    update(anim) {
-                        element.textContent = Math.round(anim.progress * stat.value);
+                function updateCounter() {
+                    const now = Date.now();
+                    const elapsed = Math.max(0, now - startTime);
+                    const progress = Math.min(1, elapsed / duration);
+
+                    // Easing: easeOutQuad
+                    const eased = 1 - Math.pow(1 - progress, 2);
+                    const current = Math.round(eased * target);
+
+                    element.textContent = current;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(updateCounter);
                     }
-                });
+                }
+
+                updateCounter();
             });
         }
 

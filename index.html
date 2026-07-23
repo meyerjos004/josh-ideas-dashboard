@@ -895,11 +895,7 @@
         const activeFilters = new Map();
         let carouselIndices = {}; // Track current index per category
 
-        const toolInfo = {
-            'Wisprflow': { brand: 'wisprflow', tags: ['Voice-to-text', 'AI', 'Productivity'], metrics: { difficulty: 'Medium' } },
-            'Granola': { brand: 'granola', tags: ['Meeting Notes', 'Transcription', 'Search'], metrics: { difficulty: 'Medium' } },
-            'Littlebird': { brand: 'littlebird', tags: ['AI Assistant', 'Screen Reading', 'Memory'], metrics: { difficulty: 'Hard' } }
-        };
+        const toolInfo = {};
 
         async function fetchIdeas() {
             try {
@@ -919,9 +915,8 @@
                     const priority = parseInt(row.c[3]?.v || '3');
                     const fullDescription = row.c[4]?.v || description;
                     const hexColor = row.c[5]?.v || null; // Color column (F)
-                    const info = toolInfo[name] || { brand: 'default', tags: [], metrics: { difficulty: 'Medium' } };
 
-                    return { id: `sheet-${idx}`, category, name, description, fullDescription, priority, hexColor, ...info };
+                    return { id: `sheet-${idx}`, category, name, description, fullDescription, priority, hexColor, brand: 'default', tags: [], metrics: { difficulty: 'Medium' } };
                 });
 
                 // Combine sheet ideas with local cards
@@ -1016,7 +1011,7 @@
                     const customStyle = idea.hexColor ? `--card-color: ${idea.hexColor};` : '';
 
                     return `
-                        <div class="idea-card-carousel ${idea.brand} ${isActive ? 'active' : isPrev ? 'prev' : 'next'}" style="${customStyle}" onclick="openModal(event, ${idea.id})">
+                        <div class="idea-card-carousel ${idea.brand} ${isActive ? 'active' : isPrev ? 'prev' : 'next'}" style="${customStyle}" onclick="openModal(event, '${idea.id}')">
                             <div class="idea-card-face">
                                 <div class="card-header">
                                     <div class="card-name">${escapeHtml(idea.name)}</div>
@@ -1033,15 +1028,15 @@
                                 <div class="card-impact">
                                     <div>Impact: <strong id="impact-${idea.id}">${ideaImpacts[idea.id] || 5}</strong>/10</div>
                                     <div class="impact-controls">
-                                        <button class="impact-btn" onclick="adjustImpact(event, ${idea.id}, -1)" title="Decrease impact">−</button>
-                                        <button class="impact-btn" onclick="adjustImpact(event, ${idea.id}, 1)" title="Increase impact">+</button>
+                                        <button class="impact-btn" onclick="adjustImpact(event, '${idea.id}', -1)" title="Decrease impact">−</button>
+                                        <button class="impact-btn" onclick="adjustImpact(event, '${idea.id}', 1)" title="Increase impact">+</button>
                                     </div>
                                 </div>
                                 <div class="card-buttons">
-                                    <button class="card-btn" onclick="cycleStatus(event, ${idea.id})" title="Change status">
+                                    <button class="card-btn" onclick="cycleStatus(event, '${idea.id}')" title="Change status">
                                         ⋮ ${ideaStatuses[idea.id] || 'IDEATING'}
                                     </button>
-                                    <button class="card-btn favorite-btn" id="fav-${idea.id}" onclick="toggleFavorite(event, ${idea.id})" title="Add to favorites">
+                                    <button class="card-btn favorite-btn" id="fav-${idea.id}" onclick="toggleFavorite(event, '${idea.id}')" title="Add to favorites">
                                         ${favorites.includes(idea.id) ? '❤️' : '🤍'}
                                     </button>
                                 </div>

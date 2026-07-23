@@ -311,7 +311,7 @@
         }
 
         .idea-card-carousel.active {
-            opacity: 1;
+            opacity: 1 !important;
         }
 
         .idea-card-carousel.hovering {
@@ -1038,7 +1038,9 @@
     </div>
 
     <script>
-        // Local-only storage, no Google Sheets
+        const SHEET_ID = '1UA_TX0lA3xwHQHY9k0gIprfkZ9W05nD2tSBEURamuqQ';
+        const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=0&tq=SELECT A,B,C,D,E,F`;
+
         let allIdeas = [];
         let localCards = JSON.parse(localStorage.getItem('localCards')) || [];
         let localCategories = JSON.parse(localStorage.getItem('localCategories')) || [];
@@ -1048,10 +1050,37 @@
         const activeFilters = new Map();
         let carouselIndices = {};
 
-        function initializeIdeas() {
-            // Everything is local to the website now
-            allIdeas = [...localCards];
-            renderIdeas();
+        const toolInfo = {};
+
+        async function fetchIdeas() {
+            try {
+                const response = await fetch(QUERY_URL);
+                const text = await response.text();
+                const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
+
+                if (!jsonMatch) throw new Error('Invalid response format');
+
+                const data = JSON.parse(jsonMatch[1]);
+                if (data.status !== 'ok') throw new Error(data.message || 'Query failed');
+
+                const sheetIdeas = (data.table.rows || []).map((row, idx) => {
+                    const category = row.c[0]?.v || 'Other';
+                    const name = row.c[1]?.v || '';
+                    const description = row.c[2]?.v || '';
+                    const priority = parseInt(row.c[3]?.v || '3');
+                    const fullDescription = row.c[4]?.v || description;
+                    const hexColor = row.c[5]?.v || null;
+
+                    return { id: `sheet-${idx}`, category, name, description, fullDescription, priority, hexColor, brand: 'default', tags: [], metrics: { difficulty: 'Medium' } };
+                });
+
+                allIdeas = [...sheetIdeas, ...localCards];
+
+                renderIdeas();
+            } catch (error) {
+                console.error('Error fetching ideas:', error);
+                document.getElementById('content').innerHTML = '<div class="empty-state"><p>Error loading ideas. Please refresh.</p></div>';
+            }
         }
 
         function toggleFilter(type, value) {
@@ -1253,7 +1282,7 @@
         }
 
         // ==================== ANIME.JS INTEGRATION ====================
-        // Updated carousel transitions with anime.js - smooth opacity only
+        // Updated carousel transitions with anime.js
         function updateCarousel(carousel, ideas, activeIdx) {
             const cards = carousel.querySelectorAll('.idea-card-carousel');
             const totalCards = ideas.length;
@@ -1287,22 +1316,19 @@
                     depth = -distance * 50;
                 }
 
-                const opacity = offset === 0 ? 1 : 0.45;
+                const opacity = offset === 0 ? 0.45 : 1;
+
+                // ANIME.JS: Smooth transitions instead of instant
+                anime({
+                    targets: card,
+                    translateX: translateX,
+                    rotate: rotationAngle,
+                    opacity: opacity,
+                    duration: 500,
+                    easing: 'easeOutCubic'
+                });
 
                 card.style.zIndex = zIndex;
-
-                // ANIME.JS: Animate the full 3D transform smoothly
-                anime({
-                    targets: { progress: 0 },
-                    progress: 1,
-                    duration: 500,
-                    easing: 'easeOutCubic',
-                    update(anim) {
-                        const t = anim.progress;
-                        card.style.transform = `translateX(${translateX * t}px) rotateY(${rotationAngle * t}deg) translateZ(${depth * t}px)`;
-                        card.style.opacity = 1 + (opacity - 1) * t;
-                    }
-                });
 
                 card.classList.remove('active');
                 if (offset === 0) {
@@ -1648,10 +1674,7 @@
         function refreshIdeas() {
             const btn = document.querySelector('.refresh-btn');
             btn.classList.add('loading');
-            // Reload from localStorage and re-render
-            localCards = JSON.parse(localStorage.getItem('localCards')) || [];
-            initializeIdeas();
-            btn.classList.remove('loading');
+            fetchIdeas().finally(() => btn.classList.remove('loading'));
         }
 
         function escapeHtml(text) {
@@ -1672,7 +1695,7 @@
             if (e.target.id === 'addCategoryModal') closeAddCategoryModal();
         });
 
-        initializeIdeas();
+        fetchIdeas();
     </script>
 </body>
 </html>

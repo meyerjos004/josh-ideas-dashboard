@@ -21,8 +21,7 @@
         }
 
         .container {
-            max-width: 1600px;
-            margin: 0 auto;
+            margin-left: 200px;
             padding: 60px 20px;
         }
 
@@ -267,11 +266,12 @@
             perspective: 2500px;
             height: 420px;
             width: 100%;
+            max-width: 1200px;
+            margin: 0 auto 80px auto;
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 80px;
             cursor: grab;
             overflow: visible;
         }
@@ -828,10 +828,6 @@
             border-left-color: #6496ff;
         }
 
-        .container {
-            margin-left: 200px;
-        }
-
         #deletedView {
             display: none;
         }
@@ -904,8 +900,8 @@
 <body>
     <div class="sidebar">
         <div class="sidebar-nav">
-            <button class="sidebar-btn active" id="homeBtn" onclick="showView('home')">🏠 Home</button>
-            <button class="sidebar-btn" id="deletedBtn" onclick="showView('deleted')">🗑️ Deleted</button>
+            <button class="sidebar-btn active" id="homeBtn" onclick="showView('home')">Home</button>
+            <button class="sidebar-btn" id="deletedBtn" onclick="showView('deleted')">Deleted</button>
         </div>
     </div>
 
@@ -915,7 +911,7 @@
             <h1>Josh's Ideas</h1>
             <p class="subtitle">3D Carousel of Innovation</p>
             <div class="header-controls">
-                <button class="refresh-btn" onclick="refreshIdeas()">🔄 Refresh</button>
+                <button class="refresh-btn" onclick="refreshIdeas()">Refresh</button>
             </div>
         </header>
 
@@ -943,7 +939,7 @@
             </div>
             <div class="filter-buttons">
                 <span class="filter-label">View:</span>
-                <button onclick="toggleFilter('view', 'favorites')" data-filter="view-favorites">❤️ Favorites</button>
+                <button onclick="toggleFilter('view', 'favorites')" data-filter="view-favorites">Favorites</button>
             </div>
             <div class="sort-controls">
                 <span class="filter-label">Sort by:</span>
@@ -1161,10 +1157,10 @@
                                     <div class="card-name">${escapeHtml(idea.name)}</div>
                                     <div class="card-top-buttons">
                                         <button class="card-btn" onclick="cycleStatus(event, '${idea.id}')" title="Change status">
-                                            ⋮ ${ideaStatuses[idea.id] || 'IDEATING'}
+                                            ${ideaStatuses[idea.id] || 'IDEATING'}
                                         </button>
                                         <button class="card-btn favorite-btn" id="fav-${idea.id}" onclick="toggleFavorite(event, '${idea.id}')" title="Add to favorites">
-                                            ${favorites.includes(idea.id) ? '❤️' : '🤍'}
+                                            ${favorites.includes(idea.id) ? 'Favorited' : 'Favorite'}
                                         </button>
                                     </div>
                                 </div>
@@ -1179,7 +1175,7 @@
                                 </div>
                                 <div class="card-footer">
                                     <div class="card-expand-hint">Click to expand</div>
-                                    <button class="card-btn delete-btn" onclick="confirmDelete(event, '${idea.id}')" title="Delete card">🗑️</button>
+                                    <button class="card-btn delete-btn" onclick="confirmDelete(event, '${idea.id}')" title="Delete card">Delete</button>
                                 </div>
                             </div>
                         </div>
@@ -1433,7 +1429,7 @@
             localStorage.setItem('favorites', JSON.stringify(favorites));
             // Update UI without full re-render
             const btn = document.getElementById(`fav-${ideaId}`);
-            if (btn) btn.textContent = favorites.includes(ideaId) ? '❤️' : '🤍';
+            if (btn) btn.textContent = favorites.includes(ideaId) ? 'Favorited' : 'Favorite';
             renderStats();
         }
 
@@ -1446,7 +1442,7 @@
             localStorage.setItem('ideaStatuses', JSON.stringify(ideaStatuses));
             // Update UI without full re-render
             const btn = event.target.closest('.card-btn');
-            if (btn) btn.textContent = `⋮ ${statuses[nextIdx]}`;
+            if (btn) btn.textContent = statuses[nextIdx];
             // Update stats at top
             renderStats();
         }
@@ -1618,8 +1614,8 @@
                         <div class="deleted-card-category">${escapeHtml(item.category)}</div>
                     </div>
                     <div class="deleted-card-actions">
-                        <button class="recover-btn" onclick="recoverCard('${item.id}')">↩️ Recover</button>
-                        <button class="permanent-delete-btn" onclick="permanentlyDelete('${item.id}')">🗑️ Delete Forever</button>
+                        <button class="recover-btn" onclick="recoverCard('${item.id}')">Recover</button>
+                        <button class="permanent-delete-btn" onclick="permanentlyDelete('${item.id}')">Delete Forever</button>
                     </div>
                 </div>
             `).join('');

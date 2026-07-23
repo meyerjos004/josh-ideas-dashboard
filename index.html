@@ -677,10 +677,12 @@
 
     <script>
         const SHEET_ID = '1UA_TX0lA3xwHQHY9k0gIprfkZ9W05nD2tSBEURamuqQ';
-        const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=0&tq=SELECT A,B,C,D,E,F,G,H`;
+        const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=0&tq=SELECT A,B,C,D,E,F`;
 
         let allIdeas = [];
         let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+        let ideaStatuses = JSON.parse(localStorage.getItem('ideaStatuses')) || {}; // Track status per idea {id: 'IDEATING'}
+        let ideaImpacts = JSON.parse(localStorage.getItem('ideaImpacts')) || {}; // Track impact per idea {id: 5}
         const activeFilters = new Map();
         let carouselIndices = {}; // Track current index per category
 
@@ -708,11 +710,9 @@
                     const priority = parseInt(row.c[3]?.v || '3');
                     const fullDescription = row.c[4]?.v || description;
                     const hexColor = row.c[5]?.v || null; // Color column (F)
-                    const status = row.c[6]?.v || 'IDEATING'; // Status column (G)
-                    const impact = parseInt(row.c[7]?.v || '5'); // Impact column (H)
                     const info = toolInfo[name] || { brand: 'default', tags: [], metrics: { difficulty: 'Medium' } };
 
-                    return { id: idx, category, name, description, fullDescription, priority, hexColor, status, impact, ...info };
+                    return { id: idx, category, name, description, fullDescription, priority, hexColor, ...info };
                 });
 
                 renderIdeas();
@@ -744,7 +744,8 @@
                 const matchesPriority = priorityFilters.length === 0 || priorityFilters.some(f => f === `priority-P${idea.priority}`);
 
                 const statusFilters = Array.from(activeFilters.keys()).filter(k => k.startsWith('status-'));
-                const matchesStatus = statusFilters.length === 0 || statusFilters.some(f => f === `status-${idea.status}`);
+                const ideaStatus = ideaStatuses[idea.id] || 'IDEATING';
+                const matchesStatus = statusFilters.length === 0 || statusFilters.some(f => f === `status-${ideaStatus}`);
 
                 const viewFilters = Array.from(activeFilters.keys()).filter(k => k.startsWith('view-'));
                 let matchesView = true;
@@ -817,10 +818,15 @@
                                 ` : ''}
                                 <div class="card-meta">
                                     <div><strong>P${idea.priority}</strong></div>
-                                    <div>Impact: <strong>${idea.impact}/10</strong></div>
+                                    <div>Impact: <strong id="impact-${idea.id}">${ideaImpacts[idea.id] || 5}</strong>/10</div>
                                 </div>
                                 <div class="card-buttons">
-                                    <button class="card-btn favorite-btn" onclick="toggleFavorite(event, ${idea.id}, ${idea.id})" title="Add to favorites">
+                                    <button class="card-btn" onclick="cycleStatus(event, ${idea.id})" title="Change status">
+                                        ⋮ ${ideaStatuses[idea.id] || 'IDEATING'}
+                                    </button>
+                                    <button class="card-btn" onclick="adjustImpact(event, ${idea.id}, -1)" title="Decrease impact">−</button>
+                                    <button class="card-btn" onclick="adjustImpact(event, ${idea.id}, 1)" title="Increase impact">+</button>
+                                    <button class="card-btn favorite-btn" id="fav-${idea.id}" onclick="toggleFavorite(event, ${idea.id})" title="Add to favorites">
                                         ${favorites.includes(idea.id) ? '❤️' : '🤍'}
                                     </button>
                                 </div>
@@ -978,9 +984,9 @@
         function renderStats() {
             const total = allIdeas.length;
             const favorited = allIdeas.filter(i => favorites.includes(i.id)).length;
-            const shipped = allIdeas.filter(i => i.status && i.status.toUpperCase() === 'SHIPPED').length;
-            const building = allIdeas.filter(i => i.status && i.status.toUpperCase() === 'BUILDING').length;
-            const ideating = allIdeas.filter(i => i.status && i.status.toUpperCase() === 'IDEATING').length;
+            const shipped = allIdeas.filter(i => (ideaStatuses[i.id] || 'IDEATING') === 'SHIPPED').length;
+            const building = allIdeas.filter(i => (ideaStatuses[i.id] || 'IDEATING') === 'BUILDING').length;
+            const ideating = allIdeas.filter(i => (ideaStatuses[i.id] || 'IDEATING') === 'IDEATING').length;
 
             document.getElementById('statsBar').innerHTML = `
                 <div class="stat-card">
@@ -1014,11 +1020,13 @@
             const modal = document.getElementById('modal');
             const modalBody = document.getElementById('modalBody');
 
+            const modalStatus = ideaStatuses[idea.id] || 'IDEATING';
+            const modalImpact = ideaImpacts[idea.id] || 5;
             modalBody.innerHTML = `
                 <div class="modal-meta-row">
                     <div class="modal-meta-item">
                         <div class="modal-meta-label">Status</div>
-                        <div class="modal-meta-value">${idea.status}</div>
+                        <div class="modal-meta-value">${modalStatus}</div>
                     </div>
                     <div class="modal-meta-item">
                         <div class="modal-meta-label">Priority</div>
@@ -1026,7 +1034,7 @@
                     </div>
                     <div class="modal-meta-item">
                         <div class="modal-meta-label">Impact</div>
-                        <div class="modal-meta-value">${idea.impact}/10</div>
+                        <div class="modal-meta-value">${modalImpact}/10</div>
                     </div>
                     <div class="modal-meta-item">
                         <div class="modal-meta-label">Difficulty</div>
@@ -1059,7 +1067,33 @@
                 favorites.push(ideaId);
             }
             localStorage.setItem('favorites', JSON.stringify(favorites));
-            renderIdeas();
+            // Update UI without full re-render
+            const btn = document.getElementById(`fav-${ideaId}`);
+            if (btn) btn.textContent = favorites.includes(ideaId) ? '❤️' : '🤍';
+            renderStats();
+        }
+
+        function cycleStatus(event, ideaId) {
+            event.stopPropagation();
+            const statuses = ['IDEATING', 'BUILDING', 'SHIPPED'];
+            const current = ideaStatuses[ideaId] || 'IDEATING';
+            const nextIdx = (statuses.indexOf(current) + 1) % statuses.length;
+            ideaStatuses[ideaId] = statuses[nextIdx];
+            localStorage.setItem('ideaStatuses', JSON.stringify(ideaStatuses));
+            // Update UI without full re-render
+            const btn = event.target.closest('.card-btn');
+            if (btn) btn.textContent = `⋮ ${statuses[nextIdx]}`;
+        }
+
+        function adjustImpact(event, ideaId, delta) {
+            event.stopPropagation();
+            const current = ideaImpacts[ideaId] || 5;
+            const newImpact = Math.max(1, Math.min(10, current + delta));
+            ideaImpacts[ideaId] = newImpact;
+            localStorage.setItem('ideaImpacts', JSON.stringify(ideaImpacts));
+            // Update UI without full re-render
+            const impactDisplay = document.getElementById(`impact-${ideaId}`);
+            if (impactDisplay) impactDisplay.textContent = newImpact;
         }
 
         function refreshIdeas() {

@@ -1319,6 +1319,9 @@
             const building = allIdeas.filter(i => (ideaStatuses[i.id] || 'IDEATING') === 'BUILDING').length;
             const ideating = allIdeas.filter(i => (ideaStatuses[i.id] || 'IDEATING') === 'IDEATING').length;
 
+            // Debug logging
+            console.log('renderStats called - counts:', { total, favorited, shipped, building, ideating, allIdeasLength: allIdeas.length });
+
             // Render HTML with data attributes
             document.getElementById('statsBar').innerHTML = `
                 <div class="stat-card">
@@ -1346,6 +1349,7 @@
             // ANIME.JS: Animate the numbers counting up, staggered
             document.querySelectorAll('.stat-number').forEach((element, idx) => {
                 const targetValue = parseInt(element.getAttribute('data-value'));
+                console.log(`Stat animation ${idx}: target=${targetValue}`);
 
                 anime({
                     targets: { value: 0 },

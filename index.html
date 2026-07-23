@@ -644,7 +644,7 @@
 
     <script>
         const SHEET_ID = '1UA_TX0lA3xwHQHY9k0gIprfkZ9W05nD2tSBEURamuqQ';
-        const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=0&tq=SELECT A,B,C,D,E`;
+        const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=0&tq=SELECT A,B,C,D,E,F`;
 
         let allIdeas = [];
         let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
@@ -674,9 +674,10 @@
                     const description = row.c[2]?.v || '';
                     const priority = parseInt(row.c[3]?.v || '3');
                     const fullDescription = row.c[4]?.v || description;
+                    const hexColor = row.c[5]?.v || null; // Color column (F)
                     const info = toolInfo[name] || { brand: 'default', status: 'IDEATING', tags: [], metrics: { impact: 5, difficulty: 'Medium' } };
 
-                    return { id: idx, category, name, description, fullDescription, priority, ...info };
+                    return { id: idx, category, name, description, fullDescription, priority, hexColor, ...info };
                 });
 
                 renderIdeas();
@@ -753,9 +754,10 @@
                 const cardsHtml = ideas.map((idea, idx) => {
                     const isActive = idx === 0;
                     const isPrev = idx === ideas.length - 1;
+                    const customStyle = idea.hexColor ? `--card-color: ${idea.hexColor};` : '';
 
                     return `
-                        <div class="idea-card-carousel ${idea.brand} ${isActive ? 'active' : isPrev ? 'prev' : 'next'}" onclick="openModal(event, ${idea.id})">
+                        <div class="idea-card-carousel ${idea.brand} ${isActive ? 'active' : isPrev ? 'prev' : 'next'}" style="${customStyle}" onclick="openModal(event, ${idea.id})">
                             <div class="idea-card-face">
                                 <div class="card-header">
                                     <div class="card-name">${escapeHtml(idea.name)}</div>
@@ -793,6 +795,25 @@
             }).join('');
 
             content.innerHTML = html;
+
+            // Apply custom colors from hex values
+            document.querySelectorAll('.idea-card-carousel').forEach(card => {
+                const idea = allIdeas.find(i => i.id === parseInt(card.getAttribute('onclick').match(/\d+/)[0]));
+                if (idea && idea.hexColor) {
+                    const face = card.querySelector('.idea-card-face');
+                    if (face) {
+                        // Extract RGB values from hex
+                        const hex = idea.hexColor.replace('#', '');
+                        const r = parseInt(hex.substring(0, 2), 16);
+                        const g = parseInt(hex.substring(2, 4), 16);
+                        const b = parseInt(hex.substring(4, 6), 16);
+
+                        // Apply color-based gradient
+                        face.style.background = `linear-gradient(180deg, ${idea.hexColor} 0%, rgba(${r}, ${g}, ${b}, 0.1) 100%)`;
+                        face.style.borderColor = `rgba(${r}, ${g}, ${b}, 0.3)`;
+                    }
+                }
+            });
 
             // Add scroll listeners to all carousels
             document.querySelectorAll('.carousel-3d').forEach((carousel, idx) => {

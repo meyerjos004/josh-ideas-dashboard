@@ -128,6 +128,24 @@
             gap: 10px;
         }
 
+        .add-btn {
+            padding: 14px 18px;
+            background: rgba(76, 222, 128, 0.15);
+            color: #4cde80;
+            border: 1px solid rgba(76, 222, 128, 0.4);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .add-btn:hover {
+            background: rgba(76, 222, 128, 0.25);
+            border-color: rgba(76, 222, 128, 0.6);
+        }
+
         input[type="text"] {
             flex: 1;
             padding: 14px 18px;
@@ -402,6 +420,40 @@
             margin-bottom: 8px;
         }
 
+        .card-impact {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .impact-controls {
+            display: flex;
+            gap: 6px;
+        }
+
+        .impact-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: #fff;
+            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .impact-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
         .card-expand-hint {
             font-size: 0.75rem;
             color: rgba(255, 255, 255, 0.6);
@@ -437,6 +489,83 @@
             padding: 60px 20px;
             color: #a0a0a8;
             font-size: 1.1rem;
+        }
+
+        .add-card-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #e0e0e0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: rgba(100, 150, 255, 0.5);
+            background: rgba(100, 150, 255, 0.08);
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .form-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .save-btn {
+            background: rgba(100, 150, 255, 0.2);
+            color: #6496ff;
+            border: 1px solid rgba(100, 150, 255, 0.5);
+        }
+
+        .save-btn:hover {
+            background: rgba(100, 150, 255, 0.3);
+        }
+
+        .cancel-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #a0a0a8;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .cancel-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
         }
 
         /* Modal */
@@ -631,6 +760,8 @@
         <div class="controls">
             <div class="search-bar">
                 <input type="text" id="searchInput" placeholder="Search ideas..." onkeyup="renderIdeas()">
+                <button class="add-btn" onclick="openAddCardModal()">+ Add Card</button>
+                <button class="add-btn" onclick="openAddCategoryModal()">+ Add Category</button>
             </div>
             <div class="filter-buttons">
                 <span class="filter-label">Priority:</span>
@@ -675,11 +806,73 @@
         </div>
     </div>
 
+    <div id="addCardModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Create New Card</h2>
+                <button class="modal-close" onclick="closeAddCardModal()">×</button>
+            </div>
+            <form onsubmit="saveNewCard(event)" class="add-card-form">
+                <div class="form-group">
+                    <label for="cardCategory">Category</label>
+                    <select id="cardCategory" required>
+                        <option value="">Select or create category</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cardName">Name</label>
+                    <input type="text" id="cardName" required placeholder="Card name">
+                </div>
+                <div class="form-group">
+                    <label for="cardDescription">Description</label>
+                    <textarea id="cardDescription" placeholder="Short description" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="cardFullDescription">Full Description</label>
+                    <textarea id="cardFullDescription" placeholder="Detailed description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="cardPriority">Priority (1-5)</label>
+                    <input type="number" id="cardPriority" min="1" max="5" value="3" required>
+                </div>
+                <div class="form-group">
+                    <label for="cardColor">Color (Hex)</label>
+                    <input type="text" id="cardColor" placeholder="#6496ff">
+                </div>
+                <div class="form-buttons">
+                    <button type="submit" class="form-btn save-btn">Create Card</button>
+                    <button type="button" class="form-btn cancel-btn" onclick="closeAddCardModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="addCategoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Create New Category</h2>
+                <button class="modal-close" onclick="closeAddCategoryModal()">×</button>
+            </div>
+            <form onsubmit="saveNewCategory(event)" class="add-card-form">
+                <div class="form-group">
+                    <label for="categoryName">Category Name</label>
+                    <input type="text" id="categoryName" required placeholder="Enter category name">
+                </div>
+                <div class="form-buttons">
+                    <button type="submit" class="form-btn save-btn">Create Category</button>
+                    <button type="button" class="form-btn cancel-btn" onclick="closeAddCategoryModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const SHEET_ID = '1UA_TX0lA3xwHQHY9k0gIprfkZ9W05nD2tSBEURamuqQ';
         const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=0&tq=SELECT A,B,C,D,E,F`;
 
         let allIdeas = [];
+        let localCards = JSON.parse(localStorage.getItem('localCards')) || []; // Cards created in the app
+        let localCategories = JSON.parse(localStorage.getItem('localCategories')) || []; // Categories created in the app
         let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
         let ideaStatuses = JSON.parse(localStorage.getItem('ideaStatuses')) || {}; // Track status per idea {id: 'IDEATING'}
         let ideaImpacts = JSON.parse(localStorage.getItem('ideaImpacts')) || {}; // Track impact per idea {id: 5}
@@ -703,7 +896,7 @@
                 const data = JSON.parse(jsonMatch[1]);
                 if (data.status !== 'ok') throw new Error(data.message || 'Query failed');
 
-                allIdeas = (data.table.rows || []).map((row, idx) => {
+                const sheetIdeas = (data.table.rows || []).map((row, idx) => {
                     const category = row.c[0]?.v || 'Other';
                     const name = row.c[1]?.v || '';
                     const description = row.c[2]?.v || '';
@@ -712,8 +905,11 @@
                     const hexColor = row.c[5]?.v || null; // Color column (F)
                     const info = toolInfo[name] || { brand: 'default', tags: [], metrics: { difficulty: 'Medium' } };
 
-                    return { id: idx, category, name, description, fullDescription, priority, hexColor, ...info };
+                    return { id: `sheet-${idx}`, category, name, description, fullDescription, priority, hexColor, ...info };
                 });
+
+                // Combine sheet ideas with local cards
+                allIdeas = [...sheetIdeas, ...localCards];
 
                 renderIdeas();
             } catch (error) {
@@ -818,14 +1014,18 @@
                                 ` : ''}
                                 <div class="card-meta">
                                     <div><strong>P${idea.priority}</strong></div>
+                                </div>
+                                <div class="card-impact">
                                     <div>Impact: <strong id="impact-${idea.id}">${ideaImpacts[idea.id] || 5}</strong>/10</div>
+                                    <div class="impact-controls">
+                                        <button class="impact-btn" onclick="adjustImpact(event, ${idea.id}, -1)" title="Decrease impact">−</button>
+                                        <button class="impact-btn" onclick="adjustImpact(event, ${idea.id}, 1)" title="Increase impact">+</button>
+                                    </div>
                                 </div>
                                 <div class="card-buttons">
                                     <button class="card-btn" onclick="cycleStatus(event, ${idea.id})" title="Change status">
                                         ⋮ ${ideaStatuses[idea.id] || 'IDEATING'}
                                     </button>
-                                    <button class="card-btn" onclick="adjustImpact(event, ${idea.id}, -1)" title="Decrease impact">−</button>
-                                    <button class="card-btn" onclick="adjustImpact(event, ${idea.id}, 1)" title="Increase impact">+</button>
                                     <button class="card-btn favorite-btn" id="fav-${idea.id}" onclick="toggleFavorite(event, ${idea.id})" title="Add to favorites">
                                         ${favorites.includes(idea.id) ? '❤️' : '🤍'}
                                     </button>
@@ -1083,6 +1283,8 @@
             // Update UI without full re-render
             const btn = event.target.closest('.card-btn');
             if (btn) btn.textContent = `⋮ ${statuses[nextIdx]}`;
+            // Update stats at top
+            renderStats();
         }
 
         function adjustImpact(event, ideaId, delta) {
@@ -1094,6 +1296,92 @@
             // Update UI without full re-render
             const impactDisplay = document.getElementById(`impact-${ideaId}`);
             if (impactDisplay) impactDisplay.textContent = newImpact;
+        }
+
+        function openAddCardModal() {
+            const modal = document.getElementById('addCardModal');
+            const categories = new Set();
+            allIdeas.forEach(idea => categories.add(idea.category));
+            localCategories.forEach(cat => categories.add(cat));
+
+            const select = document.getElementById('cardCategory');
+            select.innerHTML = '<option value="">Select or create category</option>';
+            Array.from(categories).sort().forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                select.appendChild(opt);
+            });
+
+            modal.classList.add('active');
+        }
+
+        function closeAddCardModal() {
+            document.getElementById('addCardModal').classList.remove('active');
+            document.getElementById('cardName').value = '';
+            document.getElementById('cardDescription').value = '';
+            document.getElementById('cardFullDescription').value = '';
+            document.getElementById('cardPriority').value = '3';
+            document.getElementById('cardColor').value = '';
+            document.getElementById('cardCategory').value = '';
+        }
+
+        function saveNewCard(event) {
+            event.preventDefault();
+
+            const category = document.getElementById('cardCategory').value || 'Other';
+            const name = document.getElementById('cardName').value;
+            const description = document.getElementById('cardDescription').value;
+            const fullDescription = document.getElementById('cardFullDescription').value || description;
+            const priority = parseInt(document.getElementById('cardPriority').value);
+            const hexColor = document.getElementById('cardColor').value || null;
+
+            const newCard = {
+                id: `local-${Date.now()}`,
+                category,
+                name,
+                description,
+                fullDescription,
+                priority,
+                hexColor,
+                brand: 'default',
+                tags: [],
+                metrics: { difficulty: 'Medium' }
+            };
+
+            localCards.push(newCard);
+            localStorage.setItem('localCards', JSON.stringify(localCards));
+
+            allIdeas.push(newCard);
+            closeAddCardModal();
+            renderIdeas();
+        }
+
+        function openAddCategoryModal() {
+            document.getElementById('addCategoryModal').classList.add('active');
+            document.getElementById('categoryName').value = '';
+        }
+
+        function closeAddCategoryModal() {
+            document.getElementById('addCategoryModal').classList.remove('active');
+        }
+
+        function saveNewCategory(event) {
+            event.preventDefault();
+
+            const categoryName = document.getElementById('categoryName').value;
+            if (!categoryName || localCategories.includes(categoryName)) {
+                alert('Category already exists or is empty');
+                return;
+            }
+
+            localCategories.push(categoryName);
+            localStorage.setItem('localCategories', JSON.stringify(localCategories));
+
+            closeAddCategoryModal();
+            // Optionally open add card modal with this category selected
+            openAddCardModal();
+            document.getElementById('cardCategory').value = categoryName;
         }
 
         function refreshIdeas() {
@@ -1110,6 +1398,14 @@
 
         document.getElementById('modal').addEventListener('click', (e) => {
             if (e.target.id === 'modal') closeModal();
+        });
+
+        document.getElementById('addCardModal').addEventListener('click', (e) => {
+            if (e.target.id === 'addCardModal') closeAddCardModal();
+        });
+
+        document.getElementById('addCategoryModal').addEventListener('click', (e) => {
+            if (e.target.id === 'addCategoryModal') closeAddCategoryModal();
         });
 
         fetchIdeas();

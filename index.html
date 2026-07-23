@@ -1288,7 +1288,7 @@
                     depth = -distance * 50;
                 }
 
-                const opacity = offset === 0 ? 1 : 0.45;
+                const opacity = offset === 0 ? 0.3 : 1;
 
                 card.style.zIndex = zIndex;
                 card.style.transform = `translateX(${translateX}px) rotateY(${rotationAngle}deg) translateZ(${depth}px)`;
@@ -1309,49 +1309,38 @@
             const building = allIdeas.filter(i => (ideaStatuses[i.id] || 'IDEATING') === 'BUILDING').length;
             const ideating = allIdeas.filter(i => (ideaStatuses[i.id] || 'IDEATING') === 'IDEATING').length;
 
-            // Debug logging
-            console.log('renderStats called - counts:', { total, favorited, shipped, building, ideating, allIdeasLength: allIdeas.length });
+            const stats = [
+                { value: total, label: 'Total Ideas' },
+                { value: favorited, label: 'Favorites' },
+                { value: shipped, label: 'Shipped' },
+                { value: building, label: 'Building' },
+                { value: ideating, label: 'Ideating' }
+            ];
 
-            // Render HTML with data attributes
-            document.getElementById('statsBar').innerHTML = `
+            // Render HTML
+            document.getElementById('statsBar').innerHTML = stats.map((stat, idx) => `
                 <div class="stat-card">
-                    <div class="stat-number" data-value="${total}">0</div>
-                    <div class="stat-label">Total Ideas</div>
+                    <div class="stat-number" data-idx="${idx}" data-value="${stat.value}">0</div>
+                    <div class="stat-label">${stat.label}</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-number" data-value="${favorited}">0</div>
-                    <div class="stat-label">Favorites</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" data-value="${shipped}">0</div>
-                    <div class="stat-label">Shipped</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" data-value="${building}">0</div>
-                    <div class="stat-label">Building</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" data-value="${ideating}">0</div>
-                    <div class="stat-label">Ideating</div>
-                </div>
-            `;
+            `).join('');
 
-            // ANIME.JS: Animate the numbers counting up, staggered
-            // First, stop any existing animations on stat numbers
-            anime.set(document.querySelectorAll('.stat-number'), { textContent: '0' });
+            // Animate each stat number
+            stats.forEach((stat, idx) => {
+                const element = document.querySelector(`[data-idx="${idx}"]`);
+                if (!element) return;
 
-            document.querySelectorAll('.stat-number').forEach((element, idx) => {
-                const targetValue = parseInt(element.getAttribute('data-value'));
-                console.log(`Stat animation ${idx}: target=${targetValue}`);
+                element.textContent = '0';  // Reset to 0 first
 
                 anime({
-                    targets: { value: 0 },
-                    value: targetValue,
+                    targets: { count: 0 },
+                    count: stat.value,
                     duration: 800,
                     easing: 'easeOutQuad',
-                    delay: idx * 100,  // Stagger each card by 100ms
+                    delay: idx * 100,
+                    round: 1,  // Round to nearest integer
                     update(anim) {
-                        element.textContent = Math.round(anim.progress * targetValue);
+                        element.textContent = Math.round(anim.progress * stat.value);
                     }
                 });
             });

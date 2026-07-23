@@ -1038,9 +1038,7 @@
     </div>
 
     <script>
-        const SHEET_ID = '1UA_TX0lA3xwHQHY9k0gIprfkZ9W05nD2tSBEURamuqQ';
-        const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=0&tq=SELECT A,B,C,D,E,F`;
-
+        // Local-only storage, no Google Sheets
         let allIdeas = [];
         let localCards = JSON.parse(localStorage.getItem('localCards')) || [];
         let localCategories = JSON.parse(localStorage.getItem('localCategories')) || [];
@@ -1050,37 +1048,10 @@
         const activeFilters = new Map();
         let carouselIndices = {};
 
-        const toolInfo = {};
-
-        async function fetchIdeas() {
-            try {
-                const response = await fetch(QUERY_URL);
-                const text = await response.text();
-                const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
-
-                if (!jsonMatch) throw new Error('Invalid response format');
-
-                const data = JSON.parse(jsonMatch[1]);
-                if (data.status !== 'ok') throw new Error(data.message || 'Query failed');
-
-                const sheetIdeas = (data.table.rows || []).map((row, idx) => {
-                    const category = row.c[0]?.v || 'Other';
-                    const name = row.c[1]?.v || '';
-                    const description = row.c[2]?.v || '';
-                    const priority = parseInt(row.c[3]?.v || '3');
-                    const fullDescription = row.c[4]?.v || description;
-                    const hexColor = row.c[5]?.v || null;
-
-                    return { id: `sheet-${idx}`, category, name, description, fullDescription, priority, hexColor, brand: 'default', tags: [], metrics: { difficulty: 'Medium' } };
-                });
-
-                allIdeas = [...sheetIdeas, ...localCards];
-
-                renderIdeas();
-            } catch (error) {
-                console.error('Error fetching ideas:', error);
-                document.getElementById('content').innerHTML = '<div class="empty-state"><p>Error loading ideas. Please refresh.</p></div>';
-            }
+        function initializeIdeas() {
+            // Everything is local to the website now
+            allIdeas = [...localCards];
+            renderIdeas();
         }
 
         function toggleFilter(type, value) {
@@ -1282,7 +1253,7 @@
         }
 
         // ==================== ANIME.JS INTEGRATION ====================
-        // Updated carousel transitions with anime.js
+        // Updated carousel transitions with anime.js - proper 3D rotation
         function updateCarousel(carousel, ideas, activeIdx) {
             const cards = carousel.querySelectorAll('.idea-card-carousel');
             const totalCards = ideas.length;
@@ -1318,14 +1289,18 @@
 
                 const opacity = offset === 0 ? 0.45 : 1;
 
-                // ANIME.JS: Smooth transitions instead of instant
+                // ANIME.JS: Smooth transitions with proper 3D transforms
+                // Use anime's update callback to set the full 3D transform string
                 anime({
-                    targets: card,
-                    translateX: translateX,
-                    rotate: rotationAngle,
-                    opacity: opacity,
+                    targets: { progress: 0 },
+                    progress: 1,
                     duration: 500,
-                    easing: 'easeOutCubic'
+                    easing: 'easeOutCubic',
+                    update(anim) {
+                        // Interpolate values during animation
+                        card.style.transform = `translateX(${translateX * anim.progress}px) rotateY(${rotationAngle * anim.progress}deg) translateZ(${depth * anim.progress}px)`;
+                        card.style.opacity = 1 - (1 - opacity) * anim.progress;
+                    }
                 });
 
                 card.style.zIndex = zIndex;
@@ -1674,7 +1649,10 @@
         function refreshIdeas() {
             const btn = document.querySelector('.refresh-btn');
             btn.classList.add('loading');
-            fetchIdeas().finally(() => btn.classList.remove('loading'));
+            // Reload from localStorage and re-render
+            localCards = JSON.parse(localStorage.getItem('localCards')) || [];
+            initializeIdeas();
+            btn.classList.remove('loading');
         }
 
         function escapeHtml(text) {
@@ -1695,7 +1673,7 @@
             if (e.target.id === 'addCategoryModal') closeAddCategoryModal();
         });
 
-        fetchIdeas();
+        initializeIdeas();
     </script>
 </body>
 </html>

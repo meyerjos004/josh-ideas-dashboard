@@ -308,6 +308,7 @@
             transform-style: preserve-3d;
             transform-origin: center center;
             cursor: pointer;
+            transition: transform 0.5s cubic-bezier(0.33, 0.66, 0.66, 1), opacity 0.5s cubic-bezier(0.33, 0.66, 0.66, 1);
         }
 
         .idea-card-carousel.active {
@@ -1253,9 +1254,8 @@
         }
 
         // ==================== ANIME.JS INTEGRATION ====================
-        // Updated carousel transitions with anime.js - smooth opacity only
+        // Carousel transitions using CSS transitions for smooth animation
         function updateCarousel(carousel, ideas, activeIdx) {
-            console.log('updateCarousel called with activeIdx:', activeIdx);
             const cards = carousel.querySelectorAll('.idea-card-carousel');
             const totalCards = ideas.length;
 
@@ -1291,21 +1291,8 @@
                 const opacity = offset === 0 ? 1 : 0.45;
 
                 card.style.zIndex = zIndex;
-
-                // ANIME.JS: Animate the full 3D transform smoothly
-                anime({
-                    targets: { progress: 0 },
-                    progress: 1,
-                    duration: 500,
-                    easing: 'easeOutCubic',
-                    update(anim) {
-                        const t = anim.progress;
-                        const newTransform = `translateX(${translateX * t}px) rotateY(${rotationAngle * t}deg) translateZ(${depth * t}px)`;
-                        card.style.transform = newTransform;
-                        card.style.opacity = 1 + (opacity - 1) * t;
-                        if (idx === 0 && t < 0.1) console.log(`Card ${idx}: t=${t.toFixed(2)}, transform=${newTransform}`);
-                    }
-                });
+                card.style.transform = `translateX(${translateX}px) rotateY(${rotationAngle}deg) translateZ(${depth}px)`;
+                card.style.opacity = opacity;
 
                 card.classList.remove('active');
                 if (offset === 0) {

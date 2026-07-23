@@ -1347,6 +1347,9 @@
             `;
 
             // ANIME.JS: Animate the numbers counting up, staggered
+            // First, stop any existing animations on stat numbers
+            anime.set(document.querySelectorAll('.stat-number'), { textContent: '0' });
+
             document.querySelectorAll('.stat-number').forEach((element, idx) => {
                 const targetValue = parseInt(element.getAttribute('data-value'));
                 console.log(`Stat animation ${idx}: target=${targetValue}`);

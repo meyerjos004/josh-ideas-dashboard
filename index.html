@@ -421,29 +421,31 @@
         }
 
         .card-impact {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 10px 12px;
             border-radius: 6px;
             margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .impact-controls {
             display: flex;
-            gap: 6px;
+            gap: 5px;
         }
 
         .impact-btn {
             background: rgba(255, 255, 255, 0.15);
-            border: none;
-            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #e0e0e0;
             border-radius: 4px;
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 0.9rem;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
@@ -452,6 +454,12 @@
 
         .impact-btn:hover {
             background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: #fff;
+        }
+
+        .impact-btn:active {
+            transform: scale(0.95);
         }
 
         .card-expand-hint {
@@ -463,25 +471,33 @@
 
         .card-buttons {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             justify-content: center;
-            margin-top: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
         }
 
         .card-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.25);
             border-radius: 6px;
-            padding: 6px 10px;
-            color: #fff;
+            padding: 8px 12px;
+            color: #e0e0e0;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
+            font-weight: 600;
             transition: all 0.2s ease;
+            white-space: nowrap;
         }
 
         .card-btn:hover {
             background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: #fff;
+        }
+
+        .card-btn:active {
+            transform: scale(0.98);
         }
 
         .empty-state {
@@ -1004,7 +1020,6 @@
                             <div class="idea-card-face">
                                 <div class="card-header">
                                     <div class="card-name">${escapeHtml(idea.name)}</div>
-                                    <span class="card-status">${idea.status}</span>
                                 </div>
                                 <p class="card-description">${escapeHtml(idea.description)}</p>
                                 ${idea.tags && idea.tags.length > 0 ? `

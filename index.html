@@ -1255,6 +1255,7 @@
         // ==================== ANIME.JS INTEGRATION ====================
         // Updated carousel transitions with anime.js - smooth opacity only
         function updateCarousel(carousel, ideas, activeIdx) {
+            console.log('updateCarousel called with activeIdx:', activeIdx);
             const cards = carousel.querySelectorAll('.idea-card-carousel');
             const totalCards = ideas.length;
 
@@ -1299,8 +1300,10 @@
                     easing: 'easeOutCubic',
                     update(anim) {
                         const t = anim.progress;
-                        card.style.transform = `translateX(${translateX * t}px) rotateY(${rotationAngle * t}deg) translateZ(${depth * t}px)`;
+                        const newTransform = `translateX(${translateX * t}px) rotateY(${rotationAngle * t}deg) translateZ(${depth * t}px)`;
+                        card.style.transform = newTransform;
                         card.style.opacity = 1 + (opacity - 1) * t;
+                        if (idx === 0 && t < 0.1) console.log(`Card ${idx}: t=${t.toFixed(2)}, transform=${newTransform}`);
                     }
                 });
 

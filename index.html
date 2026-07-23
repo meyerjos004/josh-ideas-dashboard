@@ -784,10 +784,133 @@
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(100, 150, 255, 0.5);
         }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 200px;
+            height: 100vh;
+            background: rgba(20, 20, 30, 0.95);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .sidebar-btn {
+            width: 100%;
+            padding: 16px 20px;
+            background: transparent;
+            border: none;
+            color: #a0a0a8;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #e0e0e0;
+        }
+
+        .sidebar-btn.active {
+            background: rgba(100, 150, 255, 0.15);
+            color: #6496ff;
+            border-left-color: #6496ff;
+        }
+
+        .container {
+            margin-left: 200px;
+        }
+
+        #deletedView {
+            display: none;
+        }
+
+        .deleted-card-item {
+            background: rgba(255, 100, 100, 0.1);
+            border: 1px solid rgba(255, 100, 100, 0.3);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .deleted-card-info {
+            flex: 1;
+        }
+
+        .deleted-card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .deleted-card-name {
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-bottom: 4px;
+        }
+
+        .deleted-card-category {
+            font-size: 0.85rem;
+            color: #a0a0a8;
+        }
+
+        .recover-btn {
+            padding: 8px 12px;
+            background: rgba(76, 222, 128, 0.2);
+            color: #4cde80;
+            border: 1px solid rgba(76, 222, 128, 0.4);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            margin-right: 8px;
+        }
+
+        .recover-btn:hover {
+            background: rgba(76, 222, 128, 0.3);
+            border-color: rgba(76, 222, 128, 0.6);
+        }
+
+        .permanent-delete-btn {
+            padding: 8px 12px;
+            background: rgba(255, 100, 100, 0.2);
+            color: #ff6464;
+            border: 1px solid rgba(255, 100, 100, 0.4);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .permanent-delete-btn:hover {
+            background: rgba(255, 100, 100, 0.3);
+            border-color: rgba(255, 100, 100, 0.6);
+        }
     </style>
 </head>
 <body>
+    <div class="sidebar">
+        <div class="sidebar-nav">
+            <button class="sidebar-btn active" id="homeBtn" onclick="showView('home')">🏠 Home</button>
+            <button class="sidebar-btn" id="deletedBtn" onclick="showView('deleted')">🗑️ Deleted</button>
+        </div>
+    </div>
+
     <div class="container">
+        <div id="homeView">
         <header>
             <h1>Josh's Ideas</h1>
             <p class="subtitle">3D Carousel of Innovation</p>
@@ -831,6 +954,15 @@
         </div>
 
         <div id="content"></div>
+        </div>
+
+        <div id="deletedView">
+            <header>
+                <h1>Deleted Ideas</h1>
+                <p class="subtitle">Recover or Permanently Delete</p>
+            </header>
+            <div id="deletedContent"></div>
+        </div>
     </div>
 
     <div id="modal" class="modal">
@@ -914,6 +1046,7 @@
         let localCategories = JSON.parse(localStorage.getItem('localCategories')) || []; // Categories created in the app
         let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
         let ideaStatuses = JSON.parse(localStorage.getItem('ideaStatuses')) || {}; // Track status per idea {id: 'IDEATING'}
+        let deletedItems = JSON.parse(localStorage.getItem('deletedItems')) || []; // Deleted cards
         const activeFilters = new Map();
         let carouselIndices = {}; // Track current index per category
 
@@ -1421,21 +1554,102 @@
         }
 
         function deleteCard(ideaId) {
+            // Find the idea to move to deleted items
+            const idea = allIdeas.find(i => i.id === ideaId);
+            if (idea) {
+                deletedItems.push({
+                    id: idea.id,
+                    name: idea.name,
+                    category: idea.category,
+                    data: idea // Store full data for recovery
+                });
+                localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
+            }
+
             // Remove from local cards if it's a local card
             if (ideaId.startsWith('local-')) {
                 localCards = localCards.filter(card => card.id !== ideaId);
                 localStorage.setItem('localCards', JSON.stringify(localCards));
             }
+
             // Remove related data
             delete ideaStatuses[ideaId];
-            delete ideaImpacts[ideaId];
             favorites = favorites.filter(id => id !== ideaId);
             localStorage.setItem('ideaStatuses', JSON.stringify(ideaStatuses));
-            localStorage.setItem('ideaImpacts', JSON.stringify(ideaImpacts));
             localStorage.setItem('favorites', JSON.stringify(favorites));
 
             // Re-render
             renderIdeas();
+        }
+
+        function showView(view) {
+            const homeView = document.getElementById('homeView');
+            const deletedView = document.getElementById('deletedView');
+            const homeBtn = document.getElementById('homeBtn');
+            const deletedBtn = document.getElementById('deletedBtn');
+
+            if (view === 'home') {
+                homeView.style.display = 'block';
+                deletedView.style.display = 'none';
+                homeBtn.classList.add('active');
+                deletedBtn.classList.remove('active');
+                renderIdeas();
+            } else if (view === 'deleted') {
+                homeView.style.display = 'none';
+                deletedView.style.display = 'block';
+                homeBtn.classList.remove('active');
+                deletedBtn.classList.add('active');
+                renderDeletedItems();
+            }
+        }
+
+        function renderDeletedItems() {
+            const deletedContent = document.getElementById('deletedContent');
+
+            if (deletedItems.length === 0) {
+                deletedContent.innerHTML = '<div class="empty-state"><p>No deleted ideas.</p></div>';
+                return;
+            }
+
+            const html = deletedItems.map(item => `
+                <div class="deleted-card-item">
+                    <div class="deleted-card-info">
+                        <div class="deleted-card-name">${escapeHtml(item.name)}</div>
+                        <div class="deleted-card-category">${escapeHtml(item.category)}</div>
+                    </div>
+                    <div class="deleted-card-actions">
+                        <button class="recover-btn" onclick="recoverCard('${item.id}')">↩️ Recover</button>
+                        <button class="permanent-delete-btn" onclick="permanentlyDelete('${item.id}')">🗑️ Delete Forever</button>
+                    </div>
+                </div>
+            `).join('');
+
+            deletedContent.innerHTML = html;
+        }
+
+        function recoverCard(ideaId) {
+            const itemIdx = deletedItems.findIndex(item => item.id === ideaId);
+            if (itemIdx !== -1) {
+                const item = deletedItems[itemIdx];
+                // Add back to allIdeas
+                allIdeas.push(item.data);
+                // Remove from deleted items
+                deletedItems.splice(itemIdx, 1);
+                localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
+                renderDeletedItems();
+                renderIdeas();
+            }
+        }
+
+        function permanentlyDelete(ideaId) {
+            if (confirm('Are you absolutely sure? This cannot be undone.')) {
+                const itemIdx = deletedItems.findIndex(item => item.id === ideaId);
+                if (itemIdx !== -1) {
+                    deletedItems.splice(itemIdx, 1);
+                    localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
+                    renderDeletedItems();
+                }
+            }
         }
 
         function refreshIdeas() {

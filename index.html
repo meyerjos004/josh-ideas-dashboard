@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Josh's Ideas Dashboard</title>
+    <!-- ANIME.JS - Add this one line and you're good to go -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -105,6 +107,10 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             margin-bottom: 8px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .stat-label {
@@ -301,7 +307,6 @@
             margin: auto;
             transform-style: preserve-3d;
             transform-origin: center center;
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
             cursor: pointer;
         }
 
@@ -627,7 +632,6 @@
 
         .modal.active {
             display: flex;
-            animation: fadeIn 0.3s ease-out;
         }
 
         .modal-content {
@@ -1038,13 +1042,13 @@
         const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=0&tq=SELECT A,B,C,D,E,F`;
 
         let allIdeas = [];
-        let localCards = JSON.parse(localStorage.getItem('localCards')) || []; // Cards created in the app
-        let localCategories = JSON.parse(localStorage.getItem('localCategories')) || []; // Categories created in the app
+        let localCards = JSON.parse(localStorage.getItem('localCards')) || [];
+        let localCategories = JSON.parse(localStorage.getItem('localCategories')) || [];
         let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-        let ideaStatuses = JSON.parse(localStorage.getItem('ideaStatuses')) || {}; // Track status per idea {id: 'IDEATING'}
-        let deletedItems = JSON.parse(localStorage.getItem('deletedItems')) || []; // Deleted cards
+        let ideaStatuses = JSON.parse(localStorage.getItem('ideaStatuses')) || {};
+        let deletedItems = JSON.parse(localStorage.getItem('deletedItems')) || [];
         const activeFilters = new Map();
-        let carouselIndices = {}; // Track current index per category
+        let carouselIndices = {};
 
         const toolInfo = {};
 
@@ -1065,12 +1069,11 @@
                     const description = row.c[2]?.v || '';
                     const priority = parseInt(row.c[3]?.v || '3');
                     const fullDescription = row.c[4]?.v || description;
-                    const hexColor = row.c[5]?.v || null; // Color column (F)
+                    const hexColor = row.c[5]?.v || null;
 
                     return { id: `sheet-${idx}`, category, name, description, fullDescription, priority, hexColor, brand: 'default', tags: [], metrics: { difficulty: 'Medium' } };
                 });
 
-                // Combine sheet ideas with local cards
                 allIdeas = [...sheetIdeas, ...localCards];
 
                 renderIdeas();
@@ -1201,7 +1204,6 @@
 
             // Apply custom colors from hex values
             document.querySelectorAll('.idea-card-carousel').forEach(card => {
-                // Extract id from onclick attribute
                 const onclickAttr = card.getAttribute('onclick');
                 const idMatch = onclickAttr.match(/openModal\(event, '([^']+)'\)/);
                 if (idMatch) {
@@ -1210,17 +1212,14 @@
                     if (idea && idea.hexColor) {
                         const face = card.querySelector('.idea-card-face');
                         if (face) {
-                            // Extract RGB values from hex
                             const hex = idea.hexColor.replace('#', '');
                             const r = parseInt(hex.substring(0, 2), 16);
                             const g = parseInt(hex.substring(2, 4), 16);
                             const b = parseInt(hex.substring(4, 6), 16);
 
-                            // Apply color-based gradient
                             face.style.background = `linear-gradient(180deg, ${idea.hexColor} 0%, rgba(${r}, ${g}, ${b}, 0.1) 100%)`;
                             face.style.borderColor = `rgba(${r}, ${g}, ${b}, 0.3)`;
 
-                            // Determine text color based on luminance
                             const luminance = getLuminance(idea.hexColor);
                             if (luminance > 0.5) {
                                 face.classList.add('light-bg');
@@ -1244,7 +1243,6 @@
                     const ideas = grouped[categoryKey];
                     const currentIdx = carouselIndices[categoryKey];
 
-                    // Scroll down/right = next card, scroll up/left = prev card
                     if (e.deltaY > 0 || e.deltaX > 0) {
                         carouselIndices[categoryKey] = (currentIdx + 1) % ideas.length;
                     } else {
@@ -1254,7 +1252,6 @@
                     updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
                 });
 
-                // Add hover listeners to card faces
                 carousel.querySelectorAll('.idea-card-face').forEach(face => {
                     const card = face.closest('.idea-card-carousel');
                     face.addEventListener('mouseenter', () => {
@@ -1264,7 +1261,6 @@
                         card.classList.remove('hovering');
                     });
 
-                    // Add wheel listener to card so scrolling works when hovering
                     face.addEventListener('wheel', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -1285,55 +1281,55 @@
             renderStats();
         }
 
+        // ==================== ANIME.JS INTEGRATION ====================
+        // Updated carousel transitions with anime.js
         function updateCarousel(carousel, ideas, activeIdx) {
             const cards = carousel.querySelectorAll('.idea-card-carousel');
             const totalCards = ideas.length;
 
             cards.forEach((card, idx) => {
-                // Calculate offset from active card
                 const offset = (idx - activeIdx + totalCards) % totalCards;
 
-                // Determine position: left (incoming), center (active), or right (outgoing)
                 let translateX = 0;
                 let rotationAngle = 0;
                 let zIndex = 0;
 
                 if (offset === 0) {
-                    // Active card in center, facing forward
                     translateX = 0;
                     rotationAngle = 0;
                     zIndex = totalCards;
                 } else if (offset < totalCards / 2) {
-                    // Next cards coming from left at 45 degrees
                     translateX = -380;
                     rotationAngle = 45;
                     zIndex = totalCards - offset;
                 } else {
-                    // Previous cards exiting to right at -45 degrees
                     translateX = 380;
                     rotationAngle = -45;
                     zIndex = totalCards - offset;
                 }
 
-                // Depth stacking toward inside: cards closer to center are shallower
                 let depth;
                 if (offset === 0) {
                     depth = 0;
                 } else {
                     const distance = Math.min(offset, totalCards - offset);
-                    // Closer to center = closer to viewer in depth (shallower)
                     depth = -distance * 50;
                 }
 
-                // Active card is transparent (glass effect), stack cards are opaque
                 const opacity = offset === 0 ? 0.45 : 1;
 
-                // Apply transforms
-                card.style.transform = `translateX(${translateX}px) rotateY(${rotationAngle}deg) translateZ(${depth}px)`;
-                card.style.opacity = opacity;
+                // ANIME.JS: Smooth transitions instead of instant
+                anime({
+                    targets: card,
+                    translateX: translateX,
+                    rotate: rotationAngle,
+                    opacity: opacity,
+                    duration: 500,
+                    easing: 'easeOutCubic'
+                });
+
                 card.style.zIndex = zIndex;
 
-                // Mark active card
                 card.classList.remove('active');
                 if (offset === 0) {
                     card.classList.add('active');
@@ -1341,6 +1337,7 @@
             });
         }
 
+        // ==================== ANIME.JS: Stat Counter Animation ====================
         function renderStats() {
             const total = allIdeas.length;
             const favorited = allIdeas.filter(i => favorites.includes(i.id)).length;
@@ -1348,30 +1345,48 @@
             const building = allIdeas.filter(i => (ideaStatuses[i.id] || 'IDEATING') === 'BUILDING').length;
             const ideating = allIdeas.filter(i => (ideaStatuses[i.id] || 'IDEATING') === 'IDEATING').length;
 
+            // Render HTML with data attributes
             document.getElementById('statsBar').innerHTML = `
                 <div class="stat-card">
-                    <div class="stat-number">${total}</div>
+                    <div class="stat-number" data-value="${total}">0</div>
                     <div class="stat-label">Total Ideas</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${favorited}</div>
+                    <div class="stat-number" data-value="${favorited}">0</div>
                     <div class="stat-label">Favorites</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${shipped}</div>
+                    <div class="stat-number" data-value="${shipped}">0</div>
                     <div class="stat-label">Shipped</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${building}</div>
+                    <div class="stat-number" data-value="${building}">0</div>
                     <div class="stat-label">Building</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${ideating}</div>
+                    <div class="stat-number" data-value="${ideating}">0</div>
                     <div class="stat-label">Ideating</div>
                 </div>
             `;
+
+            // ANIME.JS: Animate the numbers counting up, staggered
+            document.querySelectorAll('.stat-number').forEach((element, idx) => {
+                const targetValue = parseInt(element.getAttribute('data-value'));
+
+                anime({
+                    targets: { value: 0 },
+                    value: targetValue,
+                    duration: 800,
+                    easing: 'easeOutQuad',
+                    delay: idx * 100,  // Stagger each card by 100ms
+                    update(anim) {
+                        element.textContent = Math.round(anim.progress * targetValue);
+                    }
+                });
+            });
         }
 
+        // ==================== ANIME.JS: Modal Pop-In Animation ====================
         function openModal(event, id) {
             event.stopPropagation();
             const idea = allIdeas.find(i => i.id === id);
@@ -1379,6 +1394,7 @@
 
             const modal = document.getElementById('modal');
             const modalBody = document.getElementById('modalBody');
+            const modalContent = modal.querySelector('.modal-content');
 
             const modalStatus = ideaStatuses[idea.id] || 'IDEATING';
             modalBody.innerHTML = `
@@ -1408,10 +1424,32 @@
             `;
 
             modal.classList.add('active');
+
+            // ANIME.JS: Smooth pop-in animation for modal
+            anime({
+                targets: modalContent,
+                scale: [0.8, 1],
+                opacity: [0, 1],
+                duration: 400,
+                easing: 'easeOutCubic'
+            });
         }
 
+        // ==================== ANIME.JS: Modal Pop-Out Animation ====================
         function closeModal() {
-            document.getElementById('modal').classList.remove('active');
+            const modal = document.getElementById('modal');
+            const modalContent = modal.querySelector('.modal-content');
+
+            anime({
+                targets: modalContent,
+                scale: [1, 0.8],
+                opacity: [1, 0],
+                duration: 300,
+                easing: 'easeInCubic',
+                complete: () => {
+                    modal.classList.remove('active');
+                }
+            });
         }
 
         function toggleFavorite(event, ideaId) {
@@ -1422,7 +1460,6 @@
                 favorites.push(ideaId);
             }
             localStorage.setItem('favorites', JSON.stringify(favorites));
-            // Update UI without full re-render
             const btn = document.getElementById(`fav-${ideaId}`);
             if (btn) btn.textContent = favorites.includes(ideaId) ? 'Favorited' : 'Favorite';
             renderStats();
@@ -1435,10 +1472,8 @@
             const nextIdx = (statuses.indexOf(current) + 1) % statuses.length;
             ideaStatuses[ideaId] = statuses[nextIdx];
             localStorage.setItem('ideaStatuses', JSON.stringify(ideaStatuses));
-            // Update UI without full re-render
             const btn = event.target.closest('.card-btn');
             if (btn) btn.textContent = statuses[nextIdx];
-            // Update stats at top
             renderStats();
         }
 
@@ -1532,7 +1567,6 @@
             localStorage.setItem('localCategories', JSON.stringify(localCategories));
 
             closeAddCategoryModal();
-            // Optionally open add card modal with this category selected
             openAddCardModal();
             document.getElementById('cardCategory').value = categoryName;
         }
@@ -1545,31 +1579,27 @@
         }
 
         function deleteCard(ideaId) {
-            // Find the idea to move to deleted items
             const idea = allIdeas.find(i => i.id === ideaId);
             if (idea) {
                 deletedItems.push({
                     id: idea.id,
                     name: idea.name,
                     category: idea.category,
-                    data: idea // Store full data for recovery
+                    data: idea
                 });
                 localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
             }
 
-            // Remove from local cards if it's a local card
             if (ideaId.startsWith('local-')) {
                 localCards = localCards.filter(card => card.id !== ideaId);
                 localStorage.setItem('localCards', JSON.stringify(localCards));
             }
 
-            // Remove related data
             delete ideaStatuses[ideaId];
             favorites = favorites.filter(id => id !== ideaId);
             localStorage.setItem('ideaStatuses', JSON.stringify(ideaStatuses));
             localStorage.setItem('favorites', JSON.stringify(favorites));
 
-            // Re-render
             renderIdeas();
         }
 
@@ -1622,9 +1652,7 @@
             const itemIdx = deletedItems.findIndex(item => item.id === ideaId);
             if (itemIdx !== -1) {
                 const item = deletedItems[itemIdx];
-                // Add back to allIdeas
                 allIdeas.push(item.data);
-                // Remove from deleted items
                 deletedItems.splice(itemIdx, 1);
                 localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
                 renderDeletedItems();

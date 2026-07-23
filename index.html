@@ -1381,7 +1381,6 @@
             const modalBody = document.getElementById('modalBody');
 
             const modalStatus = ideaStatuses[idea.id] || 'IDEATING';
-            const modalImpact = ideaImpacts[idea.id] || 5;
             modalBody.innerHTML = `
                 <div class="modal-meta-row">
                     <div class="modal-meta-item">
@@ -1391,10 +1390,6 @@
                     <div class="modal-meta-item">
                         <div class="modal-meta-label">Priority</div>
                         <div class="modal-meta-value">P${idea.priority}</div>
-                    </div>
-                    <div class="modal-meta-item">
-                        <div class="modal-meta-label">Impact</div>
-                        <div class="modal-meta-value">${modalImpact}/10</div>
                     </div>
                     <div class="modal-meta-item">
                         <div class="modal-meta-label">Difficulty</div>

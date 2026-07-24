@@ -247,6 +247,21 @@
             border-color: rgba(100, 150, 255, 0.5);
         }
 
+        select option {
+            background: #1a1a1a;
+            color: #000000;
+        }
+
+        #cardCategory {
+            color: #000000;
+            background: #f0f0f0;
+        }
+
+        #cardCategory option {
+            background: #f0f0f0;
+            color: #000000;
+        }
+
         .carousel-section {
             margin-bottom: 120px;
         }
@@ -963,6 +978,7 @@
                 <input type="text" id="searchInput" placeholder="Search ideas..." onkeyup="renderIdeas()">
                 <button class="add-btn" onclick="openAddCardModal()">+ Add Card</button>
                 <button class="add-btn" onclick="openAddCategoryModal()">+ Add Category</button>
+                <button class="add-btn" onclick="openManageCategoriesModal()" title="Manage categories">⚙️ Categories</button>
             </div>
             <div class="filter-buttons">
                 <span class="filter-label">Priority:</span>
@@ -1071,6 +1087,16 @@
                     <button type="button" class="form-btn cancel-btn" onclick="closeAddCategoryModal()">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div id="manageCategoriesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Manage Categories</h2>
+                <button class="modal-close" onclick="closeManageCategoriesModal()">×</button>
+            </div>
+            <div id="categoriesList"></div>
         </div>
     </div>
 
@@ -1702,6 +1728,50 @@
             document.getElementById('addCategoryModal').classList.remove('active');
         }
 
+        function openManageCategoriesModal() {
+            const modal = document.getElementById('manageCategoriesModal');
+            const list = document.getElementById('categoriesList');
+
+            if (categories.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>No categories yet.</p></div>';
+            } else {
+                list.innerHTML = categories.sort().map(cat => `
+                    <div class="deleted-card-item">
+                        <div class="deleted-card-info">
+                            <div class="deleted-card-name">${escapeHtml(cat)}</div>
+                        </div>
+                        <div class="deleted-card-actions">
+                            <button class="permanent-delete-btn" onclick="deleteCategory('${cat}')">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeManageCategoriesModal() {
+            document.getElementById('manageCategoriesModal').classList.remove('active');
+        }
+
+        async function deleteCategory(categoryName) {
+            if (confirm(`Delete category "${categoryName}"?`)) {
+                try {
+                    const { error } = await sbClient
+                        .from('categories')
+                        .delete()
+                        .eq('name', categoryName);
+
+                    if (error) throw error;
+                    // Don't manually update - let real-time subscription handle it
+                    openManageCategoriesModal();
+                } catch (error) {
+                    console.error('Error deleting category:', error);
+                    alert('Failed to delete category');
+                }
+            }
+        }
+
         async function saveNewCategory(event) {
             event.preventDefault();
 
@@ -1793,6 +1863,10 @@
 
         document.getElementById('addCategoryModal').addEventListener('click', (e) => {
             if (e.target.id === 'addCategoryModal') closeAddCategoryModal();
+        });
+
+        document.getElementById('manageCategoriesModal').addEventListener('click', (e) => {
+            if (e.target.id === 'manageCategoriesModal') closeManageCategoriesModal();
         });
 
         initializeIdeas();

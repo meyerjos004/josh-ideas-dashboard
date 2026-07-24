@@ -392,7 +392,7 @@
             transform-style: preserve-3d;
             transform-origin: center center;
             cursor: pointer;
-            transition: transform 0.5s cubic-bezier(0.33, 0.66, 0.66, 1), opacity 0.5s cubic-bezier(0.33, 0.66, 0.66, 1);
+            transition: transform 2s cubic-bezier(0.33, 0.66, 0.66, 1), opacity 2s cubic-bezier(0.33, 0.66, 0.66, 1);
         }
 
         .idea-card-carousel.active {
@@ -1586,7 +1586,7 @@
                     const currentIdx = carouselIndices[categoryKey];
                     carouselIndices[categoryKey] = (currentIdx + 1) % ideas.length;
                     updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
-                }, 8000); // Cycle every 8 seconds - slow and consistent
+                }, 4000); // Cycle every 4 seconds
             }
 
             function stopCarouselCycle(categoryKey) {

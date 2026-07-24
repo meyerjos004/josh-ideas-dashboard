@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Josh's Ideas Dashboard</title>
-    <!-- ANIME.JS - Add this one line and you're good to go -->
+    <!-- ANIME.JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <!-- SUPABASE CLIENT -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -941,7 +943,6 @@
         <button class="sidebar-collapse-btn" onclick="toggleSidebar()" title="Collapse sidebar">☰</button>
         <div class="sidebar-nav">
             <button class="sidebar-btn active" id="homeBtn" onclick="showView('home')">Home</button>
-            <button class="sidebar-btn" id="deletedBtn" onclick="showView('deleted')">Deleted</button>
         </div>
     </div>
 
@@ -1074,20 +1075,123 @@
     </div>
 
     <script>
-        // Local-only storage, no Google Sheets
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://ibutllgwjgmmlydkcrzi.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_VdkNDTcxwk0lkWpppf9vtQ_jAq4adZn';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Data storage
         let allIdeas = [];
-        let localCards = JSON.parse(localStorage.getItem('localCards')) || [];
-        let localCategories = JSON.parse(localStorage.getItem('localCategories')) || [];
-        let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-        let ideaStatuses = JSON.parse(localStorage.getItem('ideaStatuses')) || {};
-        let deletedItems = JSON.parse(localStorage.getItem('deletedItems')) || [];
+        let favorites = [];
+        let ideaStatuses = {};
         const activeFilters = new Map();
         let carouselIndices = {};
+        let isLoading = true;
 
-        function initializeIdeas() {
-            // Everything is local to the website now
-            allIdeas = [...localCards];
-            renderIdeas();
+        async function initializeIdeas() {
+            try {
+                isLoading = true;
+
+                // Load ideas from Supabase
+                const { data: ideas, error: ideasError } = await supabase
+                    .from('ideas')
+                    .select('*');
+
+                if (ideasError) throw ideasError;
+                // Normalize snake_case to camelCase
+                allIdeas = (ideas || []).map(idea => ({
+                    ...idea,
+                    fullDescription: idea.full_description,
+                    hexColor: idea.hex_color,
+                    metrics: idea.metrics || {}
+                }));
+
+                // Load statuses
+                const { data: statuses, error: statusError } = await supabase
+                    .from('idea_statuses')
+                    .select('*');
+
+                if (statusError) throw statusError;
+                ideaStatuses = {};
+                (statuses || []).forEach(s => {
+                    ideaStatuses[s.idea_id] = s.status;
+                });
+
+                // Load favorites
+                const { data: favs, error: favsError } = await supabase
+                    .from('favorites')
+                    .select('idea_id');
+
+                if (favsError) throw favsError;
+                favorites = (favs || []).map(f => f.idea_id);
+
+                isLoading = false;
+                renderIdeas();
+
+                // Subscribe to real-time updates
+                subscribeToUpdates();
+            } catch (error) {
+                console.error('Error loading ideas:', error);
+                isLoading = false;
+            }
+        }
+
+        function subscribeToUpdates() {
+            // Listen for changes to ideas
+            supabase
+                .channel('ideas_channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'ideas' }, payload => {
+                    if (payload.eventType === 'INSERT') {
+                        const normalized = {
+                            ...payload.new,
+                            fullDescription: payload.new.full_description,
+                            hexColor: payload.new.hex_color,
+                            metrics: payload.new.metrics || {}
+                        };
+                        allIdeas.push(normalized);
+                    } else if (payload.eventType === 'UPDATE') {
+                        const idx = allIdeas.findIndex(i => i.id === payload.new.id);
+                        if (idx >= 0) {
+                            const normalized = {
+                                ...payload.new,
+                                fullDescription: payload.new.full_description,
+                                hexColor: payload.new.hex_color,
+                                metrics: payload.new.metrics || {}
+                            };
+                            allIdeas[idx] = normalized;
+                        }
+                    } else if (payload.eventType === 'DELETE') {
+                        allIdeas = allIdeas.filter(i => i.id !== payload.old.id);
+                    }
+                    renderIdeas();
+                })
+                .subscribe();
+
+            // Listen for status changes
+            supabase
+                .channel('statuses_channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'idea_statuses' }, payload => {
+                    if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+                        ideaStatuses[payload.new.idea_id] = payload.new.status;
+                    } else if (payload.eventType === 'DELETE') {
+                        delete ideaStatuses[payload.old.idea_id];
+                    }
+                    renderIdeas();
+                })
+                .subscribe();
+
+            // Listen for favorites changes
+            supabase
+                .channel('favorites_channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'favorites' }, payload => {
+                    if (payload.eventType === 'INSERT') {
+                        favorites.push(payload.new.idea_id);
+                    } else if (payload.eventType === 'DELETE') {
+                        favorites = favorites.filter(f => f !== payload.old.idea_id);
+                    }
+                    renderIdeas();
+                })
+                .subscribe();
         }
 
         function toggleFilter(type, value) {
@@ -1456,29 +1560,44 @@
             });
         }
 
-        function toggleFavorite(event, ideaId) {
+        async function toggleFavorite(event, ideaId) {
             event.stopPropagation();
-            if (favorites.includes(ideaId)) {
-                favorites = favorites.filter(id => id !== ideaId);
-            } else {
-                favorites.push(ideaId);
+            try {
+                if (favorites.includes(ideaId)) {
+                    const { error } = await supabase
+                        .from('favorites')
+                        .delete()
+                        .eq('idea_id', ideaId);
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabase
+                        .from('favorites')
+                        .insert([{ id: `fav-${ideaId}`, idea_id: ideaId }]);
+                    if (error) throw error;
+                }
+                // Don't manually update - let real-time subscription handle it
+            } catch (error) {
+                console.error('Error toggling favorite:', error);
             }
-            localStorage.setItem('favorites', JSON.stringify(favorites));
-            const btn = document.getElementById(`fav-${ideaId}`);
-            if (btn) btn.textContent = favorites.includes(ideaId) ? 'Favorited' : 'Favorite';
-            renderStats();
         }
 
-        function cycleStatus(event, ideaId) {
+        async function cycleStatus(event, ideaId) {
             event.stopPropagation();
-            const statuses = ['IDEATING', 'BUILDING', 'SHIPPED'];
-            const current = ideaStatuses[ideaId] || 'IDEATING';
-            const nextIdx = (statuses.indexOf(current) + 1) % statuses.length;
-            ideaStatuses[ideaId] = statuses[nextIdx];
-            localStorage.setItem('ideaStatuses', JSON.stringify(ideaStatuses));
-            const btn = event.target.closest('.card-btn');
-            if (btn) btn.textContent = statuses[nextIdx];
-            renderStats();
+            try {
+                const statuses = ['IDEATING', 'BUILDING', 'SHIPPED'];
+                const current = ideaStatuses[ideaId] || 'IDEATING';
+                const nextIdx = (statuses.indexOf(current) + 1) % statuses.length;
+                const nextStatus = statuses[nextIdx];
+
+                const { error } = await supabase
+                    .from('idea_statuses')
+                    .upsert({ idea_id: ideaId, status: nextStatus });
+
+                if (error) throw error;
+                // Don't manually update - let real-time subscription handle it
+            } catch (error) {
+                console.error('Error changing status:', error);
+            }
         }
 
         function getLuminance(hexColor) {
@@ -1494,7 +1613,6 @@
             const modal = document.getElementById('addCardModal');
             const categories = new Set();
             allIdeas.forEach(idea => categories.add(idea.category));
-            localCategories.forEach(cat => categories.add(cat));
 
             const select = document.getElementById('cardCategory');
             select.innerHTML = '<option value="">Select or create category</option>';
@@ -1518,7 +1636,7 @@
             document.getElementById('cardCategory').value = '';
         }
 
-        function saveNewCard(event) {
+        async function saveNewCard(event) {
             event.preventDefault();
 
             const category = document.getElementById('cardCategory').value || 'Other';
@@ -1533,20 +1651,27 @@
                 category,
                 name,
                 description,
-                fullDescription,
+                full_description: fullDescription,
                 priority,
-                hexColor,
+                hex_color: hexColor,
                 brand: 'default',
                 tags: [],
-                metrics: { difficulty: 'Medium' }
+                difficulty: 'Medium'
             };
 
-            localCards.push(newCard);
-            localStorage.setItem('localCards', JSON.stringify(localCards));
+            try {
+                const { error } = await supabase
+                    .from('ideas')
+                    .insert([newCard]);
 
-            allIdeas.push(newCard);
-            closeAddCardModal();
-            renderIdeas();
+                if (error) throw error;
+
+                closeAddCardModal();
+                // Don't manually push - let real-time subscription handle it
+            } catch (error) {
+                console.error('Error saving card:', error);
+                alert('Failed to save card');
+            }
         }
 
         function openAddCategoryModal() {
@@ -1562,13 +1687,10 @@
             event.preventDefault();
 
             const categoryName = document.getElementById('categoryName').value;
-            if (!categoryName || localCategories.includes(categoryName)) {
-                alert('Category already exists or is empty');
+            if (!categoryName) {
+                alert('Category name cannot be empty');
                 return;
             }
-
-            localCategories.push(categoryName);
-            localStorage.setItem('localCategories', JSON.stringify(localCategories));
 
             closeAddCategoryModal();
             openAddCardModal();
@@ -1582,29 +1704,20 @@
             }
         }
 
-        function deleteCard(ideaId) {
-            const idea = allIdeas.find(i => i.id === ideaId);
-            if (idea) {
-                deletedItems.push({
-                    id: idea.id,
-                    name: idea.name,
-                    category: idea.category,
-                    data: idea
-                });
-                localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
+        async function deleteCard(ideaId) {
+            try {
+                // Delete from Supabase - this will cascade to related records
+                const { error } = await supabase
+                    .from('ideas')
+                    .delete()
+                    .eq('id', ideaId);
+
+                if (error) throw error;
+                // Don't manually update - let real-time subscription handle it
+            } catch (error) {
+                console.error('Error deleting card:', error);
+                alert('Failed to delete card');
             }
-
-            if (ideaId.startsWith('local-')) {
-                localCards = localCards.filter(card => card.id !== ideaId);
-                localStorage.setItem('localCards', JSON.stringify(localCards));
-            }
-
-            delete ideaStatuses[ideaId];
-            favorites = favorites.filter(id => id !== ideaId);
-            localStorage.setItem('ideaStatuses', JSON.stringify(ideaStatuses));
-            localStorage.setItem('favorites', JSON.stringify(favorites));
-
-            renderIdeas();
         }
 
         function toggleSidebar() {
@@ -1616,78 +1729,20 @@
 
         function showView(view) {
             const homeView = document.getElementById('homeView');
-            const deletedView = document.getElementById('deletedView');
             const homeBtn = document.getElementById('homeBtn');
-            const deletedBtn = document.getElementById('deletedBtn');
 
             if (view === 'home') {
                 homeView.style.display = 'block';
-                deletedView.style.display = 'none';
                 homeBtn.classList.add('active');
-                deletedBtn.classList.remove('active');
-                renderIdeas();
-            } else if (view === 'deleted') {
-                homeView.style.display = 'none';
-                deletedView.style.display = 'block';
-                homeBtn.classList.remove('active');
-                deletedBtn.classList.add('active');
-                renderDeletedItems();
-            }
-        }
-
-        function renderDeletedItems() {
-            const deletedContent = document.getElementById('deletedContent');
-
-            if (deletedItems.length === 0) {
-                deletedContent.innerHTML = '<div class="empty-state"><p>No deleted ideas.</p></div>';
-                return;
-            }
-
-            const html = deletedItems.map(item => `
-                <div class="deleted-card-item">
-                    <div class="deleted-card-info">
-                        <div class="deleted-card-name">${escapeHtml(item.name)}</div>
-                        <div class="deleted-card-category">${escapeHtml(item.category)}</div>
-                    </div>
-                    <div class="deleted-card-actions">
-                        <button class="recover-btn" onclick="recoverCard('${item.id}')">Recover</button>
-                        <button class="permanent-delete-btn" onclick="permanentlyDelete('${item.id}')">Delete Forever</button>
-                    </div>
-                </div>
-            `).join('');
-
-            deletedContent.innerHTML = html;
-        }
-
-        function recoverCard(ideaId) {
-            const itemIdx = deletedItems.findIndex(item => item.id === ideaId);
-            if (itemIdx !== -1) {
-                const item = deletedItems[itemIdx];
-                allIdeas.push(item.data);
-                deletedItems.splice(itemIdx, 1);
-                localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
-                renderDeletedItems();
                 renderIdeas();
             }
         }
 
-        function permanentlyDelete(ideaId) {
-            if (confirm('Are you absolutely sure? This cannot be undone.')) {
-                const itemIdx = deletedItems.findIndex(item => item.id === ideaId);
-                if (itemIdx !== -1) {
-                    deletedItems.splice(itemIdx, 1);
-                    localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
-                    renderDeletedItems();
-                }
-            }
-        }
-
-        function refreshIdeas() {
+        async function refreshIdeas() {
             const btn = document.querySelector('.refresh-btn');
             btn.classList.add('loading');
-            // Reload from localStorage and re-render
-            localCards = JSON.parse(localStorage.getItem('localCards')) || [];
-            initializeIdeas();
+            // Reload from Supabase and re-render
+            await initializeIdeas();
             btn.classList.remove('loading');
         }
 

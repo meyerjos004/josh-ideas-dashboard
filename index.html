@@ -312,6 +312,26 @@
             overflow: visible;
         }
 
+        .carousel-scroll-hint {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 2.5rem;
+            color: rgba(100, 150, 255, 0.4);
+            user-select: none;
+            pointer-events: none;
+            font-weight: 300;
+            z-index: 10;
+        }
+
+        .carousel-scroll-hint.left {
+            left: -40px;
+        }
+
+        .carousel-scroll-hint.right {
+            right: -40px;
+        }
+
         .carousel-3d:active {
             cursor: grabbing;
         }
@@ -1403,6 +1423,8 @@
                             <div class="carousel-section-count">${ideas.length} ideas</div>
                         </div>
                         <div class="carousel-3d">
+                            <div class="carousel-scroll-hint left">❮</div>
+                            <div class="carousel-scroll-hint right">❯</div>
                             <div class="carousel-3d-inner" style="transform-style: preserve-3d;">
                                 ${cardsHtml}
                             </div>
@@ -1442,11 +1464,37 @@
                 }
             });
 
-            // Add scroll listeners to all carousels
+            // Add scroll listeners to all carousels and animate scroll hints
             document.querySelectorAll('.carousel-3d').forEach((carousel, idx) => {
                 const categoryKey = categories[idx];
                 if (!carouselIndices[categoryKey]) {
                     carouselIndices[categoryKey] = 0;
+                }
+
+                // Animate scroll hints
+                const leftHint = carousel.querySelector('.carousel-scroll-hint.left');
+                const rightHint = carousel.querySelector('.carousel-scroll-hint.right');
+
+                if (leftHint && rightHint) {
+                    // Left chevron floats left and back
+                    anime.timeline({ loop: true })
+                        .add({
+                            targets: leftHint,
+                            translateX: [-8, 0],
+                            opacity: [0.3, 0.6, 0.3],
+                            duration: 1500,
+                            easing: 'easeInOutQuad'
+                        }, 0);
+
+                    // Right chevron floats right and back
+                    anime.timeline({ loop: true })
+                        .add({
+                            targets: rightHint,
+                            translateX: [8, 0],
+                            opacity: [0.3, 0.6, 0.3],
+                            duration: 1500,
+                            easing: 'easeInOutQuad'
+                        }, 0);
                 }
 
                 carousel.addEventListener('wheel', (e) => {

@@ -312,24 +312,56 @@
             overflow: visible;
         }
 
-        .carousel-scroll-hint {
+        .scroll-indicator {
             position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 2.5rem;
-            color: rgba(100, 150, 255, 0.4);
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
             user-select: none;
             pointer-events: none;
-            font-weight: 300;
             z-index: 10;
         }
 
-        .carousel-scroll-hint.left {
-            left: -40px;
+        .mouse-wheel {
+            width: 30px;
+            height: 50px;
+            border: 2px solid rgba(100, 150, 255, 0.6);
+            border-radius: 15px;
+            position: relative;
+            margin: 0 auto;
         }
 
-        .carousel-scroll-hint.right {
-            right: -40px;
+        .mouse-wheel::before {
+            content: '';
+            position: absolute;
+            width: 3px;
+            height: 8px;
+            background: rgba(100, 150, 255, 0.6);
+            left: 50%;
+            top: 8px;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        .wheel-scroll {
+            position: absolute;
+            width: 3px;
+            height: 6px;
+            background: rgba(100, 150, 255, 0.8);
+            left: 50%;
+            top: 15px;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        .scroll-text {
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgba(100, 150, 255, 0.5);
+            margin-top: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
         }
 
         .carousel-3d:active {
@@ -1423,8 +1455,12 @@
                             <div class="carousel-section-count">${ideas.length} ideas</div>
                         </div>
                         <div class="carousel-3d">
-                            <div class="carousel-scroll-hint left">❮</div>
-                            <div class="carousel-scroll-hint right">❯</div>
+                            <div class="scroll-indicator">
+                                <div class="mouse-wheel">
+                                    <div class="wheel-scroll"></div>
+                                </div>
+                                <div class="scroll-text">Scroll</div>
+                            </div>
                             <div class="carousel-3d-inner" style="transform-style: preserve-3d;">
                                 ${cardsHtml}
                             </div>
@@ -1471,30 +1507,50 @@
                     carouselIndices[categoryKey] = 0;
                 }
 
-                // Animate scroll hints
-                const leftHint = carousel.querySelector('.carousel-scroll-hint.left');
-                const rightHint = carousel.querySelector('.carousel-scroll-hint.right');
+                // Animate scroll indicator
+                const scrollIndicator = carousel.querySelector('.scroll-indicator');
+                const mouseWheel = carousel.querySelector('.mouse-wheel');
+                const wheelScroll = carousel.querySelector('.wheel-scroll');
 
-                if (leftHint && rightHint) {
-                    // Left chevron floats left and back
+                if (scrollIndicator && mouseWheel && wheelScroll) {
                     anime.timeline({ loop: true })
+                        // Zoom in
                         .add({
-                            targets: leftHint,
-                            translateX: [-8, 0],
-                            opacity: [0.3, 0.6, 0.3],
-                            duration: 1500,
-                            easing: 'easeInOutQuad'
-                        }, 0);
-
-                    // Right chevron floats right and back
-                    anime.timeline({ loop: true })
+                            targets: mouseWheel,
+                            scale: [1, 1.2],
+                            opacity: [0.5, 1],
+                            duration: 300,
+                            easing: 'easeOutQuad'
+                        }, 0)
+                        // Scroll wheel down
                         .add({
-                            targets: rightHint,
-                            translateX: [8, 0],
-                            opacity: [0.3, 0.6, 0.3],
-                            duration: 1500,
-                            easing: 'easeInOutQuad'
-                        }, 0);
+                            targets: wheelScroll,
+                            translateY: [0, 8],
+                            opacity: [1, 0],
+                            duration: 400,
+                            easing: 'easeInQuad'
+                        }, 300)
+                        // Scroll wheel up (reset from top)
+                        .add({
+                            targets: wheelScroll,
+                            translateY: [-8, 8],
+                            opacity: [1, 0],
+                            duration: 400,
+                            easing: 'easeInQuad'
+                        }, 700)
+                        // Zoom out
+                        .add({
+                            targets: mouseWheel,
+                            scale: [1.2, 1],
+                            opacity: [1, 0.5],
+                            duration: 300,
+                            easing: 'easeInQuad'
+                        }, 900)
+                        // Pause before repeating
+                        .add({
+                            targets: wheelScroll,
+                            duration: 800
+                        }, 1200);
                 }
 
                 carousel.addEventListener('wheel', (e) => {

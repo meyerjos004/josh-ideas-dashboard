@@ -1663,7 +1663,8 @@
         async function toggleFavorite(event, ideaId) {
             event.stopPropagation();
             try {
-                if (favorites.includes(ideaId)) {
+                const isFavorited = favorites.includes(ideaId);
+                if (isFavorited) {
                     favorites = favorites.filter(f => f !== ideaId);
                     const { error } = await sbClient
                         .from('favorites')
@@ -1677,7 +1678,12 @@
                         .insert([{ id: `fav-${ideaId}`, idea_id: ideaId }]);
                     if (error) throw error;
                 }
-                renderIdeas();
+                // Update button text only
+                const favBtn = document.querySelector(`#fav-${ideaId}`);
+                if (favBtn) {
+                    favBtn.textContent = favorites.includes(ideaId) ? 'Favorited' : 'Favorite';
+                }
+                renderStats();
             } catch (error) {
                 console.error('Error toggling favorite:', error);
             }
@@ -1697,7 +1703,18 @@
                     .upsert({ idea_id: ideaId, status: nextStatus });
 
                 if (error) throw error;
-                renderIdeas();
+
+                // Find and update the status button only
+                const cards = document.querySelectorAll('.idea-card-carousel');
+                cards.forEach(card => {
+                    if (card.onclick && card.onclick.toString().includes(ideaId)) {
+                        const statusBtn = card.querySelector('.card-btn:first-of-type');
+                        if (statusBtn) {
+                            statusBtn.textContent = nextStatus;
+                        }
+                    }
+                });
+                renderStats();
             } catch (error) {
                 console.error('Error changing status:', error);
             }
@@ -1838,8 +1855,10 @@
 
                 if (error) throw error;
 
-                // Update local state immediately
+                // Update local state
                 const ideaIdx = allIdeas.findIndex(i => i.id === currentEditCardId);
+                const oldCategory = ideaIdx >= 0 ? allIdeas[ideaIdx].category : null;
+
                 if (ideaIdx >= 0) {
                     allIdeas[ideaIdx] = {
                         ...allIdeas[ideaIdx],
@@ -1853,7 +1872,36 @@
                 }
 
                 closeEditCardModal();
-                renderIdeas();
+
+                // If category changed, need to re-render. Otherwise just update the card
+                if (category !== oldCategory) {
+                    renderIdeas();
+                } else {
+                    // Just update the card UI without full re-render
+                    const cards = document.querySelectorAll('.idea-card-carousel');
+                    cards.forEach(card => {
+                        if (card.onclick && card.onclick.toString().includes(currentEditCardId)) {
+                            const nameEl = card.querySelector('.card-name');
+                            const descEl = card.querySelector('.card-description');
+                            const priorityEl = card.querySelector('.card-meta');
+
+                            if (nameEl) nameEl.textContent = name;
+                            if (descEl) descEl.textContent = description;
+                            if (priorityEl) priorityEl.innerHTML = `<div><strong>P${priority}</strong></div>`;
+
+                            // Update card colors
+                            const face = card.querySelector('.idea-card-face');
+                            if (face && hexColor) {
+                                const hex = hexColor.replace('#', '');
+                                const r = parseInt(hex.substring(0, 2), 16);
+                                const g = parseInt(hex.substring(2, 4), 16);
+                                const b = parseInt(hex.substring(4, 6), 16);
+                                face.style.background = `linear-gradient(180deg, ${hexColor} 0%, rgba(${r}, ${g}, ${b}, 0.1) 100%)`;
+                                face.style.borderColor = `rgba(${r}, ${g}, ${b}, 0.3)`;
+                            }
+                        }
+                    });
+                }
             } catch (error) {
                 console.error('Error saving card:', error);
                 alert('Failed to save card');
@@ -1905,7 +1953,24 @@
                         .eq('name', categoryName);
 
                     if (error) throw error;
-                    openManageCategoriesModal();
+
+                    // Update the manage categories list without re-rendering
+                    const list = document.getElementById('categoriesList');
+                    const items = list.querySelectorAll('.deleted-card-item');
+                    items.forEach(item => {
+                        if (item.textContent.includes(categoryName)) {
+                            item.style.opacity = '0';
+                            item.style.transition = 'opacity 0.3s ease';
+                            setTimeout(() => item.remove(), 300);
+                        }
+                    });
+
+                    // If no categories left, show empty state
+                    if (categories.length === 0) {
+                        setTimeout(() => {
+                            list.innerHTML = '<div class="empty-state"><p>No categories yet.</p></div>';
+                        }, 300);
+                    }
                 } catch (error) {
                     console.error('Error deleting category:', error);
                     alert('Failed to delete category');
@@ -1948,6 +2013,21 @@
 
         async function deleteCard(ideaId) {
             try {
+                // Find and fade out the card
+                const cards = document.querySelectorAll('.idea-card-carousel');
+                let cardToDelete = null;
+                cards.forEach(card => {
+                    if (card.onclick && card.onclick.toString().includes(ideaId)) {
+                        cardToDelete = card;
+                    }
+                });
+
+                if (cardToDelete) {
+                    cardToDelete.style.opacity = '0';
+                    cardToDelete.style.pointerEvents = 'none';
+                    cardToDelete.style.transition = 'opacity 0.3s ease';
+                }
+
                 allIdeas = allIdeas.filter(i => i.id !== ideaId);
                 const { error } = await sbClient
                     .from('ideas')
@@ -1955,7 +2035,9 @@
                     .eq('id', ideaId);
 
                 if (error) throw error;
-                renderIdeas();
+
+                // After animation, re-render just the category
+                setTimeout(() => renderIdeas(), 300);
             } catch (error) {
                 console.error('Error deleting card:', error);
                 alert('Failed to delete card');

@@ -1793,9 +1793,10 @@
         function openAddCardModal() {
             const modal = document.getElementById('addCardModal');
 
+            // Refresh category dropdown with latest categories
             const select = document.getElementById('cardCategory');
             select.innerHTML = '<option value="">Select or create category</option>';
-            categories.sort().forEach(cat => {
+            [...new Set(categories)].sort().forEach(cat => {
                 const opt = document.createElement('option');
                 opt.value = cat;
                 opt.textContent = cat;
@@ -1863,10 +1864,10 @@
             currentEditCardId = ideaId;
             const modal = document.getElementById('editCardModal');
 
-            // Populate category dropdown
+            // Populate category dropdown with latest categories
             const categorySelect = document.getElementById('editCardCategory');
             categorySelect.innerHTML = '<option value="">Select category</option>';
-            categories.sort().forEach(cat => {
+            [...new Set(categories)].sort().forEach(cat => {
                 const opt = document.createElement('option');
                 opt.value = cat;
                 opt.textContent = cat;
@@ -2049,6 +2050,11 @@
             }
 
             try {
+                // Add to local categories immediately (avoid duplicates)
+                if (!categories.includes(categoryName)) {
+                    categories.push(categoryName);
+                }
+
                 // Save category to Supabase
                 const { error } = await sbClient
                     .from('categories')
@@ -2057,8 +2063,6 @@
                 if (error) throw error;
 
                 closeAddCategoryModal();
-                openAddCardModal();
-                document.getElementById('cardCategory').value = categoryName;
             } catch (error) {
                 console.error('Error saving category:', error);
                 alert('Failed to save category');

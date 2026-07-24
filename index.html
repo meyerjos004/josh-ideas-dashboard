@@ -252,14 +252,25 @@
             color: #000000;
         }
 
-        #cardCategory {
+        #cardCategory,
+        #editCardCategory {
             color: #000000;
             background: #f0f0f0;
         }
 
-        #cardCategory option {
+        #cardCategory option,
+        #editCardCategory option {
             background: #f0f0f0;
             color: #000000;
+        }
+
+        input[type="color"] {
+            width: 60px;
+            height: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 2px;
         }
 
         .carousel-section {
@@ -1100,6 +1111,47 @@
         </div>
     </div>
 
+    <div id="editCardModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Card</h2>
+                <button class="modal-close" onclick="closeEditCardModal()">×</button>
+            </div>
+            <form onsubmit="saveEditedCard(event)" class="add-card-form">
+                <div class="form-group">
+                    <label for="editCardCategory">Category</label>
+                    <select id="editCardCategory" required>
+                        <option value="">Select category</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editCardName">Name</label>
+                    <input type="text" id="editCardName" required placeholder="Card name">
+                </div>
+                <div class="form-group">
+                    <label for="editCardDescription">Description</label>
+                    <textarea id="editCardDescription" placeholder="Short description" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editCardFullDescription">Full Description</label>
+                    <textarea id="editCardFullDescription" placeholder="Detailed description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editCardPriority">Priority (1-5)</label>
+                    <input type="number" id="editCardPriority" min="1" max="5" value="3" required>
+                </div>
+                <div class="form-group">
+                    <label for="editCardColor">Color (Hex)</label>
+                    <input type="color" id="editCardColor" value="#6496ff">
+                </div>
+                <div class="form-buttons">
+                    <button type="submit" class="form-btn save-btn">Save Changes</button>
+                    <button type="button" class="form-btn cancel-btn" onclick="closeEditCardModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // Supabase Configuration
         const SUPABASE_URL = 'https://ibutllgwjgmmlydkcrzi.supabase.co';
@@ -1336,6 +1388,7 @@
                                 </div>
                                 <div class="card-footer">
                                     <div class="card-expand-hint">Click to expand</div>
+                                    <button class="card-btn" onclick="openEditCardModal(event, '${idea.id}')" title="Edit card">Edit</button>
                                     <button class="card-btn delete-btn" onclick="confirmDelete(event, '${idea.id}')" title="Delete card">Delete</button>
                                 </div>
                             </div>
@@ -1611,18 +1664,20 @@
             event.stopPropagation();
             try {
                 if (favorites.includes(ideaId)) {
+                    favorites = favorites.filter(f => f !== ideaId);
                     const { error } = await sbClient
                         .from('favorites')
                         .delete()
                         .eq('idea_id', ideaId);
                     if (error) throw error;
                 } else {
+                    favorites.push(ideaId);
                     const { error } = await sbClient
                         .from('favorites')
                         .insert([{ id: `fav-${ideaId}`, idea_id: ideaId }]);
                     if (error) throw error;
                 }
-                // Don't manually update - let real-time subscription handle it
+                renderIdeas();
             } catch (error) {
                 console.error('Error toggling favorite:', error);
             }
@@ -1636,12 +1691,13 @@
                 const nextIdx = (statuses.indexOf(current) + 1) % statuses.length;
                 const nextStatus = statuses[nextIdx];
 
+                ideaStatuses[ideaId] = nextStatus;
                 const { error } = await sbClient
                     .from('idea_statuses')
                     .upsert({ idea_id: ideaId, status: nextStatus });
 
                 if (error) throw error;
-                // Don't manually update - let real-time subscription handle it
+                renderIdeas();
             } catch (error) {
                 console.error('Error changing status:', error);
             }
@@ -1719,6 +1775,91 @@
             }
         }
 
+        let currentEditCardId = null;
+
+        function openEditCardModal(event, ideaId) {
+            event.stopPropagation();
+            const idea = allIdeas.find(i => i.id === ideaId);
+            if (!idea) return;
+
+            currentEditCardId = ideaId;
+            const modal = document.getElementById('editCardModal');
+
+            // Populate category dropdown
+            const categorySelect = document.getElementById('editCardCategory');
+            categorySelect.innerHTML = '<option value="">Select category</option>';
+            categories.sort().forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                if (cat === idea.category) opt.selected = true;
+                categorySelect.appendChild(opt);
+            });
+
+            // Populate form fields
+            document.getElementById('editCardName').value = idea.name;
+            document.getElementById('editCardDescription').value = idea.description;
+            document.getElementById('editCardFullDescription').value = idea.fullDescription || '';
+            document.getElementById('editCardPriority').value = idea.priority;
+            document.getElementById('editCardColor').value = idea.hexColor || '#6496ff';
+
+            modal.classList.add('active');
+        }
+
+        function closeEditCardModal() {
+            document.getElementById('editCardModal').classList.remove('active');
+            currentEditCardId = null;
+        }
+
+        async function saveEditedCard(event) {
+            event.preventDefault();
+
+            if (!currentEditCardId) return;
+
+            const category = document.getElementById('editCardCategory').value;
+            const name = document.getElementById('editCardName').value;
+            const description = document.getElementById('editCardDescription').value;
+            const fullDescription = document.getElementById('editCardFullDescription').value || description;
+            const priority = parseInt(document.getElementById('editCardPriority').value);
+            const hexColor = document.getElementById('editCardColor').value;
+
+            try {
+                const { error } = await sbClient
+                    .from('ideas')
+                    .update({
+                        category,
+                        name,
+                        description,
+                        full_description: fullDescription,
+                        priority,
+                        hex_color: hexColor
+                    })
+                    .eq('id', currentEditCardId);
+
+                if (error) throw error;
+
+                // Update local state immediately
+                const ideaIdx = allIdeas.findIndex(i => i.id === currentEditCardId);
+                if (ideaIdx >= 0) {
+                    allIdeas[ideaIdx] = {
+                        ...allIdeas[ideaIdx],
+                        category,
+                        name,
+                        description,
+                        fullDescription,
+                        priority,
+                        hexColor
+                    };
+                }
+
+                closeEditCardModal();
+                renderIdeas();
+            } catch (error) {
+                console.error('Error saving card:', error);
+                alert('Failed to save card');
+            }
+        }
+
         function openAddCategoryModal() {
             document.getElementById('addCategoryModal').classList.add('active');
             document.getElementById('categoryName').value = '';
@@ -1757,13 +1898,13 @@
         async function deleteCategory(categoryName) {
             if (confirm(`Delete category "${categoryName}"?`)) {
                 try {
+                    categories = categories.filter(c => c !== categoryName);
                     const { error } = await sbClient
                         .from('categories')
                         .delete()
                         .eq('name', categoryName);
 
                     if (error) throw error;
-                    // Don't manually update - let real-time subscription handle it
                     openManageCategoriesModal();
                 } catch (error) {
                     console.error('Error deleting category:', error);
@@ -1807,14 +1948,14 @@
 
         async function deleteCard(ideaId) {
             try {
-                // Delete from Supabase - this will cascade to related records
+                allIdeas = allIdeas.filter(i => i.id !== ideaId);
                 const { error } = await sbClient
                     .from('ideas')
                     .delete()
                     .eq('id', ideaId);
 
                 if (error) throw error;
-                // Don't manually update - let real-time subscription handle it
+                renderIdeas();
             } catch (error) {
                 console.error('Error deleting card:', error);
                 alert('Failed to delete card');
@@ -1867,6 +2008,10 @@
 
         document.getElementById('manageCategoriesModal').addEventListener('click', (e) => {
             if (e.target.id === 'manageCategoriesModal') closeManageCategoriesModal();
+        });
+
+        document.getElementById('editCardModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editCardModal') closeEditCardModal();
         });
 
         initializeIdeas();

@@ -1084,6 +1084,7 @@
         let allIdeas = [];
         let favorites = [];
         let ideaStatuses = {};
+        let categories = [];
         const activeFilters = new Map();
         let carouselIndices = {};
         let isLoading = true;
@@ -1124,6 +1125,14 @@
 
                 if (favsError) throw favsError;
                 favorites = (favs || []).map(f => f.idea_id);
+
+                // Load categories
+                const { data: cats, error: catsError } = await sbClient
+                    .from('categories')
+                    .select('name');
+
+                if (catsError) throw catsError;
+                categories = (cats || []).map(c => c.name);
 
                 isLoading = false;
                 renderIdeas();
@@ -1190,6 +1199,18 @@
                         favorites = favorites.filter(f => f !== payload.old.idea_id);
                     }
                     renderIdeas();
+                })
+                .subscribe();
+
+            // Listen for category changes
+            sbClient
+                .channel('categories_channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, payload => {
+                    if (payload.eventType === 'INSERT') {
+                        categories.push(payload.new.name);
+                    } else if (payload.eventType === 'DELETE') {
+                        categories = categories.filter(c => c !== payload.old.name);
+                    }
                 })
                 .subscribe();
         }
@@ -1611,12 +1632,10 @@
 
         function openAddCardModal() {
             const modal = document.getElementById('addCardModal');
-            const categories = new Set();
-            allIdeas.forEach(idea => categories.add(idea.category));
 
             const select = document.getElementById('cardCategory');
             select.innerHTML = '<option value="">Select or create category</option>';
-            Array.from(categories).sort().forEach(cat => {
+            categories.sort().forEach(cat => {
                 const opt = document.createElement('option');
                 opt.value = cat;
                 opt.textContent = cat;
@@ -1683,7 +1702,7 @@
             document.getElementById('addCategoryModal').classList.remove('active');
         }
 
-        function saveNewCategory(event) {
+        async function saveNewCategory(event) {
             event.preventDefault();
 
             const categoryName = document.getElementById('categoryName').value;
@@ -1692,9 +1711,21 @@
                 return;
             }
 
-            closeAddCategoryModal();
-            openAddCardModal();
-            document.getElementById('cardCategory').value = categoryName;
+            try {
+                // Save category to Supabase
+                const { error } = await sbClient
+                    .from('categories')
+                    .insert([{ name: categoryName }]);
+
+                if (error) throw error;
+
+                closeAddCategoryModal();
+                openAddCardModal();
+                document.getElementById('cardCategory').value = categoryName;
+            } catch (error) {
+                console.error('Error saving category:', error);
+                alert('Failed to save category');
+            }
         }
 
         function confirmDelete(event, ideaId) {

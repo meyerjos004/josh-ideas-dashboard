@@ -1033,6 +1033,10 @@
             <p class="subtitle">3D Carousel of Innovation</p>
             <div class="header-controls">
                 <button class="refresh-btn" onclick="refreshIdeas()">Refresh</button>
+                <div id="activeUsers" style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; background: rgba(76, 222, 128, 0.1); border: 1px solid rgba(76, 222, 128, 0.3); border-radius: 6px; font-size: 0.85rem;">
+                    <span style="width: 8px; height: 8px; background: #4cde80; border-radius: 50%; display: inline-block;"></span>
+                    <span id="activeUserCount">1 active</span>
+                </div>
             </div>
         </header>
 
@@ -1223,9 +1227,12 @@
         let favorites = [];
         let ideaStatuses = {};
         let categories = [];
+        let activeSessions = [];
         const activeFilters = new Map();
         let carouselIndices = {};
+        let carouselIntervals = {};
         let isLoading = true;
+        let currentSessionId = null;
 
         async function initializeIdeas() {
             try {
@@ -1277,9 +1284,79 @@
 
                 // Subscribe to real-time updates
                 subscribeToUpdates();
+
+                // Initialize active sessions
+                initializeSession();
             } catch (error) {
                 console.error('Error loading ideas:', error);
                 isLoading = false;
+            }
+        }
+
+        async function initializeSession() {
+            try {
+                // Create a unique session ID for this browser
+                currentSessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+                // Create session record
+                const { error } = await sbClient
+                    .from('active_sessions')
+                    .insert([{
+                        id: currentSessionId,
+                        last_active: new Date().toISOString()
+                    }]);
+
+                if (error && error.code !== 'PGRST116') throw error; // Ignore "relations does not exist" error
+
+                // Update session every 30 seconds
+                setInterval(async () => {
+                    if (!currentSessionId) return;
+                    await sbClient
+                        .from('active_sessions')
+                        .update({ last_active: new Date().toISOString() })
+                        .eq('id', currentSessionId)
+                        .catch(() => {}); // Silently ignore errors
+                }, 30000);
+
+                // Subscribe to active sessions
+                subscribeToActiveSessions();
+
+                // Clean up on page unload
+                window.addEventListener('beforeunload', async () => {
+                    if (currentSessionId) {
+                        await sbClient
+                            .from('active_sessions')
+                            .delete()
+                            .eq('id', currentSessionId)
+                            .catch(() => {});
+                    }
+                });
+            } catch (error) {
+                console.error('Error initializing session:', error);
+            }
+        }
+
+        function subscribeToActiveSessions() {
+            try {
+                sbClient
+                    .channel('active_sessions_channel')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'active_sessions' }, payload => {
+                        // Fetch all active sessions
+                        sbClient
+                            .from('active_sessions')
+                            .select('id', { count: 'exact' })
+                            .then(({ count }) => {
+                                const userCount = count || 1;
+                                const countEl = document.getElementById('activeUserCount');
+                                if (countEl) {
+                                    countEl.textContent = `${userCount} ${userCount === 1 ? 'active' : 'active'}`;
+                                }
+                            })
+                            .catch(() => {});
+                    })
+                    .subscribe();
+            } catch (error) {
+                console.error('Error subscribing to active sessions:', error);
             }
         }
 
@@ -1502,17 +1579,46 @@
                 }
             });
 
+            // Auto-cycle carousels
+            function startCarouselCycle(carousel, categoryKey, ideas) {
+                if (carouselIntervals[categoryKey]) clearInterval(carouselIntervals[categoryKey]);
+                carouselIntervals[categoryKey] = setInterval(() => {
+                    const currentIdx = carouselIndices[categoryKey];
+                    carouselIndices[categoryKey] = (currentIdx + 1) % ideas.length;
+                    updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
+                }, 4000); // Cycle every 4 seconds
+            }
+
+            function stopCarouselCycle(categoryKey) {
+                if (carouselIntervals[categoryKey]) {
+                    clearInterval(carouselIntervals[categoryKey]);
+                    carouselIntervals[categoryKey] = null;
+                }
+            }
+
             // Add scroll listeners to all carousels and animate scroll hints
             document.querySelectorAll('.carousel-3d').forEach((carousel, idx) => {
                 const categoryKey = categories[idx];
                 if (!carouselIndices[categoryKey]) {
                     carouselIndices[categoryKey] = 0;
                 }
+                const ideas = grouped[categoryKey];
 
+                // Start auto-cycling
+                startCarouselCycle(carousel, categoryKey, ideas);
+
+                // Pause on hover
+                carousel.addEventListener('mouseenter', () => {
+                    stopCarouselCycle(categoryKey);
+                });
+
+                carousel.addEventListener('mouseleave', () => {
+                    startCarouselCycle(carousel, categoryKey, ideas);
+                });
 
                 carousel.addEventListener('wheel', (e) => {
                     e.preventDefault();
-                    const ideas = grouped[categoryKey];
+                    stopCarouselCycle(categoryKey);
                     const currentIdx = carouselIndices[categoryKey];
 
                     if (e.deltaY > 0 || e.deltaX > 0) {
@@ -1522,6 +1628,7 @@
                     }
 
                     updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
+                    startCarouselCycle(carousel, categoryKey, ideas);
                 });
 
                 carousel.querySelectorAll('.idea-card-face').forEach(face => {
@@ -1536,7 +1643,7 @@
                     face.addEventListener('wheel', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        const ideas = grouped[categoryKey];
+                        stopCarouselCycle(categoryKey);
                         const currentIdx = carouselIndices[categoryKey];
 
                         if (e.deltaY > 0 || e.deltaX > 0) {
@@ -1546,6 +1653,7 @@
                         }
 
                         updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
+                        startCarouselCycle(carousel, categoryKey, ideas);
                     });
                 });
             });

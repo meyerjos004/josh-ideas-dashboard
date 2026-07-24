@@ -1078,7 +1078,7 @@
         // Supabase Configuration
         const SUPABASE_URL = 'https://ibutllgwjgmmlydkcrzi.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_VdkNDTcxwk0lkWpppf9vtQ_jAq4adZn';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Data storage
         let allIdeas = [];
@@ -1093,7 +1093,7 @@
                 isLoading = true;
 
                 // Load ideas from Supabase
-                const { data: ideas, error: ideasError } = await supabase
+                const { data: ideas, error: ideasError } = await sbClient
                     .from('ideas')
                     .select('*');
 
@@ -1107,7 +1107,7 @@
                 }));
 
                 // Load statuses
-                const { data: statuses, error: statusError } = await supabase
+                const { data: statuses, error: statusError } = await sbClient
                     .from('idea_statuses')
                     .select('*');
 
@@ -1118,7 +1118,7 @@
                 });
 
                 // Load favorites
-                const { data: favs, error: favsError } = await supabase
+                const { data: favs, error: favsError } = await sbClient
                     .from('favorites')
                     .select('idea_id');
 
@@ -1138,7 +1138,7 @@
 
         function subscribeToUpdates() {
             // Listen for changes to ideas
-            supabase
+            sbClient
                 .channel('ideas_channel')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'ideas' }, payload => {
                     if (payload.eventType === 'INSERT') {
@@ -1168,7 +1168,7 @@
                 .subscribe();
 
             // Listen for status changes
-            supabase
+            sbClient
                 .channel('statuses_channel')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'idea_statuses' }, payload => {
                     if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
@@ -1181,7 +1181,7 @@
                 .subscribe();
 
             // Listen for favorites changes
-            supabase
+            sbClient
                 .channel('favorites_channel')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'favorites' }, payload => {
                     if (payload.eventType === 'INSERT') {
@@ -1564,13 +1564,13 @@
             event.stopPropagation();
             try {
                 if (favorites.includes(ideaId)) {
-                    const { error } = await supabase
+                    const { error } = await sbClient
                         .from('favorites')
                         .delete()
                         .eq('idea_id', ideaId);
                     if (error) throw error;
                 } else {
-                    const { error } = await supabase
+                    const { error } = await sbClient
                         .from('favorites')
                         .insert([{ id: `fav-${ideaId}`, idea_id: ideaId }]);
                     if (error) throw error;
@@ -1589,7 +1589,7 @@
                 const nextIdx = (statuses.indexOf(current) + 1) % statuses.length;
                 const nextStatus = statuses[nextIdx];
 
-                const { error } = await supabase
+                const { error } = await sbClient
                     .from('idea_statuses')
                     .upsert({ idea_id: ideaId, status: nextStatus });
 
@@ -1660,7 +1660,7 @@
             };
 
             try {
-                const { error } = await supabase
+                const { error } = await sbClient
                     .from('ideas')
                     .insert([newCard]);
 
@@ -1707,7 +1707,7 @@
         async function deleteCard(ideaId) {
             try {
                 // Delete from Supabase - this will cascade to related records
-                const { error } = await supabase
+                const { error } = await sbClient
                     .from('ideas')
                     .delete()
                     .eq('id', ideaId);

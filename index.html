@@ -313,13 +313,17 @@
         }
 
         .scroll-indicator {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
             user-select: none;
             pointer-events: none;
-            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .scroll-indicator.scroll-hint-top {
+            position: relative;
+            justify-content: center;
+            margin-left: auto;
         }
 
         .mouse-wheel {
@@ -355,13 +359,11 @@
         }
 
         .scroll-text {
-            text-align: center;
             font-size: 0.75rem;
             color: rgba(100, 150, 255, 0.5);
-            margin-top: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             font-weight: 600;
+            white-space: nowrap;
         }
 
         .carousel-3d:active {
@@ -1042,6 +1044,12 @@
                 <button class="add-btn" onclick="openAddCardModal()">+ Add Card</button>
                 <button class="add-btn" onclick="openAddCategoryModal()">+ Add Category</button>
                 <button class="add-btn" onclick="openManageCategoriesModal()" title="Manage categories">⚙️ Categories</button>
+                <div id="scrollHint" class="scroll-indicator scroll-hint-top">
+                    <div class="mouse-wheel">
+                        <div class="wheel-scroll"></div>
+                    </div>
+                    <div class="scroll-text">scroll on the cards to cycle</div>
+                </div>
             </div>
             <div class="filter-buttons">
                 <span class="filter-label">Priority:</span>
@@ -1455,12 +1463,6 @@
                             <div class="carousel-section-count">${ideas.length} ideas</div>
                         </div>
                         <div class="carousel-3d">
-                            <div class="scroll-indicator">
-                                <div class="mouse-wheel">
-                                    <div class="wheel-scroll"></div>
-                                </div>
-                                <div class="scroll-text">Scroll</div>
-                            </div>
                             <div class="carousel-3d-inner" style="transform-style: preserve-3d;">
                                 ${cardsHtml}
                             </div>
@@ -1507,51 +1509,6 @@
                     carouselIndices[categoryKey] = 0;
                 }
 
-                // Animate scroll indicator
-                const scrollIndicator = carousel.querySelector('.scroll-indicator');
-                const mouseWheel = carousel.querySelector('.mouse-wheel');
-                const wheelScroll = carousel.querySelector('.wheel-scroll');
-
-                if (scrollIndicator && mouseWheel && wheelScroll) {
-                    anime.timeline({ loop: true })
-                        // Zoom in
-                        .add({
-                            targets: mouseWheel,
-                            scale: [1, 1.2],
-                            opacity: [0.5, 1],
-                            duration: 300,
-                            easing: 'easeOutQuad'
-                        }, 0)
-                        // Scroll wheel down
-                        .add({
-                            targets: wheelScroll,
-                            translateY: [0, 8],
-                            opacity: [1, 0],
-                            duration: 400,
-                            easing: 'easeInQuad'
-                        }, 300)
-                        // Scroll wheel up (reset from top)
-                        .add({
-                            targets: wheelScroll,
-                            translateY: [-8, 8],
-                            opacity: [1, 0],
-                            duration: 400,
-                            easing: 'easeInQuad'
-                        }, 700)
-                        // Zoom out
-                        .add({
-                            targets: mouseWheel,
-                            scale: [1.2, 1],
-                            opacity: [1, 0.5],
-                            duration: 300,
-                            easing: 'easeInQuad'
-                        }, 900)
-                        // Pause before repeating
-                        .add({
-                            targets: wheelScroll,
-                            duration: 800
-                        }, 1200);
-                }
 
                 carousel.addEventListener('wheel', (e) => {
                     e.preventDefault();
@@ -2200,7 +2157,57 @@
             if (e.target.id === 'editCardModal') closeEditCardModal();
         });
 
+        function animateScrollHint() {
+            const scrollHint = document.getElementById('scrollHint');
+            if (!scrollHint) return;
+
+            const mouseWheel = scrollHint.querySelector('.mouse-wheel');
+            const wheelScroll = scrollHint.querySelector('.wheel-scroll');
+
+            if (mouseWheel && wheelScroll) {
+                anime.timeline({ loop: true })
+                    // Zoom in
+                    .add({
+                        targets: mouseWheel,
+                        scale: [1, 1.2],
+                        opacity: [0.5, 1],
+                        duration: 300,
+                        easing: 'easeOutQuad'
+                    }, 0)
+                    // Scroll wheel down
+                    .add({
+                        targets: wheelScroll,
+                        translateY: [0, 8],
+                        opacity: [1, 0],
+                        duration: 400,
+                        easing: 'easeInQuad'
+                    }, 300)
+                    // Scroll wheel up (reset from top)
+                    .add({
+                        targets: wheelScroll,
+                        translateY: [-8, 8],
+                        opacity: [1, 0],
+                        duration: 400,
+                        easing: 'easeInQuad'
+                    }, 700)
+                    // Zoom out
+                    .add({
+                        targets: mouseWheel,
+                        scale: [1.2, 1],
+                        opacity: [1, 0.5],
+                        duration: 300,
+                        easing: 'easeInQuad'
+                    }, 900)
+                    // Pause before repeating
+                    .add({
+                        targets: wheelScroll,
+                        duration: 800
+                    }, 1200);
+            }
+        }
+
         initializeIdeas();
+        animateScrollHint();
     </script>
 </body>
 </html>

@@ -392,7 +392,7 @@
             transform-style: preserve-3d;
             transform-origin: center center;
             cursor: pointer;
-            transition: transform 2s cubic-bezier(0.33, 0.66, 0.66, 1), opacity 2s cubic-bezier(0.33, 0.66, 0.66, 1);
+            transition: transform 2s linear, opacity 2s linear;
         }
 
         .idea-card-carousel.active {
@@ -1585,8 +1585,8 @@
                 carouselIntervals[categoryKey] = setInterval(() => {
                     const currentIdx = carouselIndices[categoryKey];
                     carouselIndices[categoryKey] = (currentIdx + 1) % ideas.length;
-                    updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
-                }, 4000); // Cycle every 4 seconds
+                    updateCarousel(carousel, ideas, carouselIndices[categoryKey], true); // isAutoCycle = true
+                }, 2000); // Cycle every 2 seconds
             }
 
             function stopCarouselCycle(categoryKey) {
@@ -1661,11 +1661,17 @@
 
         // ==================== ANIME.JS INTEGRATION ====================
         // Carousel transitions using CSS transitions for smooth animation
-        function updateCarousel(carousel, ideas, activeIdx) {
+        function updateCarousel(carousel, ideas, activeIdx, isAutoCycle = false) {
             const cards = carousel.querySelectorAll('.idea-card-carousel');
             const totalCards = ideas.length;
 
+            // Set transition speed and easing based on whether it's auto-cycling
+            const transitionStr = isAutoCycle
+                ? 'transform 2s linear, opacity 2s linear'
+                : 'transform 2s cubic-bezier(0.33, 0.66, 0.66, 1), opacity 2s cubic-bezier(0.33, 0.66, 0.66, 1)';
+
             cards.forEach((card, idx) => {
+                card.style.transition = transitionStr;
                 const offset = (idx - activeIdx + totalCards) % totalCards;
 
                 let translateX = 0;

@@ -1586,7 +1586,7 @@
                     const currentIdx = carouselIndices[categoryKey];
                     carouselIndices[categoryKey] = (currentIdx + 1) % ideas.length;
                     updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
-                }, 4000); // Cycle every 4 seconds
+                }, 8000); // Cycle every 8 seconds - slow and consistent
             }
 
             function stopCarouselCycle(categoryKey) {
@@ -1618,7 +1618,6 @@
 
                 carousel.addEventListener('wheel', (e) => {
                     e.preventDefault();
-                    stopCarouselCycle(categoryKey);
                     const currentIdx = carouselIndices[categoryKey];
 
                     if (e.deltaY > 0 || e.deltaX > 0) {
@@ -1628,7 +1627,7 @@
                     }
 
                     updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
-                    startCarouselCycle(carousel, categoryKey, ideas);
+                    // Don't stop/restart the cycle - let it continue naturally
                 });
 
                 carousel.querySelectorAll('.idea-card-face').forEach(face => {
@@ -1643,7 +1642,6 @@
                     face.addEventListener('wheel', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        stopCarouselCycle(categoryKey);
                         const currentIdx = carouselIndices[categoryKey];
 
                         if (e.deltaY > 0 || e.deltaX > 0) {
@@ -1653,7 +1651,7 @@
                         }
 
                         updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
-                        startCarouselCycle(carousel, categoryKey, ideas);
+                        // Don't stop/restart the cycle - let it continue naturally
                     });
                 });
             });

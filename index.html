@@ -1941,36 +1941,7 @@
                 }
 
                 closeEditCardModal();
-
-                // If category changed, need to re-render. Otherwise just update the card
-                if (category !== oldCategory) {
-                    renderIdeas();
-                } else {
-                    // Just update the card UI without full re-render
-                    const cards = document.querySelectorAll('.idea-card-carousel');
-                    cards.forEach(card => {
-                        if (card.onclick && card.onclick.toString().includes(currentEditCardId)) {
-                            const nameEl = card.querySelector('.card-name');
-                            const descEl = card.querySelector('.card-description');
-                            const priorityEl = card.querySelector('.card-meta');
-
-                            if (nameEl) nameEl.textContent = name;
-                            if (descEl) descEl.textContent = description;
-                            if (priorityEl) priorityEl.innerHTML = `<div><strong>P${priority}</strong></div>`;
-
-                            // Update card colors
-                            const face = card.querySelector('.idea-card-face');
-                            if (face && hexColor) {
-                                const hex = hexColor.replace('#', '');
-                                const r = parseInt(hex.substring(0, 2), 16);
-                                const g = parseInt(hex.substring(2, 4), 16);
-                                const b = parseInt(hex.substring(4, 6), 16);
-                                face.style.background = `linear-gradient(180deg, ${hexColor} 0%, rgba(${r}, ${g}, ${b}, 0.1) 100%)`;
-                                face.style.borderColor = `rgba(${r}, ${g}, ${b}, 0.3)`;
-                            }
-                        }
-                    });
-                }
+                renderIdeas();
             } catch (error) {
                 console.error('Error saving card:', error);
                 alert('Failed to save card');

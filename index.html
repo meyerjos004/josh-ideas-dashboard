@@ -1840,6 +1840,13 @@
             };
 
             try {
+                // Add to local state immediately
+                allIdeas.push({
+                    ...newCard,
+                    fullDescription,
+                    hexColor
+                });
+
                 const { error } = await sbClient
                     .from('ideas')
                     .insert([newCard]);
@@ -1847,7 +1854,7 @@
                 if (error) throw error;
 
                 closeAddCardModal();
-                // Don't manually push - let real-time subscription handle it
+                renderIdeas();
             } catch (error) {
                 console.error('Error saving card:', error);
                 alert('Failed to save card');

@@ -1996,7 +1996,7 @@
                     if (error) throw error;
                 }
                 // Update button text only
-                const favBtn = document.querySelector(`#fav-${ideaId}`);
+                const favBtn = document.querySelector(`#${CSS.escape(`fav-${ideaId}`)}`);
                 if (favBtn) {
                     favBtn.textContent = favorites.includes(ideaId) ? 'Favorited' : 'Favorite';
                 }

@@ -419,6 +419,8 @@
             overflow: hidden;
             backdrop-filter: blur(30px);
             padding: 30px;
+            pointer-events: auto;
+            cursor: pointer;
             background: linear-gradient(135deg,
                 rgba(100, 150, 255, 0.15) 0%,
                 rgba(100, 150, 255, 0.05) 50%,
@@ -1627,12 +1629,12 @@
                     const card = face.closest('.idea-card-carousel');
 
                     face.addEventListener('mouseenter', () => {
-                        // Only apply hover effects and pause on front few cards (offset 0-2)
+                        // Apply hover effects to all cards, but only pause on front few cards (offset 0-2)
                         const cardOffset = (faceIdx - carouselIndices[categoryKey] + ideas.length) % ideas.length;
+                        card.classList.add('hovering');
+                        updateCarousel(carousel, ideas, carouselIndices[categoryKey]); // Apply hover transform immediately
                         if (cardOffset <= 2) {
-                            card.classList.add('hovering');
                             stopCarouselCycle(categoryKey);
-                            updateCarousel(carousel, ideas, carouselIndices[categoryKey]); // Apply hover transform immediately
                         }
                     });
 

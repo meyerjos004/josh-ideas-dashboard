@@ -1620,16 +1620,6 @@
                 // Start auto-cycling
                 startCarouselCycle(carousel, categoryKey, ideas);
 
-                // Debug: log what gets clicked
-                carousel.addEventListener('click', (e) => {
-                    console.log('Carousel clicked:', {
-                        target: e.target,
-                        targetClass: e.target.className,
-                        targetClosestCard: e.target.closest('.idea-card-carousel')?.className,
-                        clientX: e.clientX,
-                        clientY: e.clientY
-                    });
-                });
 
                 // Initialize momentum for this carousel
                 carouselMomentum[categoryKey] = { velocity: 0, lastTime: 0 };
@@ -1650,7 +1640,7 @@
 
                     // Set momentum based on scroll amount (more scrolling = more momentum)
                     const scrollAmount = Math.abs(e.deltaY || e.deltaX);
-                    carouselMomentum[categoryKey].velocity = scrollDirection * Math.min(scrollAmount / 100, 0.5);
+                    carouselMomentum[categoryKey].velocity = scrollDirection * Math.min(scrollAmount / 50, 1.0);
                     carouselMomentum[categoryKey].lastTime = Date.now();
 
                     // Cancel any existing momentum animation
@@ -1711,7 +1701,7 @@
 
                         // Set momentum based on scroll amount
                         const scrollAmount = Math.abs(e.deltaY || e.deltaX);
-                        carouselMomentum[categoryKey].velocity = scrollDirection * Math.min(scrollAmount / 100, 0.5);
+                        carouselMomentum[categoryKey].velocity = scrollDirection * Math.min(scrollAmount / 50, 1.0);
                         carouselMomentum[categoryKey].lastTime = Date.now();
 
                         // Cancel any existing momentum animation
@@ -1790,11 +1780,10 @@
                 // Stop animation if velocity is too low
                 if (Math.abs(momentum.velocity) < minVelocity) {
                     momentum.velocity = 0;
-                    console.log('Momentum stopped for', categoryKey);
                     return;
                 }
 
-                // Accumulate the velocity (it's a decimal between -0.5 and 0.5)
+                // Accumulate the velocity (it's a decimal between -1.0 and 1.0)
                 accumulatedDelta += momentum.velocity;
 
                 // Only rotate when we've accumulated enough to move a full card
@@ -1805,8 +1794,6 @@
                     carouselIndices[categoryKey] = (currentIdx + rotationAmount + ideas.length) % ideas.length;
                     updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
 
-                    console.log('Momentum rotation:', categoryKey, rotationAmount, 'velocity:', momentum.velocity.toFixed(3));
-
                     accumulatedDelta -= rotationAmount;
                 }
 
@@ -1815,7 +1802,6 @@
             }
 
             // Start the momentum animation
-            console.log('Starting momentum for', categoryKey, 'with velocity', momentum.velocity);
             momentumAnimationFrames[categoryKey] = requestAnimationFrame(animateMomentum);
         }
 

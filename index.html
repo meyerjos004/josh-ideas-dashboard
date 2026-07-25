@@ -1639,6 +1639,11 @@
                     const currentIdx = carouselIndices[categoryKey];
                     const scrollDirection = (e.deltaY > 0 || e.deltaX > 0) ? 1 : -1;
 
+                    // Remove hover effects when scrolling
+                    carousel.querySelectorAll('.idea-card-carousel').forEach(c => {
+                        c.classList.remove('hovering');
+                    });
+
                     // Move one card per scroll
                     carouselIndices[categoryKey] = (currentIdx + scrollDirection + ideas.length) % ideas.length;
                     updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
@@ -1670,6 +1675,11 @@
                     const card = face.closest('.idea-card-carousel');
 
                     face.addEventListener('mouseenter', () => {
+                        // Don't apply hover effects while scrolling/momentum is active
+                        if (carouselMomentum[categoryKey].velocity !== 0) {
+                            return;
+                        }
+
                         // Apply hover effects to all cards, but only pause on front few cards (offset 0-2)
                         const cardOffset = (faceIdx - carouselIndices[categoryKey] + ideas.length) % ideas.length;
                         card.classList.add('hovering');
@@ -1690,6 +1700,11 @@
                         e.stopPropagation();
                         const currentIdx = carouselIndices[categoryKey];
                         const scrollDirection = (e.deltaY > 0 || e.deltaX > 0) ? 1 : -1;
+
+                        // Remove hover effects when scrolling
+                        carousel.querySelectorAll('.idea-card-carousel').forEach(c => {
+                            c.classList.remove('hovering');
+                        });
 
                         carouselIndices[categoryKey] = (currentIdx + scrollDirection + ideas.length) % ideas.length;
                         updateCarousel(carousel, ideas, carouselIndices[categoryKey]);

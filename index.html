@@ -1682,7 +1682,7 @@
                 // Position on the circle
                 const translateX = Math.sin(angle) * circleRadius;
                 const depth = (Math.cos(angle) - 1) * (maxDepth / 2); // Smooth depth from front to back and back
-                const translateY = (1 - Math.cos(angle)) * 60; // Cards go up as they move back
+                const translateY = -(1 - Math.cos(angle)) * 72; // Cards go up as they move back (20% more)
 
                 // Z-index based on depth (deeper = lower z-index)
                 const zIndex = Math.round(1000 - depth);

@@ -2328,6 +2328,14 @@
                 }
 
                 allIdeas = allIdeas.filter(i => i.id !== ideaId);
+
+                // First delete any related idea_statuses records
+                await sbClient
+                    .from('idea_statuses')
+                    .delete()
+                    .eq('idea_id', ideaId);
+
+                // Then delete the idea itself
                 const { error } = await sbClient
                     .from('ideas')
                     .delete()

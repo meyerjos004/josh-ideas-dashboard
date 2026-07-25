@@ -1446,7 +1446,7 @@
         function filterIdeas() {
             return allIdeas.filter(idea => {
                 const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-                const matchesSearch = idea.name.toLowerCase().includes(searchTerm) || idea.description.toLowerCase().includes(searchTerm);
+                const matchesSearch = idea.name.toLowerCase().includes(searchTerm);
 
                 const priorityFilters = Array.from(activeFilters.keys()).filter(k => k.startsWith('priority-'));
                 const matchesPriority = priorityFilters.length === 0 || priorityFilters.some(f => f === `priority-P${idea.priority}`);
@@ -1607,15 +1607,6 @@
                 // Start auto-cycling
                 startCarouselCycle(carousel, categoryKey, ideas);
 
-                // Pause on hover
-                carousel.addEventListener('mouseenter', () => {
-                    stopCarouselCycle(categoryKey);
-                });
-
-                carousel.addEventListener('mouseleave', () => {
-                    startCarouselCycle(carousel, categoryKey, ideas);
-                });
-
                 carousel.addEventListener('wheel', (e) => {
                     e.preventDefault();
                     const currentIdx = carouselIndices[categoryKey];
@@ -1630,13 +1621,21 @@
                     // Don't stop/restart the cycle - let it continue naturally
                 });
 
-                carousel.querySelectorAll('.idea-card-face').forEach(face => {
+                carousel.querySelectorAll('.idea-card-face').forEach((face, faceIdx) => {
                     const card = face.closest('.idea-card-carousel');
+
                     face.addEventListener('mouseenter', () => {
-                        card.classList.add('hovering');
+                        // Only apply hover effects and pause on front few cards (offset 0-2)
+                        const cardOffset = (faceIdx - carouselIndices[categoryKey] + ideas.length) % ideas.length;
+                        if (cardOffset <= 2) {
+                            card.classList.add('hovering');
+                            stopCarouselCycle(categoryKey);
+                        }
                     });
+
                     face.addEventListener('mouseleave', () => {
                         card.classList.remove('hovering');
+                        startCarouselCycle(carousel, categoryKey, ideas);
                     });
 
                     face.addEventListener('wheel', (e) => {
@@ -1690,7 +1689,14 @@
                 const opacity = 1;
 
                 card.style.zIndex = zIndex;
-                card.style.transform = `translateX(${translateX}px) translateY(${translateY}px) translateZ(${depth}px)`;
+
+                // Add hover effects if card is hovering
+                const isHovering = card.classList.contains('hovering');
+                const hoverScale = isHovering ? 'scale(1.08) ' : '';
+                const hoverYOffset = isHovering ? -40 : 0;
+                const totalTranslateY = translateY + hoverYOffset;
+
+                card.style.transform = `${hoverScale}translateX(${translateX}px) translateY(${totalTranslateY}px) translateZ(${depth}px)`;
                 card.style.opacity = opacity;
 
                 card.classList.remove('active');

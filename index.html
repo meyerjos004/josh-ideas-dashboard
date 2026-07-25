@@ -1697,7 +1697,7 @@
                     depth = 0;
                 } else {
                     const distance = Math.min(offset, totalCards - offset);
-                    depth = -distance * 50;
+                    depth = -distance * 300; // Deeper z-axis so cards go behind properly
                 }
 
                 const opacity = offset === 0 ? 1 : 1;

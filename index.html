@@ -1764,7 +1764,7 @@
         // ==================== Momentum Scrolling ====================
         function applyMomentum(carousel, categoryKey, ideas) {
             const momentum = carouselMomentum[categoryKey];
-            const decelerationFactor = 0.92; // How quickly momentum decays (0-1, lower = faster decay)
+            const decelerationFactor = 0.99; // How quickly momentum decays (0-1, lower = faster decay)
             const minVelocity = 0.01; // Minimum velocity before we stop the animation
             let accumulatedDelta = 0; // Accumulate small deltas until they add up to 1 card
 

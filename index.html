@@ -1586,7 +1586,7 @@
                     const currentIdx = carouselIndices[categoryKey];
                     carouselIndices[categoryKey] = (currentIdx + 1) % ideas.length;
                     updateCarousel(carousel, ideas, carouselIndices[categoryKey], true); // isAutoCycle = true
-                }, 2000); // Cycle every 2 seconds
+                }, 6000); // Cycle every 6 seconds
             }
 
             function stopCarouselCycle(categoryKey) {

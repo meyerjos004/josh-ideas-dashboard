@@ -1766,6 +1766,7 @@
             const momentum = carouselMomentum[categoryKey];
             const decelerationFactor = 0.92; // How quickly momentum decays (0-1, lower = faster decay)
             const minVelocity = 0.01; // Minimum velocity before we stop the animation
+            let accumulatedDelta = 0; // Accumulate small deltas until they add up to 1 card
 
             function animateMomentum() {
                 // Decay velocity
@@ -1774,16 +1775,24 @@
                 // Stop animation if velocity is too low
                 if (Math.abs(momentum.velocity) < minVelocity) {
                     momentum.velocity = 0;
+                    console.log('Momentum stopped for', categoryKey);
                     return;
                 }
 
-                // Apply momentum to rotate carousel
-                const currentIdx = carouselIndices[categoryKey];
-                const rotationAmount = Math.round(momentum.velocity);
+                // Accumulate the velocity (it's a decimal between -0.5 and 0.5)
+                accumulatedDelta += momentum.velocity;
 
-                if (rotationAmount !== 0) {
+                // Only rotate when we've accumulated enough to move a full card
+                if (Math.abs(accumulatedDelta) >= 1) {
+                    const currentIdx = carouselIndices[categoryKey];
+                    const rotationAmount = Math.sign(accumulatedDelta) * Math.floor(Math.abs(accumulatedDelta));
+
                     carouselIndices[categoryKey] = (currentIdx + rotationAmount + ideas.length) % ideas.length;
                     updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
+
+                    console.log('Momentum rotation:', categoryKey, rotationAmount, 'velocity:', momentum.velocity.toFixed(3));
+
+                    accumulatedDelta -= rotationAmount;
                 }
 
                 // Continue animation
@@ -1791,6 +1800,7 @@
             }
 
             // Start the momentum animation
+            console.log('Starting momentum for', categoryKey, 'with velocity', momentum.velocity);
             momentumAnimationFrames[categoryKey] = requestAnimationFrame(animateMomentum);
         }
 

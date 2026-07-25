@@ -1658,7 +1658,7 @@
                     tracking.lastScrollTime = currentTime;
 
                     // Only enable momentum if there have been 2+ rapid scrolls
-                    if (tracking.scrollCount >= 2) {
+                    if (tracking.scrollCount >= 8) {
                         const velocity = scrollDirection * (0.15 + (tracking.scrollCount - 2) * 0.1);
                         carouselMomentum[categoryKey].velocity = Math.sign(velocity) * Math.min(Math.abs(velocity), 1.0);
                         carouselMomentum[categoryKey].lastTime = currentTime;
@@ -1743,8 +1743,8 @@
 
                         tracking.lastScrollTime = currentTime;
 
-                        // Only enable momentum if there have been 2+ rapid scrolls
-                        if (tracking.scrollCount >= 2) {
+                        // Only enable momentum if there have been 8+ rapid scrolls
+                        if (tracking.scrollCount >= 8) {
                             const velocity = scrollDirection * (0.15 + (tracking.scrollCount - 2) * 0.1);
                             carouselMomentum[categoryKey].velocity = Math.sign(velocity) * Math.min(Math.abs(velocity), 1.0);
                             carouselMomentum[categoryKey].lastTime = currentTime;

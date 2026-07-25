@@ -1618,6 +1618,17 @@
                 // Start auto-cycling
                 startCarouselCycle(carousel, categoryKey, ideas);
 
+                // Debug: log what gets clicked
+                carousel.addEventListener('click', (e) => {
+                    console.log('Carousel clicked:', {
+                        target: e.target,
+                        targetClass: e.target.className,
+                        targetClosestCard: e.target.closest('.idea-card-carousel')?.className,
+                        clientX: e.clientX,
+                        clientY: e.clientY
+                    });
+                });
+
                 carousel.addEventListener('wheel', (e) => {
                     e.preventDefault();
                     const currentIdx = carouselIndices[categoryKey];

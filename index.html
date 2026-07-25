@@ -1242,6 +1242,8 @@
         const activeFilters = new Map();
         let carouselIndices = {};
         let carouselIntervals = {};
+        let carouselMomentum = {}; // Track momentum for each carousel
+        let momentumAnimationFrames = {}; // Track RAF for momentum
         let isLoading = true;
         let currentSessionId = null;
 
@@ -1629,18 +1631,38 @@
                     });
                 });
 
+                // Initialize momentum for this carousel
+                carouselMomentum[categoryKey] = { velocity: 0, lastTime: 0 };
+
                 carousel.addEventListener('wheel', (e) => {
                     e.preventDefault();
                     const currentIdx = carouselIndices[categoryKey];
+                    const scrollDirection = (e.deltaY > 0 || e.deltaX > 0) ? 1 : -1;
 
-                    if (e.deltaY > 0 || e.deltaX > 0) {
-                        carouselIndices[categoryKey] = (currentIdx + 1) % ideas.length;
-                    } else {
-                        carouselIndices[categoryKey] = (currentIdx - 1 + ideas.length) % ideas.length;
+                    // Move one card per scroll
+                    carouselIndices[categoryKey] = (currentIdx + scrollDirection + ideas.length) % ideas.length;
+                    updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
+
+                    // Set momentum based on scroll amount (more scrolling = more momentum)
+                    const scrollAmount = Math.abs(e.deltaY || e.deltaX);
+                    carouselMomentum[categoryKey].velocity = scrollDirection * Math.min(scrollAmount / 100, 0.5);
+                    carouselMomentum[categoryKey].lastTime = Date.now();
+
+                    // Cancel any existing momentum animation
+                    if (momentumAnimationFrames[categoryKey]) {
+                        cancelAnimationFrame(momentumAnimationFrames[categoryKey]);
                     }
 
-                    updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
-                    // Don't stop/restart the cycle - let it continue naturally
+                    // Start momentum animation
+                    applyMomentum(carousel, categoryKey, ideas);
+                });
+
+                // Stop momentum on click
+                carousel.addEventListener('click', () => {
+                    carouselMomentum[categoryKey].velocity = 0;
+                    if (momentumAnimationFrames[categoryKey]) {
+                        cancelAnimationFrame(momentumAnimationFrames[categoryKey]);
+                    }
                 });
 
 
@@ -1667,15 +1689,23 @@
                         e.preventDefault();
                         e.stopPropagation();
                         const currentIdx = carouselIndices[categoryKey];
+                        const scrollDirection = (e.deltaY > 0 || e.deltaX > 0) ? 1 : -1;
 
-                        if (e.deltaY > 0 || e.deltaX > 0) {
-                            carouselIndices[categoryKey] = (currentIdx + 1) % ideas.length;
-                        } else {
-                            carouselIndices[categoryKey] = (currentIdx - 1 + ideas.length) % ideas.length;
+                        carouselIndices[categoryKey] = (currentIdx + scrollDirection + ideas.length) % ideas.length;
+                        updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
+
+                        // Set momentum based on scroll amount
+                        const scrollAmount = Math.abs(e.deltaY || e.deltaX);
+                        carouselMomentum[categoryKey].velocity = scrollDirection * Math.min(scrollAmount / 100, 0.5);
+                        carouselMomentum[categoryKey].lastTime = Date.now();
+
+                        // Cancel any existing momentum animation
+                        if (momentumAnimationFrames[categoryKey]) {
+                            cancelAnimationFrame(momentumAnimationFrames[categoryKey]);
                         }
 
-                        updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
-                        // Don't stop/restart the cycle - let it continue naturally
+                        // Start momentum animation
+                        applyMomentum(carousel, categoryKey, ideas);
                     });
                 });
             });
@@ -1729,6 +1759,39 @@
                     card.classList.add('active');
                 }
             });
+        }
+
+        // ==================== Momentum Scrolling ====================
+        function applyMomentum(carousel, categoryKey, ideas) {
+            const momentum = carouselMomentum[categoryKey];
+            const decelerationFactor = 0.92; // How quickly momentum decays (0-1, lower = faster decay)
+            const minVelocity = 0.01; // Minimum velocity before we stop the animation
+
+            function animateMomentum() {
+                // Decay velocity
+                momentum.velocity *= decelerationFactor;
+
+                // Stop animation if velocity is too low
+                if (Math.abs(momentum.velocity) < minVelocity) {
+                    momentum.velocity = 0;
+                    return;
+                }
+
+                // Apply momentum to rotate carousel
+                const currentIdx = carouselIndices[categoryKey];
+                const rotationAmount = Math.round(momentum.velocity);
+
+                if (rotationAmount !== 0) {
+                    carouselIndices[categoryKey] = (currentIdx + rotationAmount + ideas.length) % ideas.length;
+                    updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
+                }
+
+                // Continue animation
+                momentumAnimationFrames[categoryKey] = requestAnimationFrame(animateMomentum);
+            }
+
+            // Start the momentum animation
+            momentumAnimationFrames[categoryKey] = requestAnimationFrame(animateMomentum);
         }
 
         // ==================== Stat Counter Animation ====================

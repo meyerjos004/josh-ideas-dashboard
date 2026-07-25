@@ -1677,10 +1677,11 @@
                 // Circular path: all cards follow the same predetermined circle
                 const angle = (offset / totalCards) * Math.PI * 2; // Full circle in radians
                 const circleRadius = 700; // Horizontal radius of the circular path
+                const maxDepth = 800; // Max depth at the back
 
                 // Position on the circle
                 const translateX = Math.sin(angle) * circleRadius;
-                const depth = -circleRadius * (1 - Math.cos(angle)); // Pushes back as we go around
+                const depth = (Math.cos(angle) - 1) * (maxDepth / 2); // Smooth depth from front to back and back
 
                 // Z-index based on depth (deeper = lower z-index)
                 const zIndex = Math.round(1000 - depth);

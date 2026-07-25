@@ -1640,7 +1640,7 @@
 
                     // Build momentum: add to existing velocity if scrolling in same direction
                     const scrollAmount = Math.abs(e.deltaY || e.deltaX);
-                    const scrollContribution = scrollDirection * Math.min(scrollAmount / 50, 0.2);
+                    const scrollContribution = scrollDirection * Math.min(scrollAmount / 100, 0.1);
                     const currentVelocity = carouselMomentum[categoryKey].velocity;
 
                     // If scrolling in same direction, add momentum. If opposite, reset
@@ -1712,7 +1712,7 @@
 
                         // Build momentum: add to existing velocity if scrolling in same direction
                         const scrollAmount = Math.abs(e.deltaY || e.deltaX);
-                        const scrollContribution = scrollDirection * Math.min(scrollAmount / 50, 0.2);
+                        const scrollContribution = scrollDirection * Math.min(scrollAmount / 100, 0.1);
                         const currentVelocity = carouselMomentum[categoryKey].velocity;
 
                         // If scrolling in same direction, add momentum. If opposite, reset

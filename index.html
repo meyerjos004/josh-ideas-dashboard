@@ -1244,6 +1244,7 @@
         let carouselIntervals = {};
         let carouselMomentum = {}; // Track momentum for each carousel
         let momentumAnimationFrames = {}; // Track RAF for momentum
+        let carouselScrollTracking = {}; // Track scroll events for momentum detection
         let isLoading = true;
         let currentSessionId = null;
 
@@ -1623,44 +1624,59 @@
 
                 // Initialize momentum for this carousel
                 carouselMomentum[categoryKey] = { velocity: 0, lastTime: 0 };
+                carouselScrollTracking[categoryKey] = { lastScrollTime: 0, scrollCount: 0, lastDirection: 0 };
 
                 carousel.addEventListener('wheel', (e) => {
                     e.preventDefault();
                     const currentIdx = carouselIndices[categoryKey];
                     const scrollDirection = (e.deltaY > 0 || e.deltaX > 0) ? 1 : -1;
+                    const currentTime = Date.now();
+                    const tracking = carouselScrollTracking[categoryKey];
 
                     // Remove hover effects when scrolling
                     carousel.querySelectorAll('.idea-card-carousel').forEach(c => {
                         c.classList.remove('hovering');
                     });
 
-                    // Move one card per scroll
+                    // Always move one card per scroll
                     carouselIndices[categoryKey] = (currentIdx + scrollDirection + ideas.length) % ideas.length;
                     updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
 
-                    // Build momentum: add to existing velocity if scrolling in same direction
-                    const scrollAmount = Math.abs(e.deltaY || e.deltaX);
-                    const scrollContribution = scrollDirection * Math.min(scrollAmount / 100, 0.1);
-                    const currentVelocity = carouselMomentum[categoryKey].velocity;
+                    // Track rapid scrolling for momentum detection
+                    const timeSinceLastScroll = currentTime - tracking.lastScrollTime;
+                    const momentumTimeWindow = 300; // ms - how long to detect rapid scrolls
 
-                    // If scrolling in same direction, add momentum. If opposite, reset
-                    if (Math.sign(currentVelocity) === scrollDirection || currentVelocity === 0) {
-                        // Building momentum in same direction
-                        carouselMomentum[categoryKey].velocity = Math.sign(scrollDirection) * Math.min(Math.abs(currentVelocity + scrollContribution), 1.0);
+                    if (timeSinceLastScroll < momentumTimeWindow && tracking.lastDirection === scrollDirection) {
+                        // Rapid scroll in same direction - build momentum
+                        tracking.scrollCount++;
                     } else {
-                        // Opposite direction - reset momentum
-                        carouselMomentum[categoryKey].velocity = scrollContribution;
+                        // New scroll sequence or direction change
+                        tracking.scrollCount = 1;
+                        tracking.lastDirection = scrollDirection;
                     }
 
-                    carouselMomentum[categoryKey].lastTime = Date.now();
+                    tracking.lastScrollTime = currentTime;
 
-                    // Cancel any existing momentum animation
-                    if (momentumAnimationFrames[categoryKey]) {
-                        cancelAnimationFrame(momentumAnimationFrames[categoryKey]);
+                    // Only enable momentum if there have been 2+ rapid scrolls
+                    if (tracking.scrollCount >= 2) {
+                        const velocity = scrollDirection * (0.15 + (tracking.scrollCount - 2) * 0.1);
+                        carouselMomentum[categoryKey].velocity = Math.sign(velocity) * Math.min(Math.abs(velocity), 1.0);
+                        carouselMomentum[categoryKey].lastTime = currentTime;
+
+                        // Cancel any existing momentum animation
+                        if (momentumAnimationFrames[categoryKey]) {
+                            cancelAnimationFrame(momentumAnimationFrames[categoryKey]);
+                        }
+
+                        // Start momentum animation
+                        applyMomentum(carousel, categoryKey, ideas);
+                    } else {
+                        // Single scroll - no momentum
+                        carouselMomentum[categoryKey].velocity = 0;
+                        if (momentumAnimationFrames[categoryKey]) {
+                            cancelAnimationFrame(momentumAnimationFrames[categoryKey]);
+                        }
                     }
-
-                    // Start momentum animation
-                    applyMomentum(carousel, categoryKey, ideas);
                 });
 
                 // Stop momentum on click
@@ -1701,6 +1717,8 @@
                         e.stopPropagation();
                         const currentIdx = carouselIndices[categoryKey];
                         const scrollDirection = (e.deltaY > 0 || e.deltaX > 0) ? 1 : -1;
+                        const currentTime = Date.now();
+                        const tracking = carouselScrollTracking[categoryKey];
 
                         // Remove hover effects when scrolling
                         carousel.querySelectorAll('.idea-card-carousel').forEach(c => {
@@ -1710,29 +1728,41 @@
                         carouselIndices[categoryKey] = (currentIdx + scrollDirection + ideas.length) % ideas.length;
                         updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
 
-                        // Build momentum: add to existing velocity if scrolling in same direction
-                        const scrollAmount = Math.abs(e.deltaY || e.deltaX);
-                        const scrollContribution = scrollDirection * Math.min(scrollAmount / 100, 0.1);
-                        const currentVelocity = carouselMomentum[categoryKey].velocity;
+                        // Track rapid scrolling for momentum detection
+                        const timeSinceLastScroll = currentTime - tracking.lastScrollTime;
+                        const momentumTimeWindow = 300; // ms - how long to detect rapid scrolls
 
-                        // If scrolling in same direction, add momentum. If opposite, reset
-                        if (Math.sign(currentVelocity) === scrollDirection || currentVelocity === 0) {
-                            // Building momentum in same direction
-                            carouselMomentum[categoryKey].velocity = Math.sign(scrollDirection) * Math.min(Math.abs(currentVelocity + scrollContribution), 1.0);
+                        if (timeSinceLastScroll < momentumTimeWindow && tracking.lastDirection === scrollDirection) {
+                            // Rapid scroll in same direction - build momentum
+                            tracking.scrollCount++;
                         } else {
-                            // Opposite direction - reset momentum
-                            carouselMomentum[categoryKey].velocity = scrollContribution;
+                            // New scroll sequence or direction change
+                            tracking.scrollCount = 1;
+                            tracking.lastDirection = scrollDirection;
                         }
 
-                        carouselMomentum[categoryKey].lastTime = Date.now();
+                        tracking.lastScrollTime = currentTime;
 
-                        // Cancel any existing momentum animation
-                        if (momentumAnimationFrames[categoryKey]) {
-                            cancelAnimationFrame(momentumAnimationFrames[categoryKey]);
+                        // Only enable momentum if there have been 2+ rapid scrolls
+                        if (tracking.scrollCount >= 2) {
+                            const velocity = scrollDirection * (0.15 + (tracking.scrollCount - 2) * 0.1);
+                            carouselMomentum[categoryKey].velocity = Math.sign(velocity) * Math.min(Math.abs(velocity), 1.0);
+                            carouselMomentum[categoryKey].lastTime = currentTime;
+
+                            // Cancel any existing momentum animation
+                            if (momentumAnimationFrames[categoryKey]) {
+                                cancelAnimationFrame(momentumAnimationFrames[categoryKey]);
+                            }
+
+                            // Start momentum animation
+                            applyMomentum(carousel, categoryKey, ideas);
+                        } else {
+                            // Single scroll - no momentum
+                            carouselMomentum[categoryKey].velocity = 0;
+                            if (momentumAnimationFrames[categoryKey]) {
+                                cancelAnimationFrame(momentumAnimationFrames[categoryKey]);
+                            }
                         }
-
-                        // Start momentum animation
-                        applyMomentum(carousel, categoryKey, ideas);
                     });
                 });
             });

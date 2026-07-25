@@ -1640,13 +1640,13 @@
 
                     // Build momentum: add to existing velocity if scrolling in same direction
                     const scrollAmount = Math.abs(e.deltaY || e.deltaX);
-                    const scrollContribution = scrollDirection * Math.min(scrollAmount / 50, 0.3);
+                    const scrollContribution = scrollDirection * Math.min(scrollAmount / 50, 0.2);
                     const currentVelocity = carouselMomentum[categoryKey].velocity;
 
                     // If scrolling in same direction, add momentum. If opposite, reset
                     if (Math.sign(currentVelocity) === scrollDirection || currentVelocity === 0) {
                         // Building momentum in same direction
-                        carouselMomentum[categoryKey].velocity = Math.sign(scrollDirection) * Math.min(Math.abs(currentVelocity + scrollContribution), 2.0);
+                        carouselMomentum[categoryKey].velocity = Math.sign(scrollDirection) * Math.min(Math.abs(currentVelocity + scrollContribution), 1.0);
                     } else {
                         // Opposite direction - reset momentum
                         carouselMomentum[categoryKey].velocity = scrollContribution;
@@ -1712,13 +1712,13 @@
 
                         // Build momentum: add to existing velocity if scrolling in same direction
                         const scrollAmount = Math.abs(e.deltaY || e.deltaX);
-                        const scrollContribution = scrollDirection * Math.min(scrollAmount / 50, 0.3);
+                        const scrollContribution = scrollDirection * Math.min(scrollAmount / 50, 0.2);
                         const currentVelocity = carouselMomentum[categoryKey].velocity;
 
                         // If scrolling in same direction, add momentum. If opposite, reset
                         if (Math.sign(currentVelocity) === scrollDirection || currentVelocity === 0) {
                             // Building momentum in same direction
-                            carouselMomentum[categoryKey].velocity = Math.sign(scrollDirection) * Math.min(Math.abs(currentVelocity + scrollContribution), 2.0);
+                            carouselMomentum[categoryKey].velocity = Math.sign(scrollDirection) * Math.min(Math.abs(currentVelocity + scrollContribution), 1.0);
                         } else {
                             // Opposite direction - reset momentum
                             carouselMomentum[categoryKey].velocity = scrollContribution;

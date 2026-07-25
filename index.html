@@ -26,6 +26,7 @@
 
         .container {
             padding: 60px 20px;
+            pointer-events: auto;
         }
 
         header {
@@ -275,6 +276,7 @@
 
         .carousel-section {
             margin-bottom: 120px;
+            pointer-events: auto;
         }
 
         .carousel-section-header {
@@ -312,6 +314,7 @@
             justify-content: center;
             cursor: grab;
             overflow: visible;
+            pointer-events: auto;
         }
 
         .scroll-indicator {
@@ -381,23 +384,23 @@
             align-items: center;
             justify-content: center;
             user-select: none;
+            pointer-events: auto;
         }
 
         .idea-card-carousel {
             position: absolute;
             width: 520px;
             height: 300px;
-            left: 0;
-            right: 0;
-            top: 0;
-            bottom: 0;
-            margin: auto;
+            top: 50%;
+            left: 50%;
             transform-style: preserve-3d;
             transform-origin: center center;
             cursor: pointer;
             transition: transform 6s linear, opacity 6s linear;
             user-select: none;
             pointer-events: auto;
+            margin-top: -150px;
+            margin-left: -260px;
         }
 
         .idea-card-carousel.active {
@@ -1628,6 +1631,69 @@
                     updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
                     // Don't stop/restart the cycle - let it continue naturally
                 });
+
+                // Add sophisticated click handler for 3D transformed cards
+                carousel.addEventListener('click', (e) => {
+                    // If we hit a card directly (pointer-events working), let normal event handling occur
+                    const directCard = e.target.closest('.idea-card-carousel');
+                    if (directCard) {
+                        return;
+                    }
+
+                    // Otherwise, calculate which card the click should target based on visual position
+                    const rect = carousel.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const clickY = e.clientY - rect.top;
+
+                    // Get all cards and calculate their visual bounding boxes
+                    const cards = carousel.querySelectorAll('.idea-card-carousel');
+                    const circleRadius = 1000;
+                    const maxDepth = 800;
+                    const cardWidth = 520;
+                    const cardHeight = 300;
+                    const totalCards = ideas.length;
+                    const activeIdx = carouselIndices[categoryKey];
+
+                    let hitCard = null;
+                    let hitDistance = Infinity;
+
+                    cards.forEach((card, idx) => {
+                        const offset = (idx - activeIdx + totalCards) % totalCards;
+                        const angle = (offset / totalCards) * Math.PI * 2;
+                        const translateX = Math.sin(angle) * circleRadius;
+                        const totalTranslateY = -(1 - Math.cos(angle)) * 72;
+
+                        // Calculate card's center position in carousel space
+                        const cardCenterX = rect.width / 2 + translateX;
+                        const cardCenterY = rect.height / 2 + totalTranslateY;
+
+                        // Calculate distance from click to card center
+                        const distX = clickX - cardCenterX;
+                        const distY = clickY - cardCenterY;
+                        const distance = Math.sqrt(distX * distX + distY * distY);
+
+                        // Check if click is within card bounds (with some tolerance for transformed edges)
+                        if (Math.abs(distX) < cardWidth / 2 + 20 && Math.abs(distY) < cardHeight / 2 + 20) {
+                            if (distance < hitDistance) {
+                                hitDistance = distance;
+                                hitCard = card;
+                            }
+                        }
+                    });
+
+                    if (hitCard) {
+                        // Trigger the card's click handler directly
+                        if (hitCard.onclick) {
+                            // Get the idea ID from the onclick attribute
+                            const onclickStr = hitCard.getAttribute('onclick');
+                            const match = onclickStr.match(/openModal\(event, '([^']+)'\)/);
+                            if (match) {
+                                const ideaId = match[1];
+                                openModal(e, ideaId);
+                            }
+                        }
+                    }
+                }, true); // Use capture phase
 
                 carousel.querySelectorAll('.idea-card-face').forEach((face, faceIdx) => {
                     const card = face.closest('.idea-card-carousel');

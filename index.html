@@ -1992,7 +1992,7 @@
                     favorites.push(ideaId);
                     const { error } = await sbClient
                         .from('favorites')
-                        .insert([{ idea_id: ideaId }]);
+                        .insert([{ id: `fav-${ideaId}`, idea_id: ideaId }]);
                     if (error) throw error;
                 }
                 // Update button text only

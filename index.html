@@ -1674,33 +1674,21 @@
                 card.style.transition = transitionStr;
                 const offset = (idx - activeIdx + totalCards) % totalCards;
 
-                let translateX = 0;
-                let rotationAngle = 0;
-                let zIndex = 0;
+                // Circular path: all cards follow the same predetermined circle
+                const angle = (offset / totalCards) * Math.PI * 2; // Full circle in radians
+                const circleRadius = 400; // Horizontal radius of the circular path
 
-                if (offset === 0) {
-                    translateX = 0;
-                    rotationAngle = 0;
-                    zIndex = totalCards * 2; // Highest z-index for center card
-                } else if (offset < totalCards / 2) {
-                    translateX = -380;
-                    rotationAngle = 45;
-                    zIndex = totalCards - (offset * 2); // Better layering for left side
-                } else {
-                    translateX = 380;
-                    rotationAngle = -45;
-                    zIndex = totalCards - ((totalCards - offset) * 2); // Better layering for right side
-                }
+                // Position on the circle
+                const translateX = Math.sin(angle) * circleRadius;
+                const depth = -circleRadius * (1 - Math.cos(angle)); // Pushes back as we go around
 
-                let depth;
-                if (offset === 0) {
-                    depth = 0;
-                } else {
-                    const distance = Math.min(offset, totalCards - offset);
-                    depth = -distance * 300; // Deeper z-axis so cards go behind properly
-                }
+                // Z-index based on depth (deeper = lower z-index)
+                const zIndex = Math.round(1000 - depth);
 
-                const opacity = offset === 0 ? 1 : 1;
+                // Slight rotation based on position on circle
+                const rotationAngle = Math.sin(angle) * 45;
+
+                const opacity = 1;
 
                 card.style.zIndex = zIndex;
                 card.style.transform = `translateX(${translateX}px) rotateY(${rotationAngle}deg) translateZ(${depth}px)`;

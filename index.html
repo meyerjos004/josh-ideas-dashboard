@@ -1322,11 +1322,11 @@
                 // Update session every 30 seconds
                 setInterval(async () => {
                     if (!currentSessionId) return;
-                    await sbClient
+                    const { error } = await sbClient
                         .from('active_sessions')
                         .update({ last_active: new Date().toISOString() })
-                        .eq('id', currentSessionId)
-                        .catch(() => {}); // Silently ignore errors
+                        .eq('id', currentSessionId);
+                    // Silently ignore errors
                 }, 30000);
 
                 // Subscribe to active sessions

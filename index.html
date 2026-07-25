@@ -1686,13 +1686,10 @@
                 // Z-index based on depth (deeper = lower z-index)
                 const zIndex = Math.round(1000 - depth);
 
-                // Slight rotation based on position on circle
-                const rotationAngle = Math.sin(angle) * 45;
-
                 const opacity = 1;
 
                 card.style.zIndex = zIndex;
-                card.style.transform = `translateX(${translateX}px) rotateY(${rotationAngle}deg) translateZ(${depth}px)`;
+                card.style.transform = `translateX(${translateX}px) translateZ(${depth}px)`;
                 card.style.opacity = opacity;
 
                 card.classList.remove('active');

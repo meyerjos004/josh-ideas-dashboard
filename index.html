@@ -392,7 +392,7 @@
             transform-style: preserve-3d;
             transform-origin: center center;
             cursor: pointer;
-            transition: transform 2s linear, opacity 2s linear;
+            transition: transform 6s linear, opacity 6s linear;
         }
 
         .idea-card-carousel.active {
@@ -1667,8 +1667,8 @@
 
             // Set transition speed and easing based on whether it's auto-cycling
             const transitionStr = isAutoCycle
-                ? 'transform 2s linear, opacity 2s linear'
-                : 'transform 2s cubic-bezier(0.33, 0.66, 0.66, 1), opacity 2s cubic-bezier(0.33, 0.66, 0.66, 1)';
+                ? 'transform 6s linear, opacity 6s linear'
+                : 'transform 6s cubic-bezier(0.33, 0.66, 0.66, 1), opacity 6s cubic-bezier(0.33, 0.66, 0.66, 1)';
 
             cards.forEach((card, idx) => {
                 card.style.transition = transitionStr;
@@ -1681,15 +1681,15 @@
                 if (offset === 0) {
                     translateX = 0;
                     rotationAngle = 0;
-                    zIndex = totalCards;
+                    zIndex = totalCards * 2; // Highest z-index for center card
                 } else if (offset < totalCards / 2) {
                     translateX = -380;
                     rotationAngle = 45;
-                    zIndex = totalCards - offset;
+                    zIndex = totalCards - (offset * 2); // Better layering for left side
                 } else {
                     translateX = 380;
                     rotationAngle = -45;
-                    zIndex = totalCards - offset;
+                    zIndex = totalCards - ((totalCards - offset) * 2); // Better layering for right side
                 }
 
                 let depth;

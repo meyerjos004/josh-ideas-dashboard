@@ -1676,38 +1676,31 @@
 
                 let translateX = 0;
                 let rotationAngle = 0;
-                let depth = 0;
                 let zIndex = 0;
 
                 if (offset === 0) {
-                    // Active card at front center
                     translateX = 0;
                     rotationAngle = 0;
-                    depth = 0;
-                    zIndex = totalCards * 2;
-                } else if (offset === totalCards - 1) {
-                    // Back card directly behind active
-                    translateX = 0;
-                    rotationAngle = 0;
-                    depth = -1200; // Far back at center
-                    zIndex = 1;
+                    zIndex = totalCards * 2; // Highest z-index for center card
                 } else if (offset < totalCards / 2) {
-                    // Cards stacking left towards back
-                    const progress = offset / (totalCards / 2);
-                    translateX = -380 * progress;
-                    rotationAngle = 45 * progress;
-                    depth = -1200 * progress;
-                    zIndex = totalCards - (offset * 2);
+                    translateX = -380;
+                    rotationAngle = 45;
+                    zIndex = totalCards - (offset * 2); // Better layering for left side
                 } else {
-                    // Cards stacking right towards back
-                    const progress = (totalCards - offset) / (totalCards / 2);
-                    translateX = 380 * progress;
-                    rotationAngle = -45 * progress;
-                    depth = -1200 * progress;
-                    zIndex = totalCards - ((totalCards - offset) * 2);
+                    translateX = 380;
+                    rotationAngle = -45;
+                    zIndex = totalCards - ((totalCards - offset) * 2); // Better layering for right side
                 }
 
-                const opacity = 1;
+                let depth;
+                if (offset === 0) {
+                    depth = 0;
+                } else {
+                    const distance = Math.min(offset, totalCards - offset);
+                    depth = -distance * 300; // Deeper z-axis so cards go behind properly
+                }
+
+                const opacity = offset === 0 ? 1 : 1;
 
                 card.style.zIndex = zIndex;
                 card.style.transform = `translateX(${translateX}px) rotateY(${rotationAngle}deg) translateZ(${depth}px)`;

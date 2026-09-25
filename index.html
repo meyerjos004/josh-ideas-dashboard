@@ -1027,6 +1027,100 @@
             background: rgba(255, 100, 100, 0.3);
             border-color: rgba(255, 100, 100, 0.6);
         }
+        /* ==================== PHONE ONLY (max 700px) ==================== */
+        /* Desktop never sees these rules */
+        .mobile-filters-toggle { display: none; }
+        .filters-panel { display: contents; }
+
+        @media (max-width: 700px) {
+            html, body { overflow-x: hidden; }
+
+            .container { padding: 70px 16px 40px; overflow-x: clip; }
+
+            /* Menu: small, top-left, no longer covers the title */
+            .sidebar { left: 12px; top: 12px; width: 150px; }
+            .sidebar.collapsed { width: 44px; }
+
+            header { margin-bottom: 20px; }
+            h1 { font-size: 2.2rem; }
+            .subtitle { font-size: 0.8rem; }
+            .header-controls { margin-top: 14px; gap: 10px; }
+
+            /* Stats: one compact row */
+            .stats-bar {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 6px;
+                margin-bottom: 20px;
+            }
+            .stat-card { padding: 10px 4px; border-radius: 10px; }
+            .stat-number { font-size: 1.35rem; min-height: 0; margin-bottom: 2px; }
+            .stat-label { font-size: 0.55rem; letter-spacing: 0.3px; }
+
+            /* Toolbar: search full width, buttons share a row */
+            .controls { gap: 12px; margin-bottom: 30px; }
+            .search-bar { flex-wrap: wrap; gap: 8px; }
+            .search-bar input[type="text"] { flex: 1 1 100%; font-size: 16px; }
+            .search-bar .add-btn { flex: 1 1 0; padding: 11px 6px; font-size: 0.8rem; }
+            #scrollHint { display: none; }
+
+            /* Filters tucked behind a button */
+            .mobile-filters-toggle {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+                padding: 12px 16px;
+                font-size: 0.9rem;
+            }
+            .mobile-filters-toggle .chev { transition: transform 0.2s ease; }
+            .controls.filters-open .mobile-filters-toggle .chev { transform: rotate(180deg); }
+            .filters-panel { display: none; }
+            .controls.filters-open .filters-panel {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                padding: 4px 2px 6px;
+            }
+            .filter-buttons { gap: 8px; }
+            .filter-buttons button { padding: 9px 13px; }
+            .filter-label { width: 100%; margin: 0; font-size: 0.75rem; }
+            .sort-controls .filter-label { width: auto; }
+
+            /* Carousels sized to the phone */
+            .carousel-section { margin-bottom: 50px; }
+            .carousel-section-header { margin-bottom: 20px; }
+            .carousel-section-title { font-size: 1.7rem; }
+            .carousel-3d {
+                height: 360px;
+                margin-bottom: 10px;
+                perspective: 1400px;
+                touch-action: pan-y;
+                overflow-x: clip;
+            }
+            .idea-card-carousel {
+                width: calc(100vw - 40px);
+                height: 280px;
+                margin-left: calc((100vw - 40px) / -2);
+                margin-top: -140px;
+            }
+            .idea-card-face { padding: 18px; border-radius: 16px; }
+            .card-header { gap: 10px; }
+            .card-name { font-size: 1.15rem; word-break: break-word; }
+            .card-top-buttons { flex-shrink: 0; }
+            .card-btn { padding: 7px 9px; font-size: 0.7rem; }
+            .card-description { -webkit-line-clamp: 3; }
+            .card-footer { gap: 8px; }
+            .card-expand-hint { flex: 1; text-align: left; }
+
+            /* Pop-ups fit the screen */
+            .modal { padding: 10px; }
+            .modal-content { padding: 22px 18px; max-height: 92vh; }
+            .modal-header { margin-bottom: 18px; gap: 12px; }
+            .modal-title { font-size: 1.45rem; }
+            .modal-meta-row { gap: 12px; margin-bottom: 18px; padding-bottom: 18px; }
+            .modal-description { font-size: 0.95rem; line-height: 1.7; }
+            .form-buttons { flex-wrap: wrap; }
+        }
     </style>
 </head>
 <body>
@@ -1066,6 +1160,10 @@
                     <div class="scroll-text">scroll on the cards to cycle</div>
                 </div>
             </div>
+            <button type="button" class="mobile-filters-toggle" onclick="toggleMobileFilters()">
+                <span>Filters &amp; Sort</span><span class="chev">▾</span>
+            </button>
+            <div class="filters-panel">
             <div class="filter-buttons">
                 <span class="filter-label">Priority:</span>
                 <button onclick="toggleFilter('priority', 'P1')" data-filter="priority-P1">P1</button>
@@ -1089,6 +1187,7 @@
                 <select id="sortBy" onchange="renderIdeas()">
                     <option value="name">Name (A-Z)</option>
                 </select>
+            </div>
             </div>
         </div>
 
@@ -1679,6 +1778,25 @@
                     }
                 });
 
+                // Swipe left/right to cycle (phones/tablets only)
+                let touchStartX = 0, touchStartY = 0;
+                carousel.addEventListener('touchstart', (e) => {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                    stopCarouselCycle(categoryKey);
+                }, { passive: true });
+                carousel.addEventListener('touchend', (e) => {
+                    const dx = e.changedTouches[0].clientX - touchStartX;
+                    const dy = e.changedTouches[0].clientY - touchStartY;
+                    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+                        const dir = dx < 0 ? 1 : -1;
+                        carouselIndices[categoryKey] = (carouselIndices[categoryKey] + dir + ideas.length) % ideas.length;
+                        carousel.querySelectorAll('.idea-card-carousel').forEach(c => c.classList.remove('hovering'));
+                        updateCarousel(carousel, ideas, carouselIndices[categoryKey]);
+                    }
+                    startCarouselCycle(carousel, categoryKey, ideas);
+                }, { passive: true });
+
                 // Stop momentum on click
                 carousel.addEventListener('click', () => {
                     carouselMomentum[categoryKey].velocity = 0;
@@ -1692,6 +1810,8 @@
                     const card = face.closest('.idea-card-carousel');
 
                     face.addEventListener('mouseenter', () => {
+                        // No hover effects on touch screens
+                        if (window.matchMedia('(hover: none)').matches) return;
                         // Don't apply hover effects while scrolling/momentum is active
                         if (carouselMomentum[categoryKey].velocity !== 0) {
                             return;
@@ -1787,7 +1907,7 @@
 
                 // Circular path: all cards follow the same predetermined circle
                 const angle = (offset / totalCards) * Math.PI * 2; // Full circle in radians
-                const circleRadius = 1000; // Horizontal radius of the circular path
+                const circleRadius = window.matchMedia('(max-width: 700px)').matches ? 600 : 1000; // Horizontal radius (smaller on phones)
                 const maxDepth = 800; // Max depth at the back
 
                 // Position on the circle
@@ -2349,6 +2469,18 @@
                 console.error('Error deleting card:', error);
                 alert('Failed to delete card');
             }
+        }
+
+        // Phones start with the menu collapsed so it stays out of the way
+        if (window.matchMedia('(max-width: 700px)').matches) {
+            document.addEventListener('DOMContentLoaded', () => {
+                const sb = document.getElementById('sidebar');
+                if (sb && !sb.classList.contains('collapsed')) toggleSidebar();
+            });
+        }
+
+        function toggleMobileFilters() {
+            document.querySelector('.controls').classList.toggle('filters-open');
         }
 
         function toggleSidebar() {

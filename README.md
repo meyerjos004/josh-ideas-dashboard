@@ -1,62 +1,54 @@
-# Josh's Ideas Dashboard
+# Pandora's Box — Josh's Ideas Dashboard
 
-Live, auto-updating ideas dashboard powered by Google Sheets.
+A live database of ideas to look into: tools, projects, and anything else worth exploring. Ideas are grouped by category into 3D card carousels, and each one has a priority, a status and a favorite flag.
 
-## Setup
+**Live site:** https://meyerjos004.github.io/josh-ideas-dashboard/
 
-### 1. Google Sheet
-Sheet ID: `1UA_TX0lA3xwHQHY9k0gIprfkZ9W05nD2tSBEURamuqQ`
-Edit link: https://docs.google.com/spreadsheets/d/1UA_TX0lA3xwHQHY9k0gIprfkZ9W05nD2tSBEURamuqQ/edit
+## Stack
 
-Your sheet is already populated with the 3 ideas. Edit it directly to add/update ideas.
-
-**Populate the sheet with your ideas:**
-1. Open the sheet above
-2. Add headers in row 1: `Category`, `Name`, `Description`, `Priority`, `FullDescription`
-3. Add your ideas starting in row 2
-
-**Sample data (paste this into your sheet):**
-```
-Category,Name,Description,Priority,FullDescription
-AI Tools,Wisprflow,Voice-to-text that sounds like you with keyword shortcuts,3,AI-powered voice-to-text that adapts tone based on context (formal in docs, casual in messages, enthusiastic in emails) and works system-wide across any app or website with a text field. Creates voice shortcuts/snippets for frequently used text like intros, links, code blocks, or replies that paste perfectly every time. Cleans filler words, fixes punctuation, formats lists, and applies markdown so text is ready to send. Available on Mac, Windows, Android, and iOS. Free tier + paid subscription.
-AI Tools,Granola,Records meetings and calls creates searchable transcripts,3,AI notepad that captures device audio directly with no bot joining your video call, works with any meeting platform (Zoom, Google Meet, Teams, Slack huddles, phone calls) because capture happens at the system audio level. Audio transcribes in real time and deletes immediately with no audio files stored, merges your rough notes with AI-enhanced summary surfacing decisions, action items, and key quotes, and creates a searchable record you can query later. Available for Mac, Windows, iOS, and Android with calendar integration. Free plan available; paid plans unlock integrations with CRM systems and MCP. SOC 2 Type 2 certified (July 2025).
-AI Tools,Littlebird,Desktop AI that reads your screen and remembers everything,3,An always-on AI assistant that runs on your desktop (Mac and Windows with iOS/Android companion apps) and reads your screen in real time using OCR and NLP to build a searchable memory of everything you see across all apps without storing screenshots. Transcribes meetings automatically, allows context-aware queries ('What did we decide on pricing in last week's meeting?'), surfaces personalized insights, and provides scheduled AI briefings (Routines) that can be daily, weekly, or monthly. No app integrations required — it works by seeing what's on your screen — but supports hundreds of integrations for deeper access. Granular privacy controls let you pause collection or exclude sensitive apps. Raised $11M as of March 2026 with backing from prominent investors.
-```
-
-### 2. Push to GitHub
-
-```bash
-# Create new repo on GitHub (via web): https://github.com/new
-# Name it: josh-ideas-dashboard
-# Then run these commands:
-
-cd josh-ideas-dashboard
-git branch -M main
-git remote add origin https://github.com/meyerjos004/josh-ideas-dashboard.git
-git push -u origin main
-```
-
-### 3. Enable GitHub Pages
-
-1. Go to your repo: https://github.com/meyerjos004/josh-ideas-dashboard
-2. Settings → Pages
-3. Source: Deploy from main branch
-4. Save
-
-Your dashboard will be live at: `https://meyerjos004.github.io/josh-ideas-dashboard/`
-
-## How It Works
-
-- The dashboard fetches data from your Google Sheet every 30 seconds
-- Edit the sheet → changes appear automatically on the dashboard
-- No manual redeployment needed
-- The sheet must remain publicly viewable (anyone with link can view)
+- **Frontend:** a single static `index.html` (vanilla HTML/CSS/JS, no build step)
+- **Backend:** Supabase (Postgres + Realtime)
+- **Animation:** anime.js
+- **Hosting:** GitHub Pages, deployed from `main`. A push to `main` updates the live site.
 
 ## Features
 
-- 🔍 Search by name or description
-- 📊 Filter by priority level (1-5)
-- 🎨 Dark hacker aesthetic
-- ⚡ Live auto-updates
-- 📱 Mobile responsive
-- ✨ Smooth animations
+- **Category carousels:** each category gets its own 3D carousel with momentum scrolling (a fast, repeated scroll flicks through cards)
+- **Card details:** click a card for the full description; cards can have a custom brand color
+- **Search:** filter by name or description
+- **Priority filter:** P1–P5 (P1 = highest, P5 = lowest)
+- **Status filter:** Ideating / Building / Shipped
+- **Favorites:** star ideas and filter to show only favorites
+- **Sort:** by name (A–Z)
+- **Stats bar:** quick counts across the dashboard
+- **Card management:** add, edit and delete cards in the UI
+- **Category management:** add, rename and remove categories in the UI
+- **Realtime sync:** changes in Supabase show up instantly, no refresh needed
+- **Active users:** a live count of who's viewing the dashboard
+- **Collapsible sidebar**, mobile responsive
+
+## Data model (Supabase)
+
+| Table | Holds |
+|---|---|
+| `ideas` | The cards: name, short description, full description, category, priority, color |
+| `categories` | Category list (the source of truth for category names) |
+| `idea_statuses` | Status per idea (Ideating / Building / Shipped) |
+| `favorites` | Which ideas are favorited |
+| `active_sessions` | Presence tracking for the active-user counter |
+
+## Adding ideas
+
+Ideas can be added two ways:
+
+1. **In the UI:** use **+ Add Card** / **+ Add Category**.
+2. **Through Claude:** say "website ideas" or `/addidea`, then give `What - Name - Desc - 1/5`. Claude researches the idea, writes the full description, picks a brand color from the palette, matches it to an existing category (or creates the category first), and inserts it into Supabase.
+
+Always reuse existing category names exactly. `AI Tools` and `AI tool` would become two separate categories.
+
+## Files
+
+| File | What it is |
+|---|---|
+| `index.html` | The live dashboard (Supabase-backed) |
+| `index-anime.html` | Earlier anime.js prototype that still reads from the old Google Sheet; kept for reference |

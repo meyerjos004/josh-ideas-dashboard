@@ -2241,7 +2241,8 @@
                 carouselScrollTracking[categoryKey] = { lastScrollTime: 0, scrollCount: 0, lastDirection: 0 };
 
                 // Click-and-throw: drag sideways to spin, let go to fling it with momentum
-                const PX_PER_CARD = 240;
+                // Same spin feel for any card count: small carousels need more drag per card
+                const PX_PER_CARD = Math.max(240, 1800 / Math.max(1, ideas.length));
                 let drag = null, throwRaf = null, livePos = null, justDragged = false;
                 const currentPos = () => (livePos !== null ? livePos : carouselIndices[categoryKey]);
                 function renderAt(pos) {

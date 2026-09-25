@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Josh's Ideas Dashboard</title>
+    <meta name="theme-color" content="#F2F7F2">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap">
     <!-- ANIME.JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <!-- SUPABASE CLIENT -->
@@ -1121,73 +1125,236 @@
             .modal-description { font-size: 0.95rem; line-height: 1.7; }
             .form-buttons { flex-wrap: wrap; }
         }
-        /* ==================== PHONE BOARD VIEW (Trello-style) ==================== */
+        /* ==================== BOARD VIEW (Trello-style) ==================== */
         .board-view { display: none; }
+        body.view-board .board-view { display: block; }
+        body.view-board #content,
+        body.view-board #scrollHint { display: none !important; }
+
+        .board-toolbar { display: flex; justify-content: flex-start; margin-bottom: 14px; }
+        .board-mode {
+            display: inline-flex;
+            background: rgba(17, 19, 20, 0.06);
+            border-radius: 10px;
+            padding: 3px;
+            gap: 2px;
+        }
+        .board-mode button {
+            border: none;
+            background: transparent;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--ink-2);
+            box-shadow: none;
+            backdrop-filter: none;
+        }
+        .board-mode button:hover { background: transparent; color: var(--ink); }
+        .board-mode button.on {
+            background: #ffffff;
+            color: var(--ink);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        .board-tabs { display: none; }
+
+        .board-columns {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(270px, 1fr);
+            gap: 14px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            align-items: start;
+        }
+        .board-col {
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.34);
+            border: 1px solid var(--edge);
+            box-shadow: inset 0 1px 0 var(--edge-hi);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 18px;
+            min-height: 0;
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+        .board-col.drop-target {
+            border-color: var(--ink);
+            background: rgba(255, 255, 255, 0.6);
+        }
+        .board-col-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px 8px;
+            font-family: var(--display);
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: -0.01em;
+            color: var(--ink);
+        }
+        .board-col-head .n {
+            font-family: var(--mono);
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--ink-3);
+            font-variant-numeric: tabular-nums;
+        }
+        .board-col-body {
+            flex: 1;
+            padding: 2px 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .board-empty {
+            border: 1px dashed rgba(17, 19, 20, 0.18);
+            border-radius: 12px;
+            padding: 22px 12px;
+            text-align: center;
+            font-size: 0.82rem;
+            color: var(--ink-3);
+        }
+
+        .board-card {
+            position: relative;
+            overflow: hidden;
+            background: var(--glass-strong);
+            border: 1px solid var(--edge);
+            border-radius: 12px;
+            padding: 12px 12px 12px 16px;
+            cursor: pointer;
+            flex: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), inset 0 1px 0 var(--edge-hi);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.15s ease;
+        }
+        .board-card::before {
+            content: "";
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--stripe, var(--ink));
+        }
+        .board-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08), inset 0 1px 0 var(--edge-hi); }
+        .board-card.lifting { transform: scale(0.97); }
+        .board-card.placeholder { opacity: 0.3; }
+        .board-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .board-card-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--ink);
+            line-height: 1.3;
+            letter-spacing: -0.01em;
+            word-break: break-word;
+        }
+        .board-card-desc {
+            margin-top: 4px;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: var(--ink-2);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .board-star {
+            border: none;
+            background: none;
+            padding: 0 2px;
+            font-size: 1.05rem;
+            line-height: 1;
+            color: var(--ink-3);
+            box-shadow: none;
+            backdrop-filter: none;
+        }
+        .board-star:hover { background: none; color: var(--ink); }
+        .board-star.on { color: var(--ink); }
+        .board-card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            gap: 8px;
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            color: var(--ink-3);
+        }
+        .board-prio {
+            display: inline-block;
+            padding: 2px 7px;
+            margin-right: 6px;
+            border-radius: 6px;
+            background: rgba(17, 19, 20, 0.06);
+            color: var(--ink-2);
+        }
+        .board-prio.p1 { background: var(--ink); color: #ffffff; }
+        .board-chip {
+            border: 1px solid var(--edge);
+            background: #ffffff;
+            color: var(--ink);
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-family: var(--body);
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+            box-shadow: none;
+            backdrop-filter: none;
+        }
+        .board-chip:hover { background: var(--ink); color: #ffffff; border-color: var(--ink); }
+
+        .board-ghost {
+            position: fixed;
+            z-index: 3000;
+            pointer-events: none;
+            transform: rotate(3deg) scale(1.03);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+            background: #ffffff;
+        }
+        .board-hint {
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            color: var(--ink-3);
+            margin-top: 10px;
+        }
 
         @media (max-width: 700px) {
-            #content { display: none; }
-            .board-view { display: block; }
-
-            .board-toolbar {
-                display: flex;
-                justify-content: center;
-                margin-bottom: 12px;
-            }
-            .board-mode {
-                display: inline-flex;
-                background: rgba(255, 255, 255, 0.06);
-                border: 1px solid rgba(255, 255, 255, 0.12);
-                border-radius: 10px;
-                padding: 3px;
-                gap: 3px;
-            }
-            .board-mode button {
-                border: none;
-                background: transparent;
-                padding: 8px 18px;
-                border-radius: 7px;
-                font-size: 0.85rem;
-                color: #a0a0a8;
-            }
-            .board-mode button.on {
-                background: rgba(100, 150, 255, 0.22);
-                color: #e8eeff;
-            }
-
+            .board-toolbar { justify-content: center; margin-bottom: 12px; }
+            .board-hint { text-align: center; }
             .board-tabs {
                 display: flex;
                 gap: 6px;
                 overflow-x: auto;
                 scrollbar-width: none;
-                padding: 0 2px 10px;
                 margin: 0 -16px;
-                padding-left: 16px;
-                padding-right: 16px;
+                padding: 0 16px 10px;
             }
             .board-tabs::-webkit-scrollbar { display: none; }
             .board-tab {
                 flex: 0 0 auto;
                 padding: 6px 12px;
                 border-radius: 999px;
-                font-size: 0.75rem;
-                font-weight: 700;
-                letter-spacing: 0.4px;
-                text-transform: uppercase;
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                color: #a0a0a8;
+                font-size: 0.72rem;
+                font-weight: 600;
+                background: var(--glass);
+                border: 1px solid var(--edge);
+                color: var(--ink-2);
             }
-            .board-tab.on {
-                background: rgba(100, 150, 255, 0.2);
-                border-color: rgba(100, 150, 255, 0.45);
-                color: #e8eeff;
-            }
-            .board-tab .n { opacity: 0.7; margin-left: 4px; }
+            .board-tab.on { background: var(--ink); border-color: var(--ink); color: #ffffff; }
+            .board-tab .n { opacity: 0.7; margin-left: 4px; font-family: var(--mono); }
 
             .board-columns {
                 display: flex;
                 gap: 12px;
-                overflow-x: auto;
                 scroll-snap-type: x mandatory;
                 scrollbar-width: none;
                 margin: 0 -16px;
@@ -1195,139 +1362,270 @@
                 scroll-padding: 0 16px;
                 height: calc(100dvh - 150px);
                 min-height: 420px;
+                align-items: stretch;
             }
             .board-columns::-webkit-scrollbar { display: none; }
             .board-columns.dragging { scroll-snap-type: none; }
+            .board-col { flex: 0 0 calc(100vw - 56px); scroll-snap-align: start; }
+            .board-col-body { overflow-y: auto; overscroll-behavior: contain; }
+            .board-card:hover { transform: none; }
+        }
 
-            .board-col {
-                flex: 0 0 calc(100vw - 56px);
-                scroll-snap-align: start;
-                display: flex;
-                flex-direction: column;
-                background: rgba(0, 0, 0, 0.28);
-                border: 1px solid rgba(255, 255, 255, 0.07);
-                border-radius: 14px;
-                min-height: 0;
-                transition: border-color 0.15s ease, background 0.15s ease;
-            }
-            .board-col.drop-target {
-                border-color: rgba(100, 150, 255, 0.7);
-                background: rgba(100, 150, 255, 0.1);
-            }
-            .board-col-head {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 12px 14px 8px;
-                font-weight: 800;
-                font-size: 0.95rem;
-                color: #f0f0f0;
-            }
-            .board-col-head .n {
-                font-size: 0.75rem;
-                font-weight: 700;
-                color: #a0a0a8;
-                background: rgba(255, 255, 255, 0.07);
-                padding: 2px 8px;
-                border-radius: 999px;
-            }
-            .board-col-body {
-                flex: 1;
-                overflow-y: auto;
-                padding: 2px 10px 12px;
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-                overscroll-behavior: contain;
-            }
-            .board-empty {
-                border: 1px dashed rgba(255, 255, 255, 0.15);
-                border-radius: 10px;
-                padding: 18px;
-                text-align: center;
-                font-size: 0.8rem;
-                color: #7a7a82;
-            }
+        /* ==================== FROSTED THEME (white + lava lamp) ==================== */
+        :root {
+            --paper: #F2F7F2;
+            --ink: #111314;
+            --ink-2: #4a4f4d;
+            --ink-3: #6f7572;
+            --glass: rgba(255, 255, 255, 0.62);
+            --glass-strong: rgba(255, 255, 255, 0.82);
+            --edge: rgba(17, 19, 20, 0.09);
+            --edge-hi: rgba(255, 255, 255, 0.9);
+            --danger: #b4232f;
+            --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+            --body: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+        }
 
-            .board-card {
-                position: relative;
-                background: rgba(255, 255, 255, 0.07);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-left: 5px solid var(--stripe, #6496ff);
-                background: linear-gradient(90deg, color-mix(in srgb, var(--stripe, #6496ff) 30%, transparent) 0%, rgba(255, 255, 255, 0.06) 70%);
-                border-radius: 10px;
-                padding: 10px 10px 10px 12px;
-                cursor: pointer;
-                user-select: none;
-                -webkit-user-select: none;
-                -webkit-touch-callout: none;
-                transition: transform 0.15s ease, opacity 0.15s ease;
-            }
-            .board-card:active { background: rgba(255, 255, 255, 0.1); }
-            .board-card.lifting { transform: scale(0.97); }
-            .board-card.placeholder { opacity: 0.3; }
-            .board-card-top {
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-start;
-                gap: 8px;
-            }
-            .board-card-name {
-                font-weight: 700;
-                font-size: 0.95rem;
-                color: #f4f4f6;
-                line-height: 1.3;
-                word-break: break-word;
-            }
-            .board-star {
-                border: none;
-                background: none;
-                padding: 0 2px;
-                font-size: 1.1rem;
-                line-height: 1;
-                color: rgba(255, 255, 255, 0.3);
-            }
-            .board-star.on { color: #ffd166; }
-            .board-card-meta {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-top: 6px;
-                gap: 8px;
-                font-size: 0.75rem;
-                color: #a0a0a8;
-            }
-            .board-chip {
-                border: 1px solid rgba(255, 255, 255, 0.18);
-                background: rgba(255, 255, 255, 0.06);
-                color: #d8d8e0;
-                padding: 4px 9px;
-                border-radius: 999px;
-                font-size: 0.68rem;
-                font-weight: 700;
-                letter-spacing: 0.3px;
-                text-transform: uppercase;
-                white-space: nowrap;
-            }
+        body {
+            background: var(--paper);
+            color: var(--ink);
+            font-family: var(--body);
+            -webkit-font-smoothing: antialiased;
+        }
 
-            .board-ghost {
-                position: fixed;
-                z-index: 3000;
-                pointer-events: none;
-                transform: rotate(3deg) scale(1.03);
-                box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
-                background: rgba(40, 44, 60, 0.97);
-            }
-            .board-hint {
-                text-align: center;
-                font-size: 0.7rem;
-                color: #6c6c74;
-                margin-top: 8px;
-            }
+        /* Lava lamp backdrop */
+        .lava-stage { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: var(--paper); overflow: hidden; }
+        #lava { position: absolute; inset: 0; width: 100%; height: 100%; }
+        .lava-frost { position: absolute; inset: 0; background: rgba(242, 247, 242, 0.22); }
+        .lava-grain {
+            position: absolute; inset: 0; opacity: 0.18; mix-blend-mode: multiply;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+        }
+        .container { position: relative; z-index: 1; max-width: 1220px; margin: 0 auto; padding: 0 20px 60px; }
+        .sidebar { display: none !important; }
+
+        /* Top bar */
+        .topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50; padding: 12px 0; }
+        .topbar-inner {
+            display: flex; align-items: center; gap: 12px;
+            background: var(--glass-strong);
+            border: 1px solid var(--edge);
+            box-shadow: inset 0 1px 0 var(--edge-hi), 0 8px 30px rgba(0, 0, 0, 0.06);
+            backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+            border-radius: 14px; padding: 8px 8px 8px 14px;
+        }
+        .brand { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; font-size: 17px; letter-spacing: -0.02em; white-space: nowrap; color: var(--ink); }
+        .brand-mark { width: 26px; height: 26px; border-radius: 7px; background: var(--ink); position: relative; overflow: hidden; flex: none; }
+        .brand-mark::before { content: ""; position: absolute; left: 5px; right: 5px; top: 7px; height: 2px; background: var(--paper); border-radius: 2px; transform: rotate(-12deg); transform-origin: left; }
+        .brand-mark::after { content: ""; position: absolute; left: 5px; right: 5px; bottom: 6px; top: 12px; border: 2px solid var(--paper); border-top: 0; border-radius: 0 0 3px 3px; }
+        .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+        .view-toggle { display: inline-flex; background: rgba(17, 19, 20, 0.06); border-radius: 10px; padding: 3px; gap: 2px; }
+        .view-toggle button { border: none; background: transparent; box-shadow: none; backdrop-filter: none; padding: 7px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; color: var(--ink-2); }
+        .view-toggle button:hover { background: transparent; color: var(--ink); }
+        .view-toggle button.on { background: #ffffff; color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
+        .new-idea-btn { background: var(--ink) !important; color: #ffffff !important; border-color: var(--ink) !important; font-size: 0.85rem; padding: 9px 14px; border-radius: 9px; }
+        .new-idea-btn:hover { background: #2a2e2f !important; }
+
+        .topnav { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+        .topnav-link {
+            border: 0; background: transparent; box-shadow: none; backdrop-filter: none;
+            font-size: 13.5px; font-weight: 500; color: var(--ink-2);
+            padding: 7px 11px; border-radius: 8px;
+        }
+        .topnav-link:hover { background: rgba(17, 19, 20, 0.06); border: 0; color: var(--ink); }
+        .topnav-link.on, .topnav-link.active { background: rgba(17, 19, 20, 0.07); color: var(--ink); box-shadow: none; }
+        .topnav-sep { width: 1px; height: 18px; background: var(--edge); margin: 0 6px; }
+        .new-idea-btn { margin-left: 8px; }
+
+        .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .search {
+            flex: 1 1 240px; display: flex; align-items: center; gap: 8px;
+            background: var(--glass-strong); border: 1px solid var(--edge); border-radius: 11px;
+            padding: 0 12px; box-shadow: inset 0 1px 0 var(--edge-hi); color: var(--ink-3);
+        }
+        .search:focus-within { border-color: var(--ink); background: #ffffff; }
+        .search input[type="text"], .search input[type="text"]:focus {
+            border: 0; background: transparent; box-shadow: none; padding: 11px 0; width: 100%;
+            font-size: 15px; outline: none; border-radius: 0;
+        }
+        .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+        .chip { border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 500; }
+        .phone-only { display: none; }
+        body.view-board #statusChips { display: none; }
+        body:not(.view-board) #groupToggle { display: none; }
+        #scrollHint { margin: 0 0 0 auto; justify-content: flex-end; width: fit-content; }
+        #scrollHint .mouse-wheel { margin: 0; transform: scale(0.7); }
+        .deleted-card-item { background: #ffffff; border: 1px solid var(--edge); }
+        .deleted-card-name { color: var(--ink); }
+        .permanent-delete-btn { background: rgba(180, 35, 47, 0.07); border: 1px solid rgba(180, 35, 47, 0.25); color: var(--danger); }
+
+        /* Hero */
+        header { text-align: left; max-width: none; margin: 0 0 28px 0; padding-top: 48px; animation: none; }
+        .subtitle {
+            display: flex; align-items: center; gap: 8px;
+            font-family: var(--mono); font-size: 12px; font-weight: 500;
+            letter-spacing: 0.12em; color: var(--ink-2); margin-bottom: 10px;
+        }
+        .subtitle::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #1f9d55; box-shadow: 0 0 0 4px rgba(31, 157, 85, 0.15); }
+        h1 {
+            font-family: var(--display); font-weight: 800;
+            font-size: clamp(48px, 9vw, 112px); line-height: 0.92; letter-spacing: -0.045em;
+            color: var(--ink); margin: 0 0 16px; text-wrap: balance;
+        }
+        .hero-lede { font-size: 17px; color: var(--ink-2); max-width: 46ch; margin: 0; }
+        .header-controls { justify-content: flex-start; margin-top: 18px; }
+
+        .refresh-btn, #activeUsers {
+            background: var(--glass) !important;
+            border: 1px solid var(--edge) !important;
+            color: var(--ink-2) !important;
+            border-radius: 9px !important;
+            box-shadow: inset 0 1px 0 var(--edge-hi);
+            font-size: 0.82rem !important;
+            padding: 8px 12px !important;
+        }
+        .refresh-btn:hover { color: var(--ink) !important; background: #ffffff !important; }
+
+        /* Stats strip */
+        .stats-bar {
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px; max-width: none; margin: 0 0 36px 0;
+            background: var(--edge); border: 1px solid var(--edge);
+            border-radius: 16px; overflow: hidden;
+        }
+        .stat-card {
+            background: var(--glass); border: 0; border-radius: 0;
+            backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+            padding: 16px 18px; text-align: left; animation: none;
+        }
+        .stat-number {
+            font-family: var(--display); font-weight: 700; font-size: 30px; letter-spacing: -0.03em;
+            background: none; -webkit-text-fill-color: var(--ink); color: var(--ink);
+            min-height: 0; margin-bottom: 2px; justify-content: flex-start;
+            font-variant-numeric: tabular-nums;
+        }
+        .stat-label { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: 0.08em; color: var(--ink-3); }
+
+        /* Controls */
+        .controls { max-width: none; margin: 0 0 32px 0; gap: 14px; }
+        input[type="text"] {
+            background: var(--glass-strong); border: 1px solid var(--edge); color: var(--ink);
+            border-radius: 11px; box-shadow: inset 0 1px 0 var(--edge-hi); font-family: var(--body);
+        }
+        input[type="text"]:focus { border-color: var(--ink); background: #ffffff; box-shadow: 0 0 0 3px rgba(17, 19, 20, 0.08); }
+        input[type="text"]::placeholder { color: var(--ink-3); }
+        .add-btn {
+            background: var(--glass-strong); color: var(--ink); border: 1px solid var(--edge);
+            border-radius: 11px; font-weight: 600; box-shadow: inset 0 1px 0 var(--edge-hi);
+        }
+        .add-btn:hover { background: #ffffff; border-color: rgba(17, 19, 20, 0.2); }
+        .filter-label { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: var(--ink-3); }
+
+        button {
+            background: var(--glass); color: var(--ink-2); border: 1px solid var(--edge);
+            font-family: var(--body); font-weight: 500;
+        }
+        button:hover { background: #ffffff; border-color: rgba(17, 19, 20, 0.18); color: var(--ink); }
+        button.active { background: var(--ink); border-color: var(--ink); color: #ffffff; box-shadow: none; }
+        .filter-buttons button { border-radius: 999px; padding: 8px 14px; font-size: 0.82rem; }
+        select { background: var(--glass-strong); color: var(--ink); border: 1px solid var(--edge); border-radius: 9px; font-family: var(--body); }
+        select option { background: #ffffff; color: var(--ink); }
+        .mobile-filters-toggle { background: var(--glass-strong); border: 1px solid var(--edge); color: var(--ink); border-radius: 11px; font-weight: 600; }
+
+        .mouse-wheel { border-color: var(--ink-3); }
+        .mouse-wheel::before, .wheel-scroll { background: var(--ink-3); }
+        .scroll-text { color: var(--ink-3); font-family: var(--mono); font-weight: 500; }
+
+        /* Carousel cards */
+        .carousel-section-title { font-family: var(--display); color: var(--ink); letter-spacing: -0.03em; }
+        .carousel-section-count { font-family: var(--mono); font-size: 0.75rem; color: var(--ink-3); }
+        .idea-card-face,
+        .idea-card-carousel .idea-card-face {
+            background: var(--glass-strong) !important;
+            border: 1px solid var(--edge) !important;
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            box-shadow: inset 0 1px 0 var(--edge-hi), 0 12px 40px rgba(0, 0, 0, 0.10);
+            color: var(--ink);
+            padding-left: 34px;
+        }
+        .idea-card-face::before {
+            content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+            background: var(--c, var(--ink));
+        }
+        .idea-card-carousel.active .idea-card-face:hover,
+        .idea-card-carousel.next .idea-card-face:hover,
+        .idea-card-carousel.prev .idea-card-face:hover,
+        .idea-card-face:hover { box-shadow: inset 0 1px 0 var(--edge-hi), 0 30px 60px rgba(0, 0, 0, 0.16) !important; }
+        .idea-card-carousel.hovering { box-shadow: none !important; }
+        .card-header { border-bottom-color: var(--edge); }
+        .card-footer { border-top-color: var(--edge); }
+        .card-name { font-family: var(--display); color: var(--ink); letter-spacing: -0.02em; }
+        .card-description { color: var(--ink-2); }
+        .card-meta { color: var(--ink-2); font-family: var(--mono); }
+        .card-expand-hint { color: var(--ink-3); }
+        .card-btn { background: #ffffff; border: 1px solid var(--edge); color: var(--ink); }
+        .card-btn:hover { background: var(--ink); border-color: var(--ink); color: #ffffff; }
+        .delete-btn { background: rgba(180, 35, 47, 0.07) !important; border: 1px solid rgba(180, 35, 47, 0.25) !important; color: var(--danger) !important; }
+        .delete-btn:hover { background: var(--danger) !important; color: #ffffff !important; }
+        .empty-state { color: var(--ink-3); }
+
+        /* Pop-ups */
+        .modal { background: rgba(242, 247, 242, 0.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        .modal-content {
+            background: rgba(255, 255, 255, 0.9); border: 1px solid var(--edge);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.18); color: var(--ink);
+        }
+        .modal-title { font-family: var(--display); color: var(--ink); letter-spacing: -0.03em; }
+        .modal-close { color: var(--ink-3); background: rgba(17, 19, 20, 0.05); border-radius: 10px; }
+        .modal-close:hover { color: var(--ink); background: rgba(17, 19, 20, 0.08); }
+        .modal-meta-row { border-bottom-color: var(--edge); }
+        .modal-meta-label { font-family: var(--mono); font-weight: 500; color: var(--ink-3); }
+        .modal-meta-value { color: var(--ink); font-family: var(--display); }
+        .modal-description { color: var(--ink-2); }
+        .modal-tag { background: rgba(17, 19, 20, 0.06); color: var(--ink); }
+        .form-group label { color: var(--ink-2); font-family: var(--mono); font-weight: 500; font-size: 0.75rem; }
+        .form-group input, .form-group textarea, .form-group select { background: #ffffff; border: 1px solid var(--edge); color: var(--ink); }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--ink); background: #ffffff; }
+        .save-btn { background: var(--ink); color: #ffffff; border: 1px solid var(--ink); }
+        .save-btn:hover { background: #2a2e2f; }
+        .cancel-btn { background: #ffffff; color: var(--ink-2); border: 1px solid var(--edge); }
+        .cancel-btn:hover { background: rgba(17, 19, 20, 0.05); }
+
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(17, 19, 20, 0.18); border-radius: 10px; }
+
+        @media (max-width: 700px) {
+            .container { padding: 0 16px 40px; }
+            .topbar { padding: 10px 0; }
+            .brand { font-size: 15px; }
+            .topnav { display: none; }
+            .new-idea-btn { margin-left: auto; }
+            .phone-only { display: flex; }
+            .search { flex-basis: 100%; }
+            .search input[type="text"] { font-size: 16px; }
+            .refresh-btn, #activeUsers { font-size: 0.75rem !important; padding: 7px 10px !important; }
+            header { padding-top: 28px; margin-bottom: 20px; }
+            h1 { font-size: 3rem; }
+            .hero-lede { font-size: 15px; }
+            .stats-bar { margin-bottom: 20px; border-radius: 12px; }
+            .stat-card { padding: 10px 6px; text-align: center; }
+            .stat-number { font-size: 1.35rem; justify-content: center; }
+            .stat-label { font-size: 0.55rem; letter-spacing: 0.03em; }
+            .idea-card-face, .idea-card-carousel .idea-card-face { padding-left: 24px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .board-card, .board-card:hover { transition: none; transform: none; }
         }
     </style>
 </head>
 <body>
+    <div class="lava-stage" aria-hidden="true">
+        <canvas id="lava"></canvas>
+        <div class="lava-frost"></div>
+        <div class="lava-grain"></div>
+    </div>
+
     <div class="sidebar" id="sidebar">
         <button class="sidebar-collapse-btn" onclick="toggleSidebar()" title="Collapse sidebar">☰</button>
         <div class="sidebar-nav">
@@ -1336,10 +1634,24 @@
     </div>
 
     <div class="container">
+        <div class="topbar">
+            <div class="topbar-inner">
+                <div class="brand"><span class="brand-mark" aria-hidden="true"></span>Pandora's Box</div>
+                <nav class="topnav" aria-label="Main">
+                    <button type="button" class="topnav-link" id="viewBoardBtn" onclick="setDesktopView('board')">Board</button>
+                    <button type="button" class="topnav-link" id="viewCarouselBtn" onclick="setDesktopView('carousel')">Carousel</button>
+                    <span class="topnav-sep" aria-hidden="true"></span>
+                    <button type="button" class="topnav-link" data-filter="view-favorites" onclick="toggleFilter('view', 'favorites')">Favorites</button>
+                    <button type="button" class="topnav-link" onclick="openManageCategoriesModal()">Categories</button>
+                </nav>
+                <button type="button" class="new-idea-btn" onclick="openAddCardModal()">+ New idea</button>
+            </div>
+        </div>
         <div id="homeView">
         <header>
-            <h1>Pandora's Box</h1>
             <p class="subtitle">Database for Ideas</p>
+            <h1>Pandora's Box</h1>
+            <p class="hero-lede">Every tool, project and rabbit hole worth looking into, in one place.</p>
             <div class="header-controls">
                 <button class="refresh-btn" onclick="refreshIdeas()">Refresh</button>
                 <div id="activeUsers" style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; background: rgba(76, 222, 128, 0.1); border: 1px solid rgba(76, 222, 128, 0.3); border-radius: 6px; font-size: 0.85rem;">
@@ -1352,47 +1664,39 @@
         <div class="stats-bar" id="statsBar"></div>
 
         <div class="controls">
-            <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Search ideas..." onkeyup="renderIdeas()">
-                <button class="add-btn" onclick="openAddCardModal()">+ Add Card</button>
-                <button class="add-btn" onclick="openAddCategoryModal()">+ Add Category</button>
-                <button class="add-btn" onclick="openManageCategoriesModal()" title="Manage categories">⚙️ Categories</button>
-                <div id="scrollHint" class="scroll-indicator scroll-hint-top">
-                    <div class="mouse-wheel">
-                        <div class="wheel-scroll"></div>
-                    </div>
-                    <div class="scroll-text">scroll on the cards to cycle</div>
+            <div class="toolbar">
+                <label class="search" for="searchInput">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                    <input type="text" id="searchInput" placeholder="Search ideas" autocomplete="off" onkeyup="renderIdeas()">
+                </label>
+                <div class="board-mode" id="groupToggle" role="group" aria-label="Group board by">
+                    <button type="button" id="groupStatusBtn" onclick="setBoardMode('status')">Status</button>
+                    <button type="button" id="groupCategoryBtn" onclick="setBoardMode('category')">Category</button>
+                </div>
+                <div class="chips" id="statusChips" aria-label="Filter by status">
+                    <button type="button" class="chip" onclick="toggleFilter('status', 'IDEATING')" data-filter="status-IDEATING">Ideating</button>
+                    <button type="button" class="chip" onclick="toggleFilter('status', 'BUILDING')" data-filter="status-BUILDING">Building</button>
+                    <button type="button" class="chip" onclick="toggleFilter('status', 'SHIPPED')" data-filter="status-SHIPPED">Shipped</button>
+                </div>
+                <div class="chips" aria-label="Filter by priority">
+                    <button type="button" class="chip" onclick="toggleFilter('priority', 'P1')" data-filter="priority-P1">P1</button>
+                    <button type="button" class="chip" onclick="toggleFilter('priority', 'P2')" data-filter="priority-P2">P2</button>
+                    <button type="button" class="chip" onclick="toggleFilter('priority', 'P3')" data-filter="priority-P3">P3</button>
+                    <button type="button" class="chip" onclick="toggleFilter('priority', 'P4')" data-filter="priority-P4">P4</button>
+                    <button type="button" class="chip" onclick="toggleFilter('priority', 'P5')" data-filter="priority-P5">P5</button>
+                </div>
+                <div class="chips phone-only">
+                    <button type="button" class="chip" data-filter="view-favorites" onclick="toggleFilter('view', 'favorites')">★ Favorites</button>
+                    <button type="button" class="chip" onclick="openManageCategoriesModal()">Categories</button>
                 </div>
             </div>
-            <button type="button" class="mobile-filters-toggle" onclick="toggleMobileFilters()">
-                <span>Filters &amp; Sort</span><span class="chev">▾</span>
-            </button>
-            <div class="filters-panel">
-            <div class="filter-buttons">
-                <span class="filter-label">Priority:</span>
-                <button onclick="toggleFilter('priority', 'P1')" data-filter="priority-P1">P1</button>
-                <button onclick="toggleFilter('priority', 'P2')" data-filter="priority-P2">P2</button>
-                <button onclick="toggleFilter('priority', 'P3')" data-filter="priority-P3">P3</button>
-                <button onclick="toggleFilter('priority', 'P4')" data-filter="priority-P4">P4</button>
-                <button onclick="toggleFilter('priority', 'P5')" data-filter="priority-P5">P5</button>
+            <div id="scrollHint" class="scroll-indicator scroll-hint-top">
+                <div class="mouse-wheel">
+                    <div class="wheel-scroll"></div>
+                </div>
+                <div class="scroll-text">scroll on the cards to cycle</div>
             </div>
-            <div class="filter-buttons">
-                <span class="filter-label">Status:</span>
-                <button onclick="toggleFilter('status', 'IDEATING')" data-filter="status-IDEATING">Ideating</button>
-                <button onclick="toggleFilter('status', 'BUILDING')" data-filter="status-BUILDING">Building</button>
-                <button onclick="toggleFilter('status', 'SHIPPED')" data-filter="status-SHIPPED">Shipped</button>
-            </div>
-            <div class="filter-buttons">
-                <span class="filter-label">View:</span>
-                <button onclick="toggleFilter('view', 'favorites')" data-filter="view-favorites">Favorites</button>
-            </div>
-            <div class="sort-controls">
-                <span class="filter-label">Sort by:</span>
-                <select id="sortBy" onchange="renderIdeas()">
-                    <option value="name">Name (A-Z)</option>
-                </select>
-            </div>
-            </div>
+            <select id="sortBy" hidden><option value="name">Name (A-Z)</option></select>
         </div>
 
         <div id="content"></div>
@@ -1483,10 +1787,11 @@
     <div id="manageCategoriesModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">Manage Categories</h2>
+                <h2 class="modal-title">Categories</h2>
                 <button class="modal-close" onclick="closeManageCategoriesModal()">×</button>
             </div>
             <div id="categoriesList"></div>
+            <button type="button" class="form-btn save-btn" style="width:100%;margin-top:14px" onclick="closeManageCategoriesModal(); openAddCategoryModal()">+ Add category</button>
         </div>
     </div>
 
@@ -1750,13 +2055,13 @@
 
         function toggleFilter(type, value) {
             const key = `${type}-${value}`;
-            const btn = document.querySelector(`[data-filter="${key}"]`);
+            const btns = document.querySelectorAll(`[data-filter="${key}"]`);
             if (activeFilters.has(key)) {
                 activeFilters.delete(key);
-                btn.classList.remove('active');
+                btns.forEach(b => b.classList.remove('active'));
             } else {
                 activeFilters.set(key, true);
-                btn.classList.add('active');
+                btns.forEach(b => b.classList.add('active'));
             }
             renderIdeas();
         }
@@ -1799,7 +2104,10 @@
 
         function renderIdeas() {
             // Phones get the Trello-style board instead of the 3D carousels
-            if (isPhoneBoard()) {
+            const boardOn = useBoard();
+            document.body.classList.toggle('view-board', boardOn);
+            syncViewToggle();
+            if (boardOn) {
                 Object.keys(carouselIntervals).forEach(k => { clearInterval(carouselIntervals[k]); carouselIntervals[k] = null; });
                 document.getElementById('content').innerHTML = '';
                 renderBoard(sortIdeas(filterIdeas()));
@@ -1892,15 +2200,8 @@
                             const g = parseInt(hex.substring(2, 4), 16);
                             const b = parseInt(hex.substring(4, 6), 16);
 
-                            face.style.background = `linear-gradient(180deg, ${idea.hexColor} 0%, rgba(${r}, ${g}, ${b}, 0.1) 100%)`;
-                            face.style.borderColor = `rgba(${r}, ${g}, ${b}, 0.3)`;
-
-                            const luminance = getLuminance(idea.hexColor);
-                            if (luminance > 0.5) {
-                                face.classList.add('light-bg');
-                            } else {
-                                face.classList.add('dark-bg');
-                            }
+                            // Frosted theme: brand color shows as the card's side stripe
+                            face.style.setProperty('--c', idea.hexColor);
                         }
                     }
                 }
@@ -2705,6 +3006,27 @@
         let boardSuppressClick = false;
 
         function isPhoneBoard() { return phoneQuery.matches; }
+
+        // Desktop can switch between the board and the 3D carousels; phones always use the board
+        let desktopView = 'board';
+        try { desktopView = localStorage.getItem('desktopView') || 'board'; } catch (e) {}
+        function useBoard() { return isPhoneBoard() || desktopView === 'board'; }
+        function setDesktopView(v) {
+            if (v === desktopView) return;
+            desktopView = v;
+            try { localStorage.setItem('desktopView', v); } catch (e) {}
+            renderIdeas();
+        }
+        function syncViewToggle() {
+            const b = document.getElementById('viewBoardBtn');
+            const c = document.getElementById('viewCarouselBtn');
+            if (b) b.classList.toggle('on', desktopView === 'board');
+            if (c) c.classList.toggle('on', desktopView === 'carousel');
+            const gs = document.getElementById('groupStatusBtn');
+            const gc = document.getElementById('groupCategoryBtn');
+            if (gs) gs.classList.toggle('on', boardMode === 'status');
+            if (gc) gc.classList.toggle('on', boardMode === 'category');
+        }
         phoneQuery.addEventListener('change', () => renderIdeas());
 
         function setBoardMode(mode) {
@@ -2737,9 +3059,6 @@
             const status = ideaStatuses[idea.id] || 'IDEATING';
             const isFav = favorites.includes(idea.id);
             const stripe = idea.hexColor || '#6496ff';
-            const metaLeft = boardMode === 'status'
-                ? `${escapeHtml(idea.category || '')} · P${idea.priority}`
-                : `P${idea.priority}`;
             const next = BOARD_STATUSES[(BOARD_STATUSES.indexOf(status) + 1) % BOARD_STATUSES.length];
             const chip = boardMode === 'status'
                 ? `→ ${STATUS_LABEL[next]}`
@@ -2751,8 +3070,9 @@
                         <div class="board-card-name">${escapeHtml(idea.name)}</div>
                         <button class="board-star ${isFav ? 'on' : ''}" data-act="fav" title="Favorite">${isFav ? '★' : '☆'}</button>
                     </div>
+                    ${isPhoneBoard() ? '' : `<div class="board-card-desc">${escapeHtml(idea.description || '')}</div>`}
                     <div class="board-card-meta">
-                        <span>${metaLeft}</span>
+                        <span><span class="board-prio ${idea.priority === 1 ? 'p1' : ''}">P${idea.priority}</span>${boardMode === 'status' ? escapeHtml(idea.category || '') : ''}</span>
                         <button class="board-chip" data-act="status" title="${chipTitle}">${chip}</button>
                     </div>
                 </div>`;
@@ -2769,12 +3089,6 @@
             if (boardActiveCol >= cols.length) boardActiveCol = 0;
 
             view.innerHTML = `
-                <div class="board-toolbar">
-                    <div class="board-mode">
-                        <button class="${boardMode === 'status' ? 'on' : ''}" onclick="setBoardMode('status')">Status</button>
-                        <button class="${boardMode === 'category' ? 'on' : ''}" onclick="setBoardMode('category')">Category</button>
-                    </div>
-                </div>
                 <div class="board-tabs">
                     ${cols.map((c, i) => `<button class="board-tab ${i === boardActiveCol ? 'on' : ''}" data-col="${i}">${escapeHtml(c.title)}<span class="n">${c.ideas.length}</span></button>`).join('')}
                 </div>
@@ -2787,7 +3101,7 @@
                             </div>
                         </div>`).join('')}
                 </div>
-                <div class="board-hint">Tap a card to open · hold &amp; drag to move it</div>`;
+                <div class="board-hint">${isPhoneBoard() ? 'Tap a card to open · hold &amp; drag to move it' : 'Click a card to open · drag it to another column to move it'}</div>`;
 
             const colsEl = view.querySelector('.board-columns');
             const colEls = [...colsEl.querySelectorAll('.board-col')];
@@ -2796,8 +3110,8 @@
                 if (prevBody[c.dataset.key]) b.scrollTop = prevBody[c.dataset.key];
             });
 
-            // Restore which column you were looking at
-            if (colEls[boardActiveCol]) colsEl.scrollLeft = colEls[boardActiveCol].offsetLeft - 16;
+            // Restore which column you were looking at (phone swipe layout)
+            if (isPhoneBoard() && colEls[boardActiveCol]) colsEl.scrollLeft = colEls[boardActiveCol].offsetLeft - 16;
 
             // Tabs jump to a column
             view.querySelectorAll('.board-tab').forEach(t => {
@@ -2961,7 +3275,111 @@
                     }, 16);
                 }, 350);
             }, { passive: true });
+
+            // Mouse: click and drag (desktop)
+            card.addEventListener('mousedown', (e) => {
+                if (e.button !== 0 || e.target.closest('[data-act]')) return;
+                e.preventDefault();
+                const sx = e.clientX, sy = e.clientY;
+                let mGhost = null, mOver = null, mOffX = 0, mOffY = 0;
+                function mm(ev) {
+                    if (!mGhost) {
+                        if (Math.abs(ev.clientX - sx) < 6 && Math.abs(ev.clientY - sy) < 6) return;
+                        const r = card.getBoundingClientRect();
+                        mOffX = sx - r.left; mOffY = sy - r.top;
+                        mGhost = card.cloneNode(true);
+                        mGhost.classList.add('board-ghost');
+                        mGhost.style.width = r.width + 'px';
+                        document.body.appendChild(mGhost);
+                        card.classList.add('placeholder');
+                    }
+                    mGhost.style.left = (ev.clientX - mOffX) + 'px';
+                    mGhost.style.top = (ev.clientY - mOffY) + 'px';
+                    const col = colAt(ev.clientX, ev.clientY);
+                    if (col !== mOver) {
+                        colEls.forEach(c => c.classList.toggle('drop-target', c === col));
+                        mOver = col;
+                    }
+                }
+                function mu() {
+                    document.removeEventListener('mousemove', mm);
+                    document.removeEventListener('mouseup', mu);
+                    if (!mGhost) return;
+                    boardSuppressClick = true;
+                    setTimeout(() => { boardSuppressClick = false; }, 400);
+                    mGhost.remove();
+                    card.classList.remove('placeholder');
+                    colEls.forEach(c => c.classList.remove('drop-target'));
+                    if (mOver) boardMoveCard(card.dataset.id, mOver.dataset.key);
+                }
+                document.addEventListener('mousemove', mm);
+                document.addEventListener('mouseup', mu);
+            });
         }
+
+        // ==================== LAVA LAMP BACKDROP ====================
+        // Metaballs drawn on a small canvas and scaled up, so edges stay soft (frosted) and it stays cheap on phones
+        (function lavaLamp() {
+            const cv = document.getElementById('lava');
+            if (!cv) return;
+            const ctx = cv.getContext('2d');
+            const SCALE = 7;
+            const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            let W = 0, H = 0, img = null;
+            const blobs = [
+                { x: 0.18, r: 0.15, sp: 0.00050, ph: 0.0, amp: 0.46, drift: 0.05 },
+                { x: 0.42, r: 0.11, sp: 0.00068, ph: 2.1, amp: 0.44, drift: 0.07 },
+                { x: 0.66, r: 0.16, sp: 0.00042, ph: 4.0, amp: 0.42, drift: 0.04 },
+                { x: 0.86, r: 0.10, sp: 0.00075, ph: 1.3, amp: 0.46, drift: 0.06 },
+                { x: 0.30, r: 0.08, sp: 0.00090, ph: 5.2, amp: 0.48, drift: 0.08 },
+                { x: 0.74, r: 0.09, sp: 0.00082, ph: 3.3, amp: 0.47, drift: 0.07 },
+                { x: 0.52, r: 0.18, sp: 0.00030, ph: 0.8, amp: 0.30, drift: 0.03 }
+            ];
+            function size() {
+                W = Math.max(40, Math.ceil(window.innerWidth / SCALE));
+                H = Math.max(60, Math.ceil(window.innerHeight / SCALE));
+                cv.width = W; cv.height = H;
+                img = ctx.createImageData(W, H);
+            }
+            function frame(t) {
+                const m = Math.min(W, H);
+                const pts = blobs.map(b => {
+                    const y = 0.5 + Math.sin(t * b.sp + b.ph) * b.amp;
+                    const vy = Math.cos(t * b.sp + b.ph);
+                    return {
+                        x: (b.x + Math.sin(t * b.sp * 0.7 + b.ph * 1.7) * b.drift) * W,
+                        y: y * H,
+                        r2: Math.pow(b.r * m * (0.9 + 0.12 * Math.sin(t * b.sp * 2 + b.ph)), 2),
+                        s: 1 + Math.abs(vy) * 0.9   // stretch tall while rising/sinking
+                    };
+                });
+                const d = img.data;
+                let i = 0;
+                for (let py = 0; py < H; py++) {
+                    for (let px = 0; px < W; px++) {
+                        let f = 0;
+                        for (let k = 0; k < pts.length; k++) {
+                            const p = pts[k];
+                            const dx = px - p.x, dy = (py - p.y) / p.s;
+                            f += p.r2 / (dx * dx + dy * dy + 1);
+                        }
+                        let a = (f - 0.55) / 0.75;
+                        a = a < 0 ? 0 : a > 1 ? 1 : a * a * (3 - 2 * a);
+                        d[i] = 12; d[i + 1] = 13; d[i + 2] = 13; d[i + 3] = a * 150;
+                        i += 4;
+                    }
+                }
+                ctx.putImageData(img, 0, 0);
+            }
+            let last = 0;
+            function loop(t) {
+                if (t - last > 33) { frame(t); last = t; }   // ~30fps is plenty for lava
+                requestAnimationFrame(loop);
+            }
+            size();
+            window.addEventListener('resize', () => { size(); frame(performance.now()); });
+            if (reduce) frame(20000); else requestAnimationFrame(loop);
+        })();
 
         function toggleMobileFilters() {
             document.querySelector('.controls').classList.toggle('filters-open');

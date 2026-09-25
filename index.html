@@ -1916,70 +1916,28 @@
             }
         }
 
-        async function initializeSession() {
+        // Live "active" count using Supabase Presence: counts browsers that have the site open right now
+        // and drops them automatically when the tab closes (no database rows needed)
+        let presenceChannel = null;
+        function initializeSession() {
             try {
-                // Create a unique session ID for this browser
                 currentSessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-                // Create session record
-                const { error } = await sbClient
-                    .from('active_sessions')
-                    .insert([{
-                        id: currentSessionId,
-                        last_active: new Date().toISOString()
-                    }]);
-
-                if (error && error.code !== 'PGRST116') throw error; // Ignore "relations does not exist" error
-
-                // Update session every 30 seconds
-                setInterval(async () => {
-                    if (!currentSessionId) return;
-                    const { error } = await sbClient
-                        .from('active_sessions')
-                        .update({ last_active: new Date().toISOString() })
-                        .eq('id', currentSessionId);
-                    // Silently ignore errors
-                }, 30000);
-
-                // Subscribe to active sessions
-                subscribeToActiveSessions();
-
-                // Clean up on page unload
-                window.addEventListener('beforeunload', async () => {
-                    if (currentSessionId) {
-                        await sbClient
-                            .from('active_sessions')
-                            .delete()
-                            .eq('id', currentSessionId)
-                            .catch(() => {});
-                    }
+                presenceChannel = sbClient.channel('online-users', {
+                    config: { presence: { key: currentSessionId } }
                 });
-            } catch (error) {
-                console.error('Error initializing session:', error);
-            }
-        }
-
-        function subscribeToActiveSessions() {
-            try {
-                sbClient
-                    .channel('active_sessions_channel')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'active_sessions' }, payload => {
-                        // Fetch all active sessions
-                        sbClient
-                            .from('active_sessions')
-                            .select('id', { count: 'exact' })
-                            .then(({ count }) => {
-                                const userCount = count || 1;
-                                const countEl = document.getElementById('activeUserCount');
-                                if (countEl) {
-                                    countEl.textContent = `${userCount} ${userCount === 1 ? 'active' : 'active'}`;
-                                }
-                            })
-                            .catch(() => {});
+                presenceChannel
+                    .on('presence', { event: 'sync' }, () => {
+                        const count = Math.max(1, Object.keys(presenceChannel.presenceState()).length);
+                        const countEl = document.getElementById('activeUserCount');
+                        if (countEl) countEl.textContent = `${count} active`;
                     })
-                    .subscribe();
+                    .subscribe(async (status) => {
+                        if (status === 'SUBSCRIBED') {
+                            await presenceChannel.track({ online_at: new Date().toISOString() });
+                        }
+                    });
             } catch (error) {
-                console.error('Error subscribing to active sessions:', error);
+                console.error('Error starting live user count:', error);
             }
         }
 
@@ -1995,7 +1953,10 @@
                             hexColor: payload.new.hex_color,
                             metrics: payload.new.metrics || {}
                         };
-                        allIdeas.push(normalized);
+                        // Replace instead of adding if this browser already added it locally
+                        const existing = allIdeas.findIndex(i => i.id === normalized.id || (i.name === normalized.name && i.category === normalized.category));
+                        if (existing >= 0) allIdeas[existing] = normalized;
+                        else allIdeas.push(normalized);
                     } else if (payload.eventType === 'UPDATE') {
                         const idx = allIdeas.findIndex(i => i.id === payload.new.id);
                         if (idx >= 0) {
@@ -2032,9 +1993,10 @@
                 .channel('favorites_channel')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'favorites' }, payload => {
                     if (payload.eventType === 'INSERT') {
-                        favorites.push(payload.new.idea_id);
+                        if (!favorites.includes(payload.new.idea_id)) favorites.push(payload.new.idea_id);
                     } else if (payload.eventType === 'DELETE') {
-                        favorites = favorites.filter(f => f !== payload.old.idea_id);
+                        const gone = payload.old.idea_id || String(payload.old.id || '').replace(/^fav-/, '');
+                        favorites = favorites.filter(f => f !== gone);
                     }
                     renderIdeas();
                 })
@@ -2045,10 +2007,11 @@
                 .channel('categories_channel')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, payload => {
                     if (payload.eventType === 'INSERT') {
-                        categories.push(payload.new.name);
+                        if (!categories.includes(payload.new.name)) categories.push(payload.new.name);
                     } else if (payload.eventType === 'DELETE') {
                         categories = categories.filter(c => c !== payload.old.name);
                     }
+                    renderIdeas();
                 })
                 .subscribe();
         }

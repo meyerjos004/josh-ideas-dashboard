@@ -1617,6 +1617,73 @@
         @media (prefers-reduced-motion: reduce) {
             .board-card, .board-card:hover { transition: none; transform: none; }
         }
+        /* ==================== MULTIPLAYER UI ==================== */
+        .container { padding-bottom: 96px; }
+        #walkerLane {
+            position: fixed; left: 0; right: 0; bottom: 0; height: 64px; z-index: 40; overflow: visible;
+            pointer-events: none; padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .walker {
+            position: absolute; left: 0; bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+            width: 0; display: flex; flex-direction: column; align-items: center;
+        }
+        .walker-label {
+            transform: translateX(0); white-space: nowrap; margin-bottom: 4px;
+            font-family: var(--mono); font-size: 10px; letter-spacing: 0.02em; color: var(--ink);
+            background: rgba(255, 255, 255, 0.85); border: 1px solid var(--edge); border-radius: 999px;
+            padding: 2px 7px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        .walker-fig { position: relative; width: 14px; height: 24px; animation: w-bob 0.5s ease-in-out infinite paused; }
+        .walker.walking .walker-fig { animation-play-state: running; }
+        .walker.flip .walker-fig { transform: scaleX(-1); }
+        .w-head { position: absolute; left: 3px; top: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--w); }
+        .w-body { position: absolute; left: 2px; top: 8px; width: 10px; height: 9px; border-radius: 4px 4px 2px 2px; background: var(--w); }
+        .w-leg { position: absolute; top: 16px; width: 3px; height: 8px; border-radius: 2px; background: var(--w); transform-origin: top center; }
+        .w-leg.l { left: 3px; } .w-leg.r { left: 8px; }
+        .walker.walking .w-leg.l { animation: w-step 0.5s ease-in-out infinite; }
+        .walker.walking .w-leg.r { animation: w-step 0.5s ease-in-out infinite reverse; }
+        @keyframes w-step { 0%, 100% { transform: rotate(22deg); } 50% { transform: rotate(-22deg); } }
+        @keyframes w-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -1.5px; } }
+
+        #mpToasts {
+            position: fixed; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 60;
+            display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none;
+        }
+        .mp-toast {
+            display: flex; align-items: center; gap: 8px; max-width: min(340px, calc(100vw - 32px));
+            background: rgba(255, 255, 255, 0.9); border: 1px solid var(--edge); border-radius: 12px;
+            padding: 9px 12px; font-size: 13px; color: var(--ink);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+            opacity: 0; transform: translateY(8px); transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .mp-toast.in { opacity: 1; transform: translateY(0); }
+        .mp-toast-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; }
+
+        .viewer-dots { position: absolute; top: 8px; right: 34px; display: flex; gap: 3px; z-index: 2; pointer-events: auto; }
+        .idea-card-face .viewer-dots { top: 12px; right: auto; left: 34px; }
+        .viewer-dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 2px #ffffff; animation: dot-pop 0.25s ease-out; }
+        @keyframes dot-pop { from { transform: scale(0); } to { transform: scale(1); } }
+
+        .name-card { max-width: 440px; }
+        .name-card-lede { color: var(--ink-2); margin: -12px 0 18px; font-size: 0.95rem; }
+        .swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+        .swatch {
+            width: 34px; height: 34px; border-radius: 50%; padding: 0;
+            background: var(--sw) !important; border: 2px solid #ffffff !important;
+            box-shadow: 0 0 0 1px var(--edge);
+        }
+        .swatch.on { box-shadow: 0 0 0 2px var(--ink); }
+        #activeUsers:hover { background: #ffffff !important; }
+
+        @media (max-width: 700px) {
+            .viewer-dots { right: 32px; }
+            .idea-card-face .viewer-dots { left: 24px; }
+            #mpToasts { left: 16px; right: 16px; align-items: stretch; }
+            .mp-toast { max-width: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .walker.walking .w-leg, .walker-fig { animation: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -1795,6 +1862,29 @@
         </div>
     </div>
 
+    <div id="nameCardModal" class="modal">
+        <div class="modal-content name-card">
+            <div class="modal-header">
+                <h2 class="modal-title" id="nameCardTitle">Welcome to Pandora's Box</h2>
+            </div>
+            <p class="name-card-lede">Pick a name and a color. Other people online will see your blob and your little walker in this color.</p>
+            <form onsubmit="saveNameCard(event)" class="add-card-form">
+                <div class="form-group">
+                    <label for="profileName">Your name</label>
+                    <input type="text" id="profileName" maxlength="20" autocomplete="nickname" placeholder="e.g. King" required>
+                </div>
+                <div class="form-group">
+                    <label>Your color</label>
+                    <div class="swatches" id="profileSwatches"></div>
+                </div>
+                <div class="form-buttons">
+                    <button type="button" class="form-btn cancel-btn" id="nameCardSkip" onclick="skipNameCard()">Skip for now</button>
+                    <button type="submit" class="form-btn save-btn">Let me in</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="editCardModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1916,29 +2006,9 @@
             }
         }
 
-        // Live "active" count using Supabase Presence: counts browsers that have the site open right now
-        // and drops them automatically when the tab closes (no database rows needed)
-        let presenceChannel = null;
+        // Live presence (who's here, where they are) lives in the MULTIPLAYER section below
         function initializeSession() {
-            try {
-                currentSessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                presenceChannel = sbClient.channel('online-users', {
-                    config: { presence: { key: currentSessionId } }
-                });
-                presenceChannel
-                    .on('presence', { event: 'sync' }, () => {
-                        const count = Math.max(1, Object.keys(presenceChannel.presenceState()).length);
-                        const countEl = document.getElementById('activeUserCount');
-                        if (countEl) countEl.textContent = `${count} active`;
-                    })
-                    .subscribe(async (status) => {
-                        if (status === 'SUBSCRIBED') {
-                            await presenceChannel.track({ online_at: new Date().toISOString() });
-                        }
-                    });
-            } catch (error) {
-                console.error('Error starting live user count:', error);
-            }
+            startMultiplayer();
         }
 
         function subscribeToUpdates() {
@@ -3263,8 +3333,425 @@
             });
         }
 
+        // ==================== MULTIPLAYER: profiles, presence, walkers, dots, toasts ====================
+        const PROFILE_COLORS = ['#5D2535', '#002B43', '#8C6057', '#232F24', '#402A2D', '#122D34'];
+        const mp = {
+            deviceId: null,
+            profile: null,              // { name, color }
+            channel: null,
+            others: new Map(),          // key -> { name, color, view, focus, card }
+            me: { view: 'board', focus: '', card: null },
+            lastSent: '',
+            hoverCol: '',
+            walkers: new Map()          // key -> { el, x, target, wanderAt, dir }
+        };
+
+        function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+        function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+        function hexToRgb(h) {
+            const x = String(h || '#111314').replace('#', '');
+            return [parseInt(x.slice(0, 2), 16) || 17, parseInt(x.slice(2, 4), 16) || 19, parseInt(x.slice(4, 6), 16) || 20];
+        }
+        function laneFor(key) {
+            let h = 0;
+            for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+            return (h % 1000) / 1000;
+        }
+
+        function startMultiplayer() {
+            mp.deviceId = lsGet('pb_device_id');
+            if (!mp.deviceId) {
+                mp.deviceId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `dev-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+                lsSet('pb_device_id', mp.deviceId);
+            }
+            currentSessionId = mp.deviceId;
+            try { mp.profile = JSON.parse(lsGet('pb_profile') || 'null'); } catch (e) { mp.profile = null; }
+
+            buildWalkerLane();
+            const pill = document.getElementById('activeUsers');
+            if (pill) {
+                pill.style.cursor = 'pointer';
+                pill.title = 'Change your name or color';
+                pill.addEventListener('click', () => openNameCard(true));
+            }
+
+            if (mp.profile && mp.profile.name) {
+                saveProfileRemote();
+                joinPresence();
+            } else {
+                openNameCard(false);
+            }
+            setInterval(refreshMyState, 1000);
+            requestAnimationFrame(walkLoop);
+        }
+
+        async function saveProfileRemote() {
+            try {
+                await sbClient.from('profiles').upsert({
+                    id: mp.deviceId,
+                    name: mp.profile.name,
+                    color: mp.profile.color,
+                    last_seen: new Date().toISOString()
+                });
+            } catch (e) { /* profile saving is best-effort */ }
+        }
+
+        // ---------- Name card (one-time "login") ----------
+        function openNameCard(isEdit) {
+            const modal = document.getElementById('nameCardModal');
+            const input = document.getElementById('profileName');
+            const current = (mp.profile && mp.profile.color) || PROFILE_COLORS[Math.floor(Math.random() * PROFILE_COLORS.length)];
+            input.value = (mp.profile && mp.profile.name) || '';
+            document.getElementById('nameCardTitle').textContent = isEdit ? 'Your profile' : 'Welcome to Pandora\'s Box';
+            document.getElementById('nameCardSkip').hidden = isEdit;
+            const sw = document.getElementById('profileSwatches');
+            sw.innerHTML = PROFILE_COLORS.map(c => `<button type="button" class="swatch ${c === current ? 'on' : ''}" data-c="${c}" style="--sw:${c}" aria-label="Color ${c}"></button>`).join('');
+            sw.querySelectorAll('.swatch').forEach(b => b.addEventListener('click', () => {
+                sw.querySelectorAll('.swatch').forEach(x => x.classList.toggle('on', x === b));
+            }));
+            modal.classList.add('active');
+            setTimeout(() => input.focus(), 50);
+        }
+        function saveNameCard(event) {
+            event.preventDefault();
+            const name = document.getElementById('profileName').value.trim().slice(0, 20);
+            if (!name) { document.getElementById('profileName').focus(); return; }
+            const on = document.querySelector('#profileSwatches .swatch.on');
+            mp.profile = { name, color: on ? on.dataset.c : PROFILE_COLORS[0] };
+            lsSet('pb_profile', JSON.stringify(mp.profile));
+            document.getElementById('nameCardModal').classList.remove('active');
+            saveProfileRemote();
+            if (mp.channel) { mp.lastSent = ''; refreshMyState(); } else joinPresence();
+        }
+        function skipNameCard() {
+            mp.profile = { name: 'Guest', color: PROFILE_COLORS[Math.floor(Math.random() * PROFILE_COLORS.length)] };
+            document.getElementById('nameCardModal').classList.remove('active');
+            joinPresence();
+        }
+
+        // ---------- Presence ----------
+        function joinPresence() {
+            try {
+                mp.channel = sbClient.channel('online-users', {
+                    config: { presence: { key: mp.deviceId }, broadcast: { self: false } }
+                });
+                mp.channel
+                    .on('presence', { event: 'sync' }, onPresenceSync)
+                    .on('broadcast', { event: 'action' }, ({ payload }) => onRemoteAction(payload))
+                    .subscribe(async (status) => {
+                        if (status === 'SUBSCRIBED') { mp.lastSent = ''; await refreshMyState(); }
+                    });
+            } catch (e) {
+                console.error('Error starting live presence:', e);
+            }
+        }
+
+        function onPresenceSync() {
+            const state = mp.channel.presenceState();
+            const next = new Map();
+            Object.keys(state).forEach(key => {
+                if (key === mp.deviceId) return;
+                const metas = state[key] || [];
+                const m = metas[metas.length - 1] || {};
+                next.set(key, { name: m.name || 'Guest', color: m.color || PROFILE_COLORS[0], view: m.view || '', focus: m.focus || '', card: m.card || null });
+            });
+            mp.others = next;
+
+            const countEl = document.getElementById('activeUserCount');
+            if (countEl) countEl.textContent = `${next.size + 1} active`;
+
+            // Lava: add/refresh colored blobs, sink the ones that left
+            next.forEach((u, key) => {
+                const existing = window.lavaPeople.get(key);
+                if (existing) { existing.rgb = hexToRgb(u.color); existing.leaving = 0; }
+                else window.lavaPeople.set(key, { rgb: hexToRgb(u.color), lane: laneFor(key), born: performance.now(), leaving: 0, pulse: 0 });
+            });
+            window.lavaPeople.forEach((p, key) => { if (!next.has(key) && !p.leaving) p.leaving = performance.now(); });
+
+            syncWalkers();
+            applyCardDots();
+        }
+
+        // What am I looking at? (view + column/category in focus + open card)
+        function refreshMyState() {
+            if (!mp.channel || !mp.profile) return;
+            const view = useBoard() ? 'board' : 'carousel';
+            let focus = '';
+            if (view === 'board') {
+                if (isPhoneBoard()) {
+                    const cols = document.querySelectorAll('.board-col');
+                    if (cols[boardActiveCol]) focus = cols[boardActiveCol].dataset.key || '';
+                } else {
+                    focus = mp.hoverCol;
+                }
+            } else {
+                let best = null, bestD = Infinity;
+                document.querySelectorAll('.carousel-section').forEach(sec => {
+                    const r = sec.getBoundingClientRect();
+                    const d = Math.abs(r.top + r.height / 2 - window.innerHeight / 2);
+                    if (d < bestD) { bestD = d; best = sec; }
+                });
+                if (best) {
+                    const t = best.querySelector('.carousel-section-title');
+                    focus = t ? t.textContent : '';
+                }
+            }
+            mp.me.view = view;
+            mp.me.focus = focus;
+            const payload = { name: mp.profile.name, color: mp.profile.color, view, focus, card: mp.me.card };
+            const sig = JSON.stringify(payload);
+            if (sig === mp.lastSent) return;
+            mp.lastSent = sig;
+            return mp.channel.track(payload).catch(() => {});
+        }
+        document.addEventListener('mouseover', (e) => {
+            const col = e.target.closest && e.target.closest('.board-col');
+            mp.hoverCol = col ? (col.dataset.key || '') : '';
+        });
+
+        // ---------- Announce my actions to everyone else ----------
+        function announce(text) {
+            window.lavaPulse('self');
+            if (!mp.channel || !mp.profile) return;
+            mp.channel.send({
+                type: 'broadcast', event: 'action',
+                payload: { key: mp.deviceId, name: mp.profile.name, color: mp.profile.color, text }
+            }).catch(() => {});
+        }
+        function onRemoteAction(p) {
+            if (!p || p.key === mp.deviceId) return;
+            window.lavaPulse(p.key);
+            showToast(p.color, `${p.name} ${p.text}`);
+        }
+        function showToast(color, text) {
+            const box = document.getElementById('mpToasts');
+            if (!box) return;
+            const t = document.createElement('div');
+            t.className = 'mp-toast';
+            t.innerHTML = `<span class="mp-toast-dot" style="background:${escapeHtml(color)}"></span><span>${escapeHtml(text)}</span>`;
+            box.appendChild(t);
+            requestAnimationFrame(() => t.classList.add('in'));
+            setTimeout(() => { t.classList.remove('in'); setTimeout(() => t.remove(), 400); }, 4500);
+            while (box.children.length > 4) box.firstChild.remove();
+        }
+        const ideaName = (id) => { const i = allIdeas.find(x => x.id === id); return i ? i.name : 'a card'; };
+        const statusWord = (s) => ({ IDEATING: 'Ideating', BUILDING: 'Building', SHIPPED: 'Shipped' }[s] || s);
+
+        // Wrap existing actions so they announce themselves (original behavior unchanged)
+        (function wrapActions() {
+            const _cycleStatus = cycleStatus;
+            cycleStatus = async function (event, id) {
+                await _cycleStatus(event, id);
+                announce(`moved ${ideaName(id)} → ${statusWord(ideaStatuses[id] || 'IDEATING')}`);
+            };
+            const _boardMoveCard = boardMoveCard;
+            boardMoveCard = async function (id, toKey) {
+                const before = boardMode === 'status' ? (ideaStatuses[id] || 'IDEATING') : (allIdeas.find(i => i.id === id) || {}).category;
+                await _boardMoveCard(id, toKey);
+                if (before !== toKey) announce(`moved ${ideaName(id)} → ${boardMode === 'status' ? statusWord(toKey) : toKey}`);
+            };
+            const _toggleFavorite = toggleFavorite;
+            toggleFavorite = async function (event, id) {
+                await _toggleFavorite(event, id);
+                announce(`${favorites.includes(id) ? 'favorited' : 'unfavorited'} ${ideaName(id)}`);
+            };
+            const _saveNewCard = saveNewCard;
+            saveNewCard = async function (event) {
+                const n = (document.getElementById('cardName') || {}).value || 'a card';
+                await _saveNewCard(event);
+                announce(`added ${n}`);
+            };
+            const _saveEditedCard = saveEditedCard;
+            saveEditedCard = async function (event) {
+                const n = (document.getElementById('editCardName') || {}).value || ideaName(currentEditCardId);
+                await _saveEditedCard(event);
+                announce(`edited ${n}`);
+            };
+            const _deleteCard = deleteCard;
+            deleteCard = async function (id) {
+                const n = ideaName(id);
+                await _deleteCard(id);
+                announce(`deleted ${n}`);
+            };
+            const _saveNewCategory = saveNewCategory;
+            saveNewCategory = async function (event) {
+                const n = (document.getElementById('categoryName') || {}).value || '';
+                await _saveNewCategory(event);
+                if (n) announce(`added the ${n} category`);
+            };
+            // Which card I have open (for other people's dots)
+            const _openModal = openModal;
+            openModal = function (event, id) {
+                _openModal(event, id);
+                mp.me.card = id; refreshMyState();
+            };
+            const _closeModal = closeModal;
+            closeModal = function () {
+                _closeModal();
+                mp.me.card = null; refreshMyState();
+            };
+            const _openEdit = openEditCardModal;
+            openEditCardModal = function (event, id) {
+                _openEdit(event, id);
+                mp.me.card = id; refreshMyState();
+            };
+            const _closeEdit = closeEditCardModal;
+            closeEditCardModal = function () {
+                _closeEdit();
+                mp.me.card = null; refreshMyState();
+            };
+            // Re-draw dots after every re-render
+            const _renderIdeas = renderIdeas;
+            renderIdeas = function () {
+                _renderIdeas();
+                applyCardDots();
+            };
+        })();
+
+        // ---------- Dots on cards someone has open ----------
+        function cardIdOf(el) {
+            if (el.dataset.id) return el.dataset.id;
+            const m = (el.getAttribute('onclick') || '').match(/openModal\(event, '([^']+)'\)/);
+            return m ? m[1] : null;
+        }
+        function applyCardDots() {
+            document.querySelectorAll('.viewer-dots').forEach(d => d.remove());
+            const byCard = new Map();
+            mp.others.forEach(u => {
+                if (!u.card) return;
+                if (!byCard.has(u.card)) byCard.set(u.card, []);
+                byCard.get(u.card).push(u);
+            });
+            if (!byCard.size) return;
+            document.querySelectorAll('.board-card, .idea-card-carousel').forEach(el => {
+                const users = byCard.get(cardIdOf(el));
+                if (!users) return;
+                const host = el.classList.contains('idea-card-carousel') ? el.querySelector('.idea-card-face') : el;
+                if (!host) return;
+                const wrap = document.createElement('div');
+                wrap.className = 'viewer-dots';
+                wrap.innerHTML = users.map(u => `<span class="viewer-dot" style="background:${escapeHtml(u.color)}" title="${escapeHtml(u.name)} is looking at this"></span>`).join('');
+                host.appendChild(wrap);
+            });
+        }
+
+        // ---------- Walkers along the bottom ----------
+        function buildWalkerLane() {
+            if (document.getElementById('walkerLane')) return;
+            const lane = document.createElement('div');
+            lane.id = 'walkerLane';
+            lane.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(lane);
+            const toasts = document.createElement('div');
+            toasts.id = 'mpToasts';
+            toasts.setAttribute('role', 'status');
+            document.body.appendChild(toasts);
+        }
+        function walkerLabel(u, isMe) {
+            let where = '';
+            if (u.card) where = ideaName(u.card);
+            else if (u.view === 'board') where = 'Board' + (u.focus ? ' › ' + (statusWord(u.focus)) : '');
+            else if (u.view === 'carousel') where = 'Carousel' + (u.focus ? ' › ' + u.focus : '');
+            return `${isMe ? 'You' : u.name}${where ? ' · ' + where : ''}`;
+        }
+        function syncWalkers() {
+            const lane = document.getElementById('walkerLane');
+            if (!lane) return;
+            const want = new Map(mp.others);
+            if (mp.profile) want.set('__me', { ...mp.me, name: mp.profile.name, color: '#111314', me: true });
+            want.forEach((u, key) => {
+                let w = mp.walkers.get(key);
+                if (!w) {
+                    const el = document.createElement('div');
+                    el.className = 'walker';
+                    el.innerHTML = `<div class="walker-label"></div><div class="walker-fig"><span class="w-head"></span><span class="w-body"></span><span class="w-leg l"></span><span class="w-leg r"></span></div>`;
+                    lane.appendChild(el);
+                    const startX = key === '__me' ? window.innerWidth * 0.5 : (laneFor(key) * 0.8 + 0.1) * window.innerWidth;
+                    w = { el, x: startX, target: startX, wanderAt: 0, dir: 1 };
+                    mp.walkers.set(key, w);
+                }
+                w.user = u;
+                w.el.style.setProperty('--w', u.color);
+                w.el.querySelector('.walker-label').textContent = walkerLabel(u, !!u.me);
+            });
+            mp.walkers.forEach((w, key) => {
+                if (!want.has(key)) { w.el.remove(); mp.walkers.delete(key); }
+            });
+        }
+        function visibleX(el) {
+            if (!el) return null;
+            const r = el.getBoundingClientRect();
+            if (r.width === 0 || r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) return null;
+            return r.left + r.width / 2;
+        }
+        function walkerTarget(w, now) {
+            const u = w.user || {};
+            const myView = useBoard() ? 'board' : 'carousel';
+            let x = null;
+            if (u.card) {
+                const esc = (window.CSS && CSS.escape) ? CSS.escape(u.card) : u.card;
+                x = visibleX(document.querySelector(`.board-card[data-id="${esc}"]`));
+                if (x === null) {
+                    document.querySelectorAll('.idea-card-carousel.active').forEach(el => { if (x === null && cardIdOf(el) === u.card) x = visibleX(el); });
+                }
+            }
+            if (x === null && u.view === myView && u.focus && myView === 'board') {
+                const esc = (window.CSS && CSS.escape) ? CSS.escape(u.focus) : u.focus;
+                x = visibleX(document.querySelector(`.board-col[data-key="${esc}"]`));
+            }
+            if (x !== null) return x;
+            if (now > w.wanderAt) {
+                w.wanderAt = now + 3000 + Math.random() * 4000;
+                w.target = 30 + Math.random() * Math.max(60, window.innerWidth - 60);
+            }
+            return w.target;
+        }
+        let walkPrev = 0;
+        function walkLoop(now) {
+            const dt = Math.min(64, now - (walkPrev || now));
+            walkPrev = now;
+            mp.walkers.forEach(w => {
+                const target = walkerTarget(w, now);
+                w.target = target;
+                const dx = target - w.x;
+                const step = 0.06 * dt; // ~60px per second
+                const moving = Math.abs(dx) > 2;
+                if (moving) {
+                    w.x += Math.sign(dx) * Math.min(Math.abs(dx), step);
+                    w.dir = dx > 0 ? 1 : -1;
+                }
+                w.el.classList.toggle('walking', moving);
+                w.el.classList.toggle('flip', w.dir < 0);
+                w.el.style.transform = `translateX(${Math.round(w.x)}px)`;
+            });
+            // Keep labels on screen and stack them when walkers stand close together
+            const list = [...mp.walkers.values()].sort((a, b) => a.x - b.x);
+            let prev = null;
+            list.forEach(w => {
+                const label = w.el.querySelector('.walker-label');
+                const lw = label.offsetWidth || 0;
+                const half = lw / 2;
+                const min = 8 + half - w.x, max = window.innerWidth - 8 - half - w.x;
+                const shift = Math.max(min, Math.min(max, 0));
+                label.style.transform = `translateX(${Math.round(shift)}px)`;
+                const left = w.x + shift - half, right = w.x + shift + half;
+                w.level = (prev && left < prev.right + 6) ? Math.min(3, prev.level + 1) : 0;
+                label.style.marginBottom = `${4 + w.level * 20}px`;
+                prev = { right: w.level > (prev ? prev.level : -1) || !prev ? Math.max(right, prev ? prev.right : right) : right, level: w.level };
+            });
+            requestAnimationFrame(walkLoop);
+        }
+
         // ==================== LAVA LAMP BACKDROP ====================
-        // Metaballs drawn on a small canvas and scaled up, so edges stay soft (frosted) and it stays cheap on phones
+        // Metaballs drawn on a small canvas and scaled up, so edges stay soft (frosted) and it stays cheap on phones.
+        // Black ambient blobs + one colored blob per other person online (window.lavaPeople).
+        window.lavaPeople = new Map();   // key -> { rgb:[r,g,b], lane, born, leaving, pulse }
+        let lavaSelfPulse = 0;
+        window.lavaPulse = function (key) {
+            if (key === 'self') { lavaSelfPulse = performance.now(); return; }
+            const p = window.lavaPeople.get(key);
+            if (p) p.pulse = performance.now();
+        };
         (function lavaLamp() {
             const cv = document.getElementById('lava');
             if (!cv) return;
@@ -3272,6 +3759,7 @@
             const SCALE = 7;
             const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             let W = 0, H = 0, img = null;
+            const INK = [12, 13, 13];
             const blobs = [
                 { x: 0.18, r: 0.15, sp: 0.00050, ph: 0.0, amp: 0.46, drift: 0.05 },
                 { x: 0.42, r: 0.11, sp: 0.00068, ph: 2.1, amp: 0.44, drift: 0.07 },
@@ -3287,31 +3775,58 @@
                 cv.width = W; cv.height = H;
                 img = ctx.createImageData(W, H);
             }
+            const pulseBoost = (since, now) => {
+                const e = (now - since) / 1200;
+                return e > 0 && e < 1 ? 1 + 0.55 * Math.sin(Math.PI * e) : 1;
+            };
             function frame(t) {
                 const m = Math.min(W, H);
-                const pts = blobs.map(b => {
+                const pts = blobs.map((b, i) => {
                     const y = 0.5 + Math.sin(t * b.sp + b.ph) * b.amp;
                     const vy = Math.cos(t * b.sp + b.ph);
+                    const boost = i === 6 ? pulseBoost(lavaSelfPulse, t) : 1;
                     return {
                         x: (b.x + Math.sin(t * b.sp * 0.7 + b.ph * 1.7) * b.drift) * W,
                         y: y * H,
-                        r2: Math.pow(b.r * m * (0.9 + 0.12 * Math.sin(t * b.sp * 2 + b.ph)), 2),
-                        s: 1 + Math.abs(vy) * 0.9   // stretch tall while rising/sinking
+                        r2: Math.pow(b.r * m * boost * (0.9 + 0.12 * Math.sin(t * b.sp * 2 + b.ph)), 2),
+                        s: 1 + Math.abs(vy) * 0.9,   // stretch tall while rising/sinking
+                        c: INK
                     };
+                });
+                // One colored blob per other person: rises in when they arrive, sinks when they leave
+                window.lavaPeople.forEach((p, key) => {
+                    const sp = 0.00055, ph = p.lane * 7.3;
+                    let y = 0.5 + Math.sin(t * sp + ph) * 0.38;
+                    const rise = Math.min(1, (t - p.born) / 2500);
+                    y = 1.35 + (y - 1.35) * (1 - Math.pow(1 - rise, 3));
+                    if (p.leaving) {
+                        const sink = Math.min(1, (t - p.leaving) / 2000);
+                        y = y + (1.4 - y) * sink * sink;
+                        if (sink >= 1) { window.lavaPeople.delete(key); return; }
+                    }
+                    const vy = Math.cos(t * sp + ph);
+                    pts.push({
+                        x: (0.1 + 0.8 * p.lane + Math.sin(t * sp * 0.8 + ph) * 0.05) * W,
+                        y: y * H,
+                        r2: Math.pow(0.12 * m * pulseBoost(p.pulse || 0, t), 2),
+                        s: 1 + Math.abs(vy) * 0.8,
+                        c: p.rgb
+                    });
                 });
                 const d = img.data;
                 let i = 0;
                 for (let py = 0; py < H; py++) {
                     for (let px = 0; px < W; px++) {
-                        let f = 0;
+                        let f = 0, cr = 0, cg = 0, cb = 0;
                         for (let k = 0; k < pts.length; k++) {
                             const p = pts[k];
                             const dx = px - p.x, dy = (py - p.y) / p.s;
-                            f += p.r2 / (dx * dx + dy * dy + 1);
+                            const v = p.r2 / (dx * dx + dy * dy + 1);
+                            f += v; cr += v * p.c[0]; cg += v * p.c[1]; cb += v * p.c[2];
                         }
                         let a = (f - 0.55) / 0.75;
                         a = a < 0 ? 0 : a > 1 ? 1 : a * a * (3 - 2 * a);
-                        d[i] = 12; d[i + 1] = 13; d[i + 2] = 13; d[i + 3] = a * 150;
+                        d[i] = cr / f; d[i + 1] = cg / f; d[i + 2] = cb / f; d[i + 3] = a * 150;
                         i += 4;
                     }
                 }
@@ -3324,7 +3839,7 @@
             }
             size();
             window.addEventListener('resize', () => { size(); frame(performance.now()); });
-            if (reduce) frame(20000); else requestAnimationFrame(loop);
+            if (reduce) { frame(20000); setInterval(() => frame(20000), 2000); } else requestAnimationFrame(loop);
         })();
 
         function toggleMobileFilters() {

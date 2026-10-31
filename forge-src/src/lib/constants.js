@@ -36,3 +36,26 @@ export const avg = (obj) => {
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null
 }
 export const isComplete = (obj) => CRITERIA.every((c) => typeof obj?.[c.id] === 'number')
+
+// Keyboard modifier label: ⌘ on Mac, Ctrl everywhere else
+export const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)
+export const MOD = IS_MAC ? '⌘' : 'Ctrl'
+
+export const ACTIVITIES = [
+  { id: 'research', name: 'Research' },
+  { id: 'building', name: 'Building' },
+  { id: 'meeting', name: 'Meeting' },
+  { id: 'admin', name: 'Admin' },
+  { id: 'other', name: 'Other' },
+]
+export const activityName = (id) => ACTIVITIES.find((a) => a.id === id)?.name ?? 'Other'
+
+// 3725 seconds -> "1h 2m"; under a minute -> "0m"
+export const fmtDuration = (secs, { clock } = {}) => {
+  secs = Math.max(0, Math.floor(secs))
+  const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs % 60
+  if (clock) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  if (!h && !m) return secs > 0 ? '<1m' : '0m'
+  return h ? `${h}h ${m}m` : `${m}m`
+}
+export const entrySecs = (t, now = Date.now()) => ((t.ended_at ? new Date(t.ended_at).getTime() : now) - new Date(t.started_at).getTime()) / 1000

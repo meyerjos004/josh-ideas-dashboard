@@ -10,6 +10,7 @@ import Board from './pages/Board'
 import IdeaPage from './pages/IdeaPage'
 import Compare, { Trash } from './pages/Compare'
 import Sessions, { SessionPage } from './pages/Sessions'
+import Hours from './pages/Hours'
 
 function App() {
   const { person } = useStore()
@@ -23,6 +24,7 @@ function App() {
         <Route path="compare" element={<Compare />} />
         <Route path="sessions" element={<Sessions />} />
         <Route path="sessions/:id" element={<SessionPage />} />
+        <Route path="hours" element={<Hours />} />
         <Route path="trash" element={<Trash />} />
         <Route path="*" element={<Today />} />
       </Route>

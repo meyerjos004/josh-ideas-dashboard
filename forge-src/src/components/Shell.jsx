@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { Home, Columns3, Radar, NotebookPen, Search, Trash2, ArrowLeftRight } from 'lucide-react'
+import { Home, Columns3, Radar, NotebookPen, Search, Trash2, ArrowLeftRight, Timer } from 'lucide-react'
+import { ClockPanel, ClockPill } from './Clock'
 import { useStore } from '../lib/store'
-import { PEOPLE, personHex } from '../lib/constants'
+import { PEOPLE, personHex, MOD } from '../lib/constants'
 import { Modal, StageDot } from './ui'
 
 const NAV = [
@@ -11,6 +12,7 @@ const NAV = [
   { to: '/board', label: 'Board', icon: Columns3 },
   { to: '/compare', label: 'Compare', icon: Radar },
   { to: '/sessions', label: 'Sessions', icon: NotebookPen },
+  { to: '/hours', label: 'Hours', icon: Timer },
 ]
 
 function Mark() {
@@ -119,7 +121,7 @@ export default function Shell() {
           <Mark /><span className="display text-xl font-bold">Forge</span>
         </NavLink>
         <button onClick={() => setSearching(true)} className="mb-4 flex items-center gap-2 rounded-lg border border-line bg-card px-2.5 py-1.5 text-sm text-faint hover:text-muted">
-          <Search size={15} /> Search <kbd className="ml-auto rounded border border-line px-1 text-[10px]">⌘K</kbd>
+          <Search size={15} /> Search <kbd className="ml-auto rounded border border-line px-1 text-[10px]">{MOD}+K</kbd>
         </button>
         <nav className="space-y-0.5">
           {NAV.map(({ to, label, icon: Icon, end }) => (
@@ -130,6 +132,7 @@ export default function Shell() {
           ))}
         </nav>
         <div className="mt-auto space-y-1">
+          <div className="mb-3"><ClockPanel /></div>
           <NavLink to="/trash" className={({ isActive }) => `flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm ${isActive ? 'bg-card text-ink' : 'text-faint hover:text-muted'}`}>
             <Trash2 size={16} strokeWidth={1.8} /> Trash {trash.length > 0 && <span className="ml-auto text-xs tabular-nums">{trash.length}</span>}
           </NavLink>
@@ -145,7 +148,8 @@ export default function Shell() {
       {/* mobile top bar */}
       <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-line bg-paper/90 px-4 py-2.5 backdrop-blur md:hidden">
         <NavLink to="/" className="flex items-center gap-2"><Mark /><span className="display text-lg font-bold">Forge</span></NavLink>
-        <button onClick={() => setSearching(true)} aria-label="Search" className="ml-auto grid size-9 place-items-center rounded-lg text-muted"><Search size={19} /></button>
+        <div className="ml-auto"><ClockPill /></div>
+        <button onClick={() => setSearching(true)} aria-label="Search" className=" grid size-9 place-items-center rounded-lg text-muted"><Search size={19} /></button>
         <button onClick={() => setPerson(other)} aria-label={`Switch to ${other}`} className="grid size-9 place-items-center">
           <span className="size-6 rounded-full ring-2 ring-card" style={{ background: personHex(person) }} />
         </button>
@@ -158,7 +162,7 @@ export default function Shell() {
       </main>
 
       {/* mobile tabs */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         {NAV.map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} className={({ isActive }) => `flex flex-col items-center gap-0.5 py-2 text-[11px] ${isActive ? 'text-wine' : 'text-faint'}`}>
             <Icon size={20} strokeWidth={1.8} /> {label}

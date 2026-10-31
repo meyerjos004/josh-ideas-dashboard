@@ -27,6 +27,7 @@ export function StoreProvider({ children }) {
   const [scores, setScores] = useState([])
   const [sessions, setSessions] = useState([])
   const [actions, setActions] = useState([])
+  const [time, setTime] = useState([])
   const [status, setStatus] = useState('loading') // loading | ready | error
   const [toast, setToast] = useState(null)
   const toastTimer = useRef()
@@ -44,16 +45,17 @@ export function StoreProvider({ children }) {
   useEffect(() => {
     let alive = true
     ;(async () => {
-      const [a, b, c, d] = await Promise.all([
+      const [a, b, c, d, e] = await Promise.all([
         sb.from('forge_ideas').select('*'),
         sb.from('forge_scores').select('*'),
         sb.from('forge_sessions').select('*'),
         sb.from('forge_actions').select('*'),
+        sb.from('forge_time').select('*').order('started_at', { ascending: false }).limit(2000),
       ])
       if (!alive) return
-      const err = a.error || b.error || c.error || d.error
+      const err = a.error || b.error || c.error || d.error || e.error
       if (err) { setStatus('error'); return }
-      setIdeas(a.data); setScores(b.data); setSessions(c.data); setActions(d.data)
+      setIdeas(a.data); setScores(b.data); setSessions(c.data); setActions(d.data); setTime(e.data)
       setStatus('ready')
     })()
 
@@ -75,6 +77,7 @@ export function StoreProvider({ children }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'forge_scores' }, handle(setScores, scoreKey))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'forge_sessions' }, handle(setSessions))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'forge_actions' }, handle(setActions))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'forge_time' }, handle(setTime))
       .subscribe()
     return () => { alive = false; sb.removeChannel(ch) }
   }, [])
@@ -158,6 +161,37 @@ export function StoreProvider({ children }) {
     return fail(error, 'delete that to-do')
   }, [fail])
 
+  // ---------- clock in / out ----------
+  const clockIn = useCallback(async (activity = 'research', note = '') => {
+    if (!person) return null
+    if (time.some((t) => t.person === person && !t.ended_at)) return null
+    const { data, error } = await sb.from('forge_time').insert({ person, activity, note, started_at: new Date().toISOString() }).select().single()
+    if (!fail(error, 'clock you in')) return null
+    setTime((l) => upsertBy(l, data))
+    return data
+  }, [person, time, fail])
+
+  const updateTime = useCallback(async (id, patch) => {
+    setTime((l) => l.map((x) => (x.id === id ? { ...x, ...patch } : x)))
+    const { error } = await sb.from('forge_time').update(patch).eq('id', id)
+    return fail(error, 'save that time entry')
+  }, [fail])
+
+  const clockOut = useCallback((id, patch = {}) => updateTime(id, { ...patch, ended_at: new Date().toISOString() }), [updateTime])
+
+  const addTime = useCallback(async (row) => {
+    const { data, error } = await sb.from('forge_time').insert(row).select().single()
+    if (!fail(error, 'add that time')) return null
+    setTime((l) => upsertBy(l, data))
+    return data
+  }, [fail])
+
+  const deleteTime = useCallback(async (id) => {
+    setTime((l) => l.filter((x) => x.id !== id))
+    const { error } = await sb.from('forge_time').delete().eq('id', id)
+    return fail(error, 'delete that time entry')
+  }, [fail])
+
   const live = useMemo(() => ideas.filter((i) => !i.deleted_at), [ideas])
   const trash = useMemo(() => ideas.filter((i) => i.deleted_at), [ideas])
 
@@ -165,6 +199,7 @@ export function StoreProvider({ children }) {
     person, setPerson, status, toast, flash,
     ideas: live, allIdeas: ideas, trash, scores, sessions, actions,
     addIdea, updateIdea, trashIdea, restoreIdea, setScore,
+    time, clockIn, clockOut, updateTime, addTime, deleteTime,
     addSession, updateSession, deleteSession, addAction, updateAction, deleteAction,
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

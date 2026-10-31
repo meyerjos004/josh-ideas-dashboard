@@ -160,19 +160,81 @@ To-dos: ${JSON.stringify(todos ?? [])}
 Earlier AI research: ${ai ? JSON.stringify(ai).slice(0, 4000) : '(none)'}`
     }
   }
+  const titleOf = new Map((ideas ?? []).map((i) => [i.id, i.title]))
+  const day = (iso: string) => new Date(iso).toLocaleDateString('en-US', { timeZone: 'America/Denver', weekday: 'short', month: 'short', day: 'numeric' })
+  const cut = (t: string | null | undefined, n: number) => { const x = (t ?? '').replace(/\s+/g, ' ').trim(); return x.length > n ? x.slice(0, n) + '…' : x }
+
+  // Brainstorm sessions: most recent first
+  const { data: sessions } = await db.from('forge_sessions').select('id, title, held_on, notes, decisions').order('held_on', { ascending: false }).order('created_at', { ascending: false }).limit(6)
+  const { data: openTodos } = await db.from('forge_actions').select('text, owner, session_id, idea_id').eq('done', false).limit(40)
+  const sessionText = (sessions ?? []).map((s) => {
+    const todos = (openTodos ?? []).filter((a) => a.session_id === s.id).map((a) => `${a.text} (${a.owner || 'unassigned'})`)
+    return `- ${s.held_on}: ${s.title}` +
+      (s.decisions ? `\n  Decided: ${cut(s.decisions, 500)}` : '') +
+      (s.notes ? `\n  Talked about: ${cut(s.notes, 600)}` : '') +
+      (todos.length ? `\n  Open to-dos: ${todos.join('; ')}` : '')
+  }).join('\n') || '(no sessions logged yet)'
+  const allOpen = (openTodos ?? []).map((a) => `- ${a.text} (${a.owner || 'unassigned'}${a.idea_id && titleOf.get(a.idea_id) ? `, for ${titleOf.get(a.idea_id)}` : ''})`).join('\n') || '(none)'
+
+  // Time spent on the business
+  const { data: time } = await db.from('forge_time').select('person, started_at, ended_at, activity, note').order('started_at', { ascending: false }).limit(500)
+  const weekAgo = Date.now() - 7 * 86400_000
+  const hrs = (secs: number) => `${(secs / 3600).toFixed(1)}h`
+  const per: Record<string, { week: number; all: number }> = {}
+  const acts: Record<string, number> = {}
+  let running = ''
+  for (const t of time ?? []) {
+    const secs = ((t.ended_at ? Date.parse(t.ended_at) : Date.now()) - Date.parse(t.started_at)) / 1000
+    per[t.person] ??= { week: 0, all: 0 }
+    per[t.person].all += secs
+    if (Date.parse(t.started_at) >= weekAgo) per[t.person].week += secs
+    acts[t.activity] = (acts[t.activity] ?? 0) + secs
+    if (!t.ended_at) running += `${t.person} is clocked in right now (${t.activity}). `
+  }
+  const hoursText = Object.keys(per).length
+    ? Object.entries(per).map(([p, v]) => `${p}: ${hrs(v.week)} in the last 7 days, ${hrs(v.all)} total`).join('; ') +
+      `\nBy activity: ${Object.entries(acts).map(([a, v]) => `${a} ${hrs(v)}`).join(', ')}` +
+      (running ? `\n${running}` : '') +
+      `\nRecent work notes: ${(time ?? []).filter((t) => t.note).slice(0, 6).map((t) => `${day(t.started_at)} ${t.person}: ${cut(t.note, 120)}`).join(' | ') || '(none)'}`
+    : '(no time logged yet)'
+
+  // What they've discussed with you in other chats
+  let otherChats = db.from('forge_chats').select('idea_id, role, person, content, created_at').eq('status', 'done').order('created_at', { ascending: false }).limit(24)
+  otherChats = ideaId ? otherChats.or(`idea_id.is.null,idea_id.neq.${ideaId}`) : otherChats.not('idea_id', 'is', null)
+  const { data: recent } = await otherChats
+  const chatText = (recent ?? []).reverse().map((c) => {
+    const where = c.idea_id ? (titleOf.get(c.idea_id) ?? 'an idea') : 'the general coach chat'
+    return `- [${day(c.created_at)}, ${where}] ${c.role === 'user' ? (c.person || 'They') : 'You'}: ${cut(c.content, c.role === 'user' ? 200 : 260)}`
+  }).join('\n') || '(none yet)'
+
   return `${FOUNDERS}
 
-You are their business coach inside Forge, the app where they collect and sort ideas. Their founder roadmap (x = done):
+You are their business coach inside Forge, the app where they collect and sort ideas. Today is ${day(new Date().toISOString())}.
+
+Their founder roadmap (x = done):
 ${roadmap}
 
 Their idea board:
-${board}${focus}
+${board}
+
+Brainstorm sessions they've logged (newest first):
+${sessionText}
+
+All open to-dos:
+${allOpen}
+
+Time they've put into the business:
+${hoursText}
+
+Recent conversations with you elsewhere in Forge (for continuity; refer back to them when relevant, don't repeat yourself):
+${chatText}${focus}
 
 How to answer:
 - Short and skimmable: a few sentences or a tight list. No long essays unless they ask.
 - Specific to them and this idea, never generic advice.
 - Search the web when facts would help (prices, competitors, rules, suppliers), and say what you found.
 - For legal or tax questions, give the practical basics, then say when it's worth a quick check with a pro.
+- Use what you know about them: past decisions in sessions, open to-dos, time put in, earlier chats. If something they say conflicts with an earlier decision, point it out.
 - End with one clear next action, phrased as something they can do this week.`
 }
 

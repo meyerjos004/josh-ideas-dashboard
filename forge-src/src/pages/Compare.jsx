@@ -33,7 +33,7 @@ export default function Compare() {
   return (
     <div className="space-y-12">
       <header>
-        <h1 className="text-4xl font-bold">Compare</h1>
+        <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.035em]">Compare</h1>
         <p className="mt-1 max-w-xl text-muted">Ideas you've both scored, best first. Pick up to three to overlay.</p>
       </header>
 
@@ -135,7 +135,7 @@ export function Trash() {
   const { trash, restoreIdea } = useStore()
   return (
     <div className="max-w-3xl">
-      <h1 className="text-4xl font-bold">Trash</h1>
+      <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.035em]">Trash</h1>
       <p className="mt-1 mb-8 text-muted">Ideas you've thrown out. Restore puts them back where they were.</p>
       {trash.length ? <TrashList trash={trash} restoreIdea={restoreIdea} /> : <Empty>Trash is empty.</Empty>}
     </div>

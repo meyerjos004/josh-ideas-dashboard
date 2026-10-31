@@ -1,58 +1,37 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'motion/react'
+import { Sparkles, Map, ArrowUpRight } from 'lucide-react'
 import { useStore } from '../lib/store'
-import { STAGES, PEOPLE, isComplete } from '../lib/constants'
+import { STAGES, PEOPLE, isComplete, entrySecs, fmtDuration } from '../lib/constants'
+import { useLayout } from '../lib/layout'
+import { ROADMAP } from '../lib/roadmap'
+import { timeAgo } from '../lib/notes'
 import Capture from '../components/Capture'
 import IdeaRow from '../components/IdeaRow'
+import PaperCard from '../components/PaperCard'
+import CoachChat from '../components/Coach'
 import { ActionItem } from './Sessions'
 import { Empty } from '../components/ui'
-import { timeAgo } from '../lib/notes'
-import { ROADMAP } from '../lib/roadmap'
-import { Sparkles, Map } from 'lucide-react'
+import { useNow } from '../components/Clock'
 
-function Funnel({ ideas }) {
-  const counts = STAGES.map((s) => ({ ...s, n: ideas.filter((i) => i.stage === s.id).length }))
-  const total = ideas.length || 1
-  return (
-    <Link to="/board" className="block" aria-label="Open the board">
-      <div className="flex h-3 w-full overflow-hidden rounded-full bg-sunk">
-        {counts.filter((c) => c.n).map((c, i) => (
-          <motion.span key={c.id} style={{ background: c.color }} className="h-full"
-            initial={{ width: 0 }} animate={{ width: `${(c.n / total) * 100}%` }} transition={{ delay: .15 + i * .07, type: 'spring', stiffness: 120, damping: 20 }} />
-        ))}
-      </div>
-      <div className="mt-2.5 grid grid-cols-5 gap-2">
-        {counts.map((c) => (
-          <div key={c.id} className="min-w-0">
-            <div className="display text-2xl font-semibold tabular-nums sm:text-3xl" style={{ color: c.n ? c.color : 'var(--color-faint)' }}>{c.n}</div>
-            <div className="truncate text-xs text-muted">{c.name}</div>
-          </div>
-        ))}
-      </div>
-    </Link>
-  )
-}
-
-export default function Today() {
-  const { person, ideas, scores, actions, sessions, status, aiReady, roadmap } = useStore()
-  const doneSteps = new Set(roadmap.filter((r) => r.done).map((r) => r.step_id))
-  const nextStep = ROADMAP.flatMap((p) => p.steps).find((s) => !doneSteps.has(s.id))
+function useToday() {
+  const { person, ideas, scores, actions, sessions, status, roadmap, time } = useStore()
+  const done = new Set(roadmap.filter((r) => r.done).map((r) => r.step_id))
+  const steps = ROADMAP.flatMap((p) => p.steps)
+  const nextStep = steps.find((s) => !done.has(s.id))
   const other = PEOPLE.find((p) => p.id !== person)?.id
-
   const needsMe = useMemo(() => ideas.filter((i) =>
     ['exploring', 'validating'].includes(i.stage) &&
     !isComplete(scores.find((s) => s.idea_id === i.id && s.person === person)?.scores)
   ), [ideas, scores, person])
-  const fresh = useMemo(() => ideas.filter((i) => i.stage === 'dump').sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 6), [ideas])
+  const fresh = useMemo(() => ideas.filter((i) => i.stage === 'dump').sort((a, b) => b.created_at.localeCompare(a.created_at)), [ideas])
   const myTodos = actions.filter((a) => !a.done && a.owner === person)
   const theirTodos = actions.filter((a) => !a.done && a.owner === other)
   const lastSession = [...sessions].sort((a, b) => (b.held_on + b.created_at).localeCompare(a.held_on + a.created_at))[0]
   const chosen = ideas.filter((i) => i.stage === 'chosen')
-
   const line = (() => {
     if (status === 'loading') return 'Loading…'
-    if (!ideas.length) return 'Nothing in here yet. Start by dumping every idea you two have had, good or bad.'
+    if (!ideas.length) return 'Nothing pinned yet. Start by dumping every idea you two have had, good or bad.'
     const bits = []
     if (chosen.length) bits.push(`${chosen.length === 1 ? `“${chosen[0].title}” is` : `${chosen.length} ideas are`} chosen`)
     if (needsMe.length) bits.push(`${needsMe.length} ${needsMe.length === 1 ? 'idea needs' : 'ideas need'} your score`)
@@ -61,74 +40,200 @@ export default function Today() {
     const s = bits.join(', ')
     return s[0].toUpperCase() + s.slice(1) + '.'
   })()
+  return { person, other, ideas, time, needsMe, fresh, myTodos, theirTodos, lastSession, nextStep, stepIndex: steps.indexOf(nextStep), stepCount: steps.length, doneCount: done.size, line }
+}
+
+function AiBanner() {
+  const { aiReady } = useStore()
+  if (aiReady !== false) return null
+  return (
+    <Link to="/setup" className="flex items-center gap-3 rounded-2xl bg-wine-soft px-4 py-3 text-sm text-wine">
+      <Sparkles size={18} className="shrink-0" />
+      <span><b className="font-bold">Turn on the AI</b> so Forge can clean up, research and coach every idea.</span>
+    </Link>
+  )
+}
+
+function RoadmapCard({ t }) {
+  if (!t.nextStep) return null
+  return (
+    <Link to="/roadmap" className="paper block rounded-3xl bg-teal p-5 text-card">
+      <div className="flex items-center gap-1.5 text-xs font-semibold opacity-80"><Map size={13} /> Roadmap · step {t.stepIndex + 1} of {t.stepCount}</div>
+      <div className="display mt-2 text-[22px] font-bold leading-[1.1]">{t.nextStep.title}</div>
+      <p className="mt-1.5 text-sm opacity-85">{t.nextStep.how}</p>
+      <div className="mt-4 flex gap-1">
+        {Array.from({ length: t.stepCount }).map((_, i) => (
+          <span key={i} className="h-1.5 flex-1 rounded-full" style={{ background: 'currentColor', opacity: i < t.doneCount ? 1 : 0.25 }} />
+        ))}
+      </div>
+    </Link>
+  )
+}
+
+function TodosCard({ t }) {
+  return (
+    <section className="paper rounded-3xl bg-card p-5">
+      <div className="mb-1 flex items-baseline justify-between">
+        <h2 className="text-lg font-bold">Your to-dos</h2>
+        <span className="text-xs text-faint tabular-nums">{t.myTodos.length}</span>
+      </div>
+      {t.myTodos.length
+        ? <ul>{t.myTodos.map((a) => <ActionItem key={a.id} a={a} showSource />)}</ul>
+        : <p className="text-sm text-muted">Nothing on your plate. To-dos come from sessions and idea pages.</p>}
+      {t.theirTodos.length > 0 && <p className="mt-2 text-xs text-faint">{t.other} has {t.theirTodos.length} open.</p>}
+    </section>
+  )
+}
+
+function HoursCard({ t }) {
+  const now = useNow(30000)
+  const week = Date.now() - 7 * 86400000
+  const per = Object.fromEntries(PEOPLE.map((p) => [p.id, 0]))
+  t.time.forEach((e) => { if (per[e.person] != null && new Date(e.started_at).getTime() >= week) per[e.person] += entrySecs(e, now) })
+  return (
+    <Link to="/hours" className="paper grid grid-cols-2 gap-2 rounded-3xl bg-card p-5">
+      {PEOPLE.map((p) => (
+        <div key={p.id}>
+          <div className="display text-[26px] font-extrabold tabular-nums leading-none" style={{ color: p.color }}>{fmtDuration(per[p.id])}</div>
+          <div className="mt-1 text-xs text-muted">{p.id}, last 7 days</div>
+        </div>
+      ))}
+    </Link>
+  )
+}
+
+function SessionCard({ t }) {
+  const s = t.lastSession
+  if (!s) return <Empty action={<Link to="/sessions" className="text-sm font-semibold text-wine">Start a session</Link>}>Log your brainstorms as sessions so decisions don't get lost.</Empty>
+  return (
+    <Link to={`/sessions/${s.id}`} className="paper block rounded-3xl bg-card p-5">
+      <div className="text-xs text-faint">Last session · {new Date(s.held_on + 'T12:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+      <div className="display mt-1 text-lg font-bold">{s.title}</div>
+      {s.decisions && <p className="mt-1 line-clamp-3 whitespace-pre-line text-sm text-muted">{s.decisions}</p>}
+    </Link>
+  )
+}
+
+function Wall({ list, empty }) {
+  if (!list.length) return <Empty>{empty}</Empty>
+  return <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3">{list.map((i, k) => <PaperCard key={i.id} idea={i} i={k} note={undefined} />)}</div>
+}
+
+function MiniBoard({ ideas }) {
+  return (
+    <div className="flex flex-col gap-5">
+      {STAGES.filter((s) => s.id !== 'killed').map((st) => {
+        const list = ideas.filter((i) => i.stage === st.id).sort((a, b) => b.position - a.position)
+        return (
+          <section key={st.id} className="min-h-0">
+            <Link to={`/board#${st.id}`} className="mb-1.5 flex items-center gap-2 text-sm font-bold">
+              <span className="size-2.5 rounded-[3px]" style={{ background: st.color }} />{st.name}<span className="font-normal text-faint">{list.length}</span>
+            </Link>
+            <div className="space-y-1.5">
+              {list.slice(0, 5).map((i) => (
+                <Link key={i.id} to={`/idea/${i.id}`} className="block truncate rounded-xl px-3 py-2 text-[13px] font-semibold" style={{ background: st.tint, color: st.on }}>{i.title}</Link>
+              ))}
+              {list.length > 5 && <Link to={`/board#${st.id}`} className="block px-3 text-xs text-faint">+{list.length - 5} more</Link>}
+              {!list.length && <p className="px-3 text-xs text-faint">Empty</p>}
+            </div>
+          </section>
+        )
+      })}
+    </div>
+  )
+}
+
+function Pane({ title, action, children, className = '' }) {
+  return (
+    <section className={`flex min-h-0 min-w-0 flex-col rounded-[28px] bg-paper ${className}`}>
+      <div className="mb-3 flex items-baseline justify-between px-1">
+        <h2 className="display text-xl font-extrabold tracking-[-0.02em]">{title}</h2>
+        {action}
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1 scroll-thin">{children}</div>
+    </section>
+  )
+}
+
+export default function Today() {
+  const t = useToday()
+  const { mode } = useLayout()
+
+  // Ultrawide: four live panes side by side, each scrolling on its own
+  if (mode === 'ultra') {
+    return (
+      <div className="flex h-[calc(100dvh-72px)] flex-col gap-5">
+        <header className="flex items-end gap-6">
+          <h1 className="text-[44px] font-extrabold leading-none tracking-[-0.035em]">What are we building, {t.person}?</h1>
+          <p className="pb-1 text-muted">{t.line}</p>
+        </header>
+        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1.25fr)_minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(0,0.9fr)] gap-7">
+          <Pane title="Inbox" action={<Link to="/board" className="text-sm text-muted hover:text-ink">Board <ArrowUpRight size={13} className="inline" /></Link>}>
+            <div className="space-y-6 pt-2">
+              <AiBanner />
+              <Capture big />
+              {t.needsMe.length > 0 && (
+                <div>
+                  <h3 className="mb-2.5 text-sm font-bold">Needs your score</h3>
+                  <div className="grid grid-cols-1 gap-3 2xl:grid-cols-2">{t.needsMe.map((i, k) => <PaperCard key={i.id} idea={i} i={k} dense />)}</div>
+                </div>
+              )}
+              <div>
+                <h3 className="mb-1 text-sm font-bold">Fresh in the dump</h3>
+                {t.fresh.length ? <div className="divide-y divide-line">{t.fresh.map((i) => <IdeaRow key={i.id} idea={i} showStage={false} />)}</div> : <p className="text-sm text-muted">Empty. Anything you pin lands here first.</p>}
+              </div>
+            </div>
+          </Pane>
+          <Pane title="Board"><MiniBoard ideas={t.ideas} /></Pane>
+          <Pane title="Coach" action={<Link to="/coach" className="text-sm text-muted hover:text-ink">Open <ArrowUpRight size={13} className="inline" /></Link>}>
+            <CoachChat compact={false} />
+          </Pane>
+          <Pane title="This week">
+            <div className="space-y-4">
+              <RoadmapCard t={t} />
+              <TodosCard t={t} />
+              <HoursCard t={t} />
+              <SessionCard t={t} />
+            </div>
+          </Pane>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-9">
       <header>
-        <h1 className="text-4xl font-bold sm:text-5xl">Hey {person}.</h1>
-        <p className="mt-2 max-w-xl text-muted">{line}</p>
+        <h1 className="text-[40px] font-extrabold leading-[0.98] tracking-[-0.035em] sm:text-[52px]">What are we<br className="sm:hidden" /> building, {t.person}?</h1>
+        <p className="mt-3 max-w-xl text-muted">{t.line}</p>
       </header>
 
-      {aiReady === false && (
-        <Link to="/setup" className="flex items-center gap-3 rounded-2xl border border-wine/25 bg-wine-soft px-4 py-3 text-sm text-wine">
-          <Sparkles size={18} className="shrink-0" />
-          <span><b className="font-semibold">Turn on the AI</b> so Forge can clean up, research and coach every idea. About 5 minutes, one time.</span>
-        </Link>
-      )}
-
-      <Capture big />
-
-      {ideas.length > 0 && <Funnel ideas={ideas} />}
-
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.4fr_1fr]">
-        <div className="space-y-10">
-          {needsMe.length > 0 && (
+      <div className={`grid grid-cols-1 gap-9 ${mode === 'phone' ? '' : 'lg:grid-cols-[minmax(0,1fr)_340px]'} ${mode === 'wide' ? 'lg:grid-cols-[minmax(0,1fr)_380px]' : ''}`}>
+        <div className="min-w-0 space-y-9">
+          <AiBanner />
+          <Capture big />
+          {t.needsMe.length > 0 && (
             <section>
-              <h2 className="mb-2 text-lg font-semibold">Needs your score</h2>
-              <div className="divide-y divide-line">{needsMe.map((i) => <IdeaRow key={i.id} idea={i} />)}</div>
+              <h2 className="mb-3 text-lg font-bold">Needs your score</h2>
+              <Wall list={t.needsMe} />
             </section>
           )}
           <section>
-            <div className="mb-2 flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold">Fresh in the dump</h2>
+            <div className="mb-1 flex items-baseline justify-between">
+              <h2 className="text-lg font-bold">Fresh in the dump</h2>
               <Link to="/board" className="text-sm text-muted hover:text-ink">See the board</Link>
             </div>
-            {fresh.length
-              ? <div className="divide-y divide-line">{fresh.map((i) => <IdeaRow key={i.id} idea={i} showStage={false} />)}</div>
-              : <Empty>The dump is empty. Anything you type above lands here first.</Empty>}
+            {t.fresh.length
+              ? <div className="divide-y divide-line">{t.fresh.slice(0, 8).map((i) => <IdeaRow key={i.id} idea={i} showStage={false} />)}</div>
+              : <Empty>The dump is empty. Anything you pin above lands here first.</Empty>}
           </section>
         </div>
-
-        <div className="space-y-10">
-          {nextStep && (
-            <Link to="/roadmap" className="block rounded-2xl bg-teal p-5 text-card">
-              <div className="flex items-center gap-1.5 text-xs opacity-75"><Map size={13} /> Roadmap, up next</div>
-              <div className="display mt-1.5 text-xl font-semibold leading-snug">{nextStep.title}</div>
-              <p className="mt-1 text-sm opacity-80">{nextStep.how}</p>
-            </Link>
-          )}
-          <section>
-            <h2 className="mb-2 text-lg font-semibold">Your to-dos</h2>
-            {myTodos.length
-              ? <ul className="space-y-1">{myTodos.map((a) => <ActionItem key={a.id} a={a} showSource />)}</ul>
-              : <p className="text-sm text-muted">Nothing on your plate. To-dos come from sessions and idea pages.</p>}
-            {theirTodos.length > 0 && (
-              <p className="mt-3 text-sm text-muted">{other} has {theirTodos.length} open.</p>
-            )}
-          </section>
-          <section>
-            <div className="mb-2 flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold">Last session</h2>
-              <Link to="/sessions" className="text-sm text-muted hover:text-ink">All sessions</Link>
-            </div>
-            {lastSession ? (
-              <Link to={`/sessions/${lastSession.id}`} className="block rounded-xl border border-line bg-card p-4 hover:border-faint">
-                <div className="font-medium">{lastSession.title}</div>
-                <div className="text-xs text-faint">{new Date(lastSession.held_on + 'T12:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · {timeAgo(lastSession.created_at)}</div>
-                {lastSession.decisions && <p className="mt-2 line-clamp-3 whitespace-pre-line text-sm text-muted">{lastSession.decisions}</p>}
-              </Link>
-            ) : <Empty action={<Link to="/sessions" className="text-sm font-medium text-wine">Start a session</Link>}>When you two sit down to brainstorm, log it as a session so decisions don't get lost.</Empty>}
-          </section>
+        <div className="space-y-5">
+          <RoadmapCard t={t} />
+          <TodosCard t={t} />
+          <HoursCard t={t} />
+          <SessionCard t={t} />
+          <p className="px-1 text-xs text-faint">Added {t.ideas.length ? timeAgo([...t.ideas].sort((a, b) => b.created_at.localeCompare(a.created_at))[0].created_at) : 'nothing yet'} · {t.ideas.length} idea{t.ideas.length === 1 ? "" : "s"} total</p>
         </div>
       </div>
     </div>

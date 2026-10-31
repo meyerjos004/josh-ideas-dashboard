@@ -47,7 +47,7 @@ export default function Sessions() {
     <div className="max-w-3xl">
       <header className="mb-8 flex flex-wrap items-end gap-3">
         <div className="mr-auto">
-          <h1 className="text-4xl font-bold">Sessions</h1>
+          <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.035em]">Sessions</h1>
           <p className="mt-1 text-muted">Every time you two sit down, log what you talked about and what you decided.</p>
         </div>
         <Button variant="primary" onClick={() => setOpen(true)}><Plus size={15} /> Start a session</Button>

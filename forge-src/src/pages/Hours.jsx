@@ -29,13 +29,8 @@ function AddTime({ open, onClose }) {
     <Modal open={open} onClose={onClose} label="Add time">
       <form className="p-5" onSubmit={save}>
         <h2 className="text-2xl font-semibold">Add time</h2>
-        <p className="mt-1 text-sm text-muted">For when you forgot to clock in.</p>
-        <div className="mt-4 flex gap-2">
-          {PEOPLE.map((p) => (
-            <button type="button" key={p.id} onClick={() => setF({ ...f, who: p.id })}
-              className={`rounded-full px-3 py-1 text-sm ${f.who === p.id ? 'text-card' : 'bg-sunk text-muted'}`} style={f.who === p.id ? { background: p.hex } : undefined}>{p.id}</button>
-          ))}
-        </div>
+        <p className="mt-1 text-sm text-muted">For when you forgot to clock in. It's logged as your time.</p>
+
         <div className="mt-3 grid grid-cols-[1.3fr_1fr_1fr] gap-2">
           <label className="text-xs text-muted">Day<input type="date" value={f.day} onChange={set('day')} className={field} /></label>
           <label className="text-xs text-muted">From<input type="time" value={f.from} onChange={set('from')} className={field} /></label>
@@ -121,7 +116,7 @@ export default function Hours() {
     <div className="space-y-12">
       <header className="flex flex-wrap items-end gap-3">
         <div className="mr-auto">
-          <h1 className="text-4xl font-bold">Hours</h1>
+          <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.035em]">Hours</h1>
           <p className="mt-1 max-w-xl text-muted">
             {stats.total ? `You two have put ${fmtDuration(stats.total)} into the business, ${fmtDuration(stats.weekTotal)} of it this week.` : 'Clock in from the sidebar whenever you work on the business. Research counts.'}
           </p>

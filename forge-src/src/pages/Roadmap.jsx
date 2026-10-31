@@ -5,6 +5,7 @@ import { useStore } from '../lib/store'
 import { ROADMAP } from '../lib/roadmap'
 import { personHex } from '../lib/constants'
 import { timeAgo } from '../lib/notes'
+import { pop } from '../lib/fun'
 
 export default function Roadmap() {
   const { roadmap, toggleStep } = useStore()
@@ -16,7 +17,7 @@ export default function Roadmap() {
   return (
     <div className="max-w-3xl">
       <header>
-        <h1 className="text-4xl font-bold">Roadmap</h1>
+        <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.035em]">Roadmap</h1>
         <p className="mt-1 text-muted">The path from “we have ideas” to a real company, in order. Check steps off together.</p>
       </header>
 
@@ -52,7 +53,7 @@ export default function Roadmap() {
                   const d = done[s.id]
                   return (
                     <li key={s.id} className="group flex items-start gap-3 rounded-xl px-2 py-2.5 hover:bg-card">
-                      <button onClick={() => toggleStep(s.id, !d)} aria-label={d ? `Mark “${s.title}” not done` : `Mark “${s.title}” done`}
+                      <button onClick={(e) => { if (!d) pop(e.clientX, e.clientY); toggleStep(s.id, !d) }} aria-label={d ? `Mark “${s.title}” not done` : `Mark “${s.title}” done`}
                         className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border transition-colors ${d ? 'border-forest bg-forest text-card' : 'border-faint bg-card hover:border-ink'}`}>
                         {d && <motion.span initial={{ scale: .3 }} animate={{ scale: 1 }}><Check size={13} strokeWidth={3} /></motion.span>}
                       </button>

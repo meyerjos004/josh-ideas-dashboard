@@ -267,18 +267,48 @@ async function coach(chatId: string, ideaId: string | null) {
   }
 }
 
+// ---------- who is calling ----------
+// Logged-in app users send their session token; the iPhone Shortcut sends a personal token.
+async function whoIs(req: Request, body: Record<string, unknown>): Promise<string | null> {
+  if (typeof body.token === 'string' && body.token.length >= 20) {
+    const { data } = await db.from('forge_members').select('person').eq('shortcut_token', body.token).maybeSingle()
+    return data?.person ?? null
+  }
+  const jwt = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+  if (!jwt || jwt === PUBLIC_KEY) return null
+  const { data: u } = await db.auth.getUser(jwt)
+  if (!u?.user) return null
+  const { data } = await db.from('forge_members').select('person').eq('user_id', u.user.id).maybeSingle()
+  return data?.person ?? null
+}
+
 // ---------- entry ----------
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return json({ error: 'Use POST' }, 405)
-  const key = req.headers.get('apikey') ?? req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-  if (key !== PUBLIC_KEY) return json({ error: 'Not allowed' }, 401)
+  if (req.headers.get('apikey') !== PUBLIC_KEY) return json({ error: 'Not allowed' }, 401)
 
   let body: Record<string, unknown>
   try { body = await req.json() } catch { return json({ error: 'Send JSON' }, 400) }
   const action = body.action
 
   if (action === 'status') return json({ ai: !!API_KEY, model: MODEL })
+
+  // First-time account setup: only for an invited email that has no account yet
+  if (action === 'register') {
+    const email = String(body.email ?? '').trim().toLowerCase()
+    const password = String(body.password ?? '')
+    if (password.length < 8) return json({ error: 'Use a password with at least 8 characters.' }, 400)
+    const { data: m } = await db.from('forge_members').select('person, user_id').eq('email', email).maybeSingle()
+    if (!m) return json({ error: "That email isn't invited to Forge." }, 403)
+    if (m.user_id) return json({ error: 'That account already exists. Sign in instead.' }, 409)
+    const { error } = await db.auth.admin.createUser({ email, password, email_confirm: true })
+    if (error) return json({ error: error.message }, 400)
+    return json({ ok: true, person: m.person })
+  }
+
+  const person = await whoIs(req, body)
+  if (!person) return json({ error: 'Sign in to Forge first.' }, 401)
 
   if (action === 'capture' || action === 'research' || action === 'chat') {
     if (!API_KEY && action !== 'capture') return json({ error: 'no_key' }, 503)
@@ -289,7 +319,6 @@ Deno.serve(async (req) => {
     // Quick capture: save the raw words now, research in the background
     const text = String(body.text ?? '').trim().slice(0, 2000)
     if (!text) return json({ error: 'Empty idea' }, 400)
-    const person = ['Josh', 'Jake'].includes(String(body.person)) ? String(body.person) : ''
     const title = text.length > 80 ? text.slice(0, 77).replace(/\s+\S*$/, '') + '…' : text
     const { data, error } = await db.from('forge_ideas').insert({
       title, raw_input: text, created_by: person, stage: 'dump', position: Date.now() / 1000,
@@ -312,7 +341,6 @@ Deno.serve(async (req) => {
     const message = String(body.message ?? '').trim().slice(0, 4000)
     if (!message) return json({ error: 'Empty message' }, 400)
     const ideaId = body.idea_id ? String(body.idea_id) : null
-    const person = String(body.person ?? '')
     const { error: e1 } = await db.from('forge_chats').insert({ idea_id: ideaId, role: 'user', person, content: message })
     if (e1) return json({ error: e1.message }, 500)
     const { data: reply, error: e2 } = await db.from('forge_chats').insert({ idea_id: ideaId, role: 'assistant', content: '', status: 'working' }).select().single()

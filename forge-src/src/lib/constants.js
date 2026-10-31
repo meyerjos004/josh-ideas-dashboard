@@ -1,16 +1,16 @@
 export const PEOPLE = [
-  { id: 'Josh', color: 'var(--color-josh)', hex: '#5D2535' },
-  { id: 'Jake', color: 'var(--color-jake)', hex: '#2B6C82' },
+  { id: 'Josh', color: 'var(--color-josh)', hex: '#B04A64' },
+  { id: 'Jake', color: 'var(--color-jake)', hex: '#3A8FA8' },
 ]
 export const personHex = (p) => PEOPLE.find((x) => x.id === p)?.hex ?? '#5C6A66'
 
 // The funnel. Order matters: an idea moves left to right.
 export const STAGES = [
-  { id: 'dump', name: 'Dump', hint: 'Raw thoughts. No filter.', color: 'var(--color-rose)' },
-  { id: 'exploring', name: 'Exploring', hint: 'Worth a closer look.', color: 'var(--color-navy)' },
-  { id: 'validating', name: 'Validating', hint: 'Testing if people want it.', color: 'var(--color-olive)' },
-  { id: 'chosen', name: 'Chosen', hint: "We're doing this.", color: 'var(--color-forest)' },
-  { id: 'killed', name: 'Killed', hint: 'Passed on, with a reason.', color: 'var(--color-stone)' },
+  { id: 'dump', name: 'Dump', hint: 'Raw thoughts. No filter.', color: 'var(--color-rose)', tint: 'var(--color-card)', on: 'var(--color-ink)' },
+  { id: 'exploring', name: 'Exploring', hint: 'Worth a closer look.', color: 'var(--color-navy)', tint: 'var(--color-tint-teal)', on: 'var(--color-on-teal)' },
+  { id: 'validating', name: 'Validating', hint: 'Testing if people want it.', color: 'var(--color-olive)', tint: 'var(--color-tint-olive)', on: 'var(--color-on-olive)' },
+  { id: 'chosen', name: 'Chosen', hint: "We're doing this.", color: 'var(--color-forest)', tint: 'var(--color-tint-rose)', on: 'var(--color-on-rose)' },
+  { id: 'killed', name: 'Killed', hint: 'Passed on, with a reason.', color: 'var(--color-stone)', tint: 'var(--color-sunk)', on: 'var(--color-muted)' },
 ]
 export const stageOf = (id) => STAGES.find((s) => s.id === id) ?? STAGES[0]
 

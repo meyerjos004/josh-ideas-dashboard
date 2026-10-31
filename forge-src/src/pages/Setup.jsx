@@ -31,13 +31,14 @@ function Step({ n, title, children }) {
 const A = (p) => <a {...p} target="_blank" rel="noreferrer" className="font-medium text-wine underline underline-offset-2" />
 
 export default function Setup() {
-  const { aiReady, checkAI, person } = useStore()
-  const body = JSON.stringify({ action: 'capture', person, text: '(Provided Input)' })
+  const { aiReady, checkAI, member } = useStore()
+  const token = member?.shortcut_token ?? ''
+  const body = JSON.stringify({ action: 'capture', token: 'your key', text: '(Provided Input)' })
 
   return (
     <div className="max-w-2xl space-y-14">
       <header>
-        <h1 className="text-4xl font-bold">Setup</h1>
+        <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.035em]">Setup</h1>
         <p className="mt-1 text-muted">Notifications, the AI connection, and putting Forge on your iPhones.</p>
       </header>
 
@@ -99,7 +100,8 @@ export default function Setup() {
             <CopyField label="Content-Type" value="application/json" />
             <p>Request Body: <b>JSON</b>, with three Text fields:</p>
             <CopyField label="action" value="capture" />
-            <CopyField label="person" value={person} />
+            <CopyField label="token" value={token} />
+            <p className="text-xs text-faint">That token is your personal key: it's how Forge knows the idea came from you. Don't share it.</p>
             <p><b>text</b> → tap the value and pick the variable <b>Provided Input</b> from step 2.</p>
             <p className="text-xs text-faint">Same thing as raw JSON, for reference: <code>{body}</code></p>
           </Step>

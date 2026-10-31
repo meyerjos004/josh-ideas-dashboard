@@ -19,12 +19,12 @@ export function PersonChip({ person, small }) {
 
 export function Button({ variant = 'quiet', className = '', ...p }) {
   const v = {
-    primary: 'bg-wine text-card hover:bg-[#4a1d2a] shadow-[0_1px_0_#3b1622]',
-    quiet: 'bg-card text-ink border border-line hover:border-faint',
-    ghost: 'text-muted hover:text-ink hover:bg-sunk',
-    danger: 'text-wine hover:bg-wine-soft',
+    primary: 'bg-wine text-card font-bold rounded-full px-4 hover:opacity-90',
+    quiet: 'bg-card text-ink border border-line rounded-full px-3.5 hover:border-faint',
+    ghost: 'text-muted hover:text-ink hover:bg-sunk rounded-full px-3',
+    danger: 'text-wine hover:bg-wine-soft rounded-full px-3',
   }[variant]
-  return <button {...p} className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-40 ${v} ${className}`} />
+  return <button {...p} className={`inline-flex items-center justify-center gap-1.5 py-1.5 text-sm font-medium transition-colors disabled:opacity-40 ${v} ${className}`} />
 }
 
 // Text that saves itself a moment after you stop typing

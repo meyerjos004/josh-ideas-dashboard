@@ -56,12 +56,15 @@ Deno.serve(async (req) => {
 
   try {
     const cfg = await getConfig()
-    const apikey = req.headers.get('apikey') ?? req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
 
     // Test ping from the app to one device
     if (body.kind === 'test') {
-      if (apikey !== PUBLIC_KEY) return json({ error: 'Not allowed' }, 401)
-      const { data: subs } = await db.from('forge_push').select('*').eq('endpoint', String(body.endpoint ?? ''))
+      if (req.headers.get('apikey') !== PUBLIC_KEY) return json({ error: 'Not allowed' }, 401)
+      const jwt = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+      const { data: u } = jwt && jwt !== PUBLIC_KEY ? await db.auth.getUser(jwt) : { data: null }
+      const { data: me } = u?.user ? await db.from('forge_members').select('person').eq('user_id', u.user.id).maybeSingle() : { data: null }
+      if (!me?.person) return json({ error: 'Sign in to Forge first.' }, 401)
+      const { data: subs } = await db.from('forge_push').select('*').eq('endpoint', String(body.endpoint ?? '')).eq('person', me.person)
       if (!subs?.length) return json({ error: 'This device is not registered' }, 404)
       const sent = await send(subs as Sub[], { title: 'Forge notifications are on', body: "You'll hear about the other person's ideas, research and to-dos.", url: APP, tag: 'test' })
       return json({ ok: true, sent })

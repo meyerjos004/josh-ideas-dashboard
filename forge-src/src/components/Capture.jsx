@@ -16,6 +16,7 @@ export default function Capture({ big }) {
   const [level, setLevel] = useState(0)
   const [progress, setProgress] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [pinned, setPinned] = useState(0) // bumps on each save to replay the pin drop
   const rec = useRef(null)
   const input = useRef()
 
@@ -68,7 +69,7 @@ export default function Capture({ big }) {
     const idea = await forgeIdea(raw, kind)
     setSaving(false)
     if (!idea) return
-    setText(''); setKind('unsure')
+    setText(''); setKind('unsure'); setPinned((n) => n + 1)
     if (open) nav(`/idea/${idea.id}`)
     else flash(aiReady ? 'Saved. Researching it now…' : `Saved to Dump: ${idea.title}`)
   }
@@ -78,13 +79,15 @@ export default function Capture({ big }) {
   }
 
   return (
-    <div className={`rounded-2xl border border-line bg-card ${big ? 'p-4 sm:p-5' : 'p-3'} shadow-[0_1px_0_var(--color-line)] focus-within:border-faint`}>
+    <div className={`paper relative rounded-2xl bg-card ${big ? 'tilt-l p-4 sm:p-5' : 'p-3'}`}>
+      <motion.span key={pinned} aria-hidden="true" className="absolute -top-2 left-1/2 size-3.5 -translate-x-1/2 rounded-full bg-wine shadow-[0_2px_0_rgb(0_0_0/.2)]"
+        initial={pinned ? { y: -26, scale: 1.3, opacity: 0 } : false} animate={{ y: 0, scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 520, damping: 14 }} />
       <div className="flex items-start gap-2">
         <textarea
           ref={input} rows={big ? 2 : 1} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={onKey}
           placeholder={listening ? `Listening ${mm}… click the square when you're done` : mic === 'working' ? (progress != null && progress < 100 ? `Setting up voice-to-text (one time) ${progress}%` : 'Turning speech into text…') : (aiReady ? 'Type the idea rough, 10–20 words. Forge cleans it up and researches it.' : 'What could we sell? Type it rough, sort it later.')}
           aria-label="New idea"
-          className={`min-h-0 flex-1 bg-transparent outline-none focus-visible:outline-none placeholder:text-faint ${big ? 'display text-xl sm:text-2xl leading-snug' : 'text-[15px]'}`}
+          className={`min-h-0 flex-1 bg-transparent outline-none focus-visible:outline-none placeholder:text-faint ${big ? 'display text-xl font-semibold sm:text-[22px] leading-snug' : 'text-[15px]'}`}
         />
         <button type="button" onClick={toggleMic} disabled={mic === 'working'} aria-label={listening ? 'Stop recording' : mic === 'working' ? 'Transcribing' : 'Talk instead of typing'}
           title={listening ? 'Stop and turn into text' : 'Talk instead of typing'}
@@ -106,8 +109,8 @@ export default function Capture({ big }) {
               <div className="ml-auto flex items-center gap-2">
                 <span className="hidden text-xs text-faint sm:inline">Enter saves · {MOD}+Enter saves and opens</span>
                 <button onClick={() => save(false)} disabled={!text.trim() || saving}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-wine px-3 py-1.5 text-sm font-medium text-card disabled:opacity-35">
-                  Save idea <CornerDownLeft size={14} />
+                  className="inline-flex items-center gap-1.5 rounded-full bg-wine px-4 py-1.5 text-sm font-bold text-card disabled:opacity-35">
+                  Pin it <CornerDownLeft size={14} />
                 </button>
               </div>
             </div>

@@ -11,6 +11,8 @@ import ScorePanel from '../components/Score'
 import ResearchPanel from '../components/Research'
 import CoachChat from '../components/Coach'
 import { IdeaTime } from '../components/Clock'
+import { useLayout } from '../lib/layout'
+import { Maximize2 } from 'lucide-react'
 import { ActionItem } from './Sessions'
 
 function Stepper({ idea, onMove }) {
@@ -73,8 +75,11 @@ function Links({ idea, onSave }) {
   )
 }
 
-export default function IdeaPage() {
-  const { id } = useParams()
+export default function IdeaPage({ id: idProp, panel = false, onClose }) {
+  const params = useParams()
+  const id = idProp ?? params.id
+  const { mode } = useLayout()
+  const ultra = mode === 'ultra' && !panel
   const nav = useNavigate()
   const { allIdeas, ideas, sessions, actions, updateIdea, trashIdea, restoreIdea, addAction, flash, status, person } = useStore()
   const idea = allIdeas.find((i) => i.id === id)
@@ -111,7 +116,14 @@ export default function IdeaPage() {
 
   return (
     <article>
-      <Link to="/board" className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink"><ArrowLeft size={15} /> Board</Link>
+      {panel ? (
+        <div className="mb-5 flex items-center gap-2">
+          <Link to={`/idea/${idea.id}`} className="inline-flex items-center gap-1.5 rounded-full bg-sunk px-3 py-1 text-xs font-semibold text-muted hover:text-ink"><Maximize2 size={12} /> Full page</Link>
+          <button onClick={onClose} aria-label="Close panel" className="ml-auto grid size-8 place-items-center rounded-full text-muted hover:bg-sunk hover:text-ink"><X size={17} /></button>
+        </div>
+      ) : (
+        <Link to="/board" className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink"><ArrowLeft size={15} /> Board</Link>
+      )}
 
       {idea.deleted_at && (
         <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-sunk px-4 py-3 text-sm">
@@ -124,7 +136,7 @@ export default function IdeaPage() {
 
       <header className="mt-5 max-w-3xl">
         <AutoText multiline rows={1} value={idea.title} onSave={(v) => v.trim() && updateIdea(idea.id, { title: v.replace(/\n/g, ' ').trim() })}
-          className="display text-4xl font-bold leading-tight sm:text-5xl" placeholder="Name this idea" />
+          className={`display font-extrabold leading-[1.02] tracking-[-0.03em] ${panel ? 'text-3xl' : 'text-4xl sm:text-[52px]'}`} placeholder="Name this idea" />
         <AutoText multiline rows={1} value={idea.pitch} onSave={(v) => updateIdea(idea.id, { pitch: v })}
           className="mt-2 text-lg text-muted" placeholder="One-line pitch: who buys it and why" />
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -149,58 +161,75 @@ export default function IdeaPage() {
         </div>
       )}
 
-      <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="min-w-0 space-y-12">
-          <ResearchPanel idea={idea} />
+      {(() => {
+        const research = <ResearchPanel idea={idea} />
+        const notes = (
           <section>
-            <h2 className="mb-2 text-xl font-semibold">Notes</h2>
+            <h2 className="mb-2 text-xl font-bold">Notes</h2>
             <NotesEditor value={idea.notes} excludeId={idea.id} onSave={(v) => updateIdea(idea.id, { notes: v })}
               placeholder={'Who would buy this? What would it cost to make? Who already sells something like it?\n\n- Bullet points work\n- Type [[ to link another idea'} />
           </section>
-          <div className="rounded-2xl border border-line bg-card p-4 sm:p-5"><ScorePanel ideaId={idea.id} /></div>
+        )
+        const score = <div className="paper rounded-3xl bg-card p-4 sm:p-5"><ScorePanel ideaId={idea.id} /></div>
+        const coach = (
           <section>
-            <h2 className="mb-1 text-xl font-semibold">Ask the coach</h2>
-            <p className="mb-4 text-sm text-muted">It knows this idea, its research, your scores and notes. Jake sees the same chat.</p>
+            <h2 className="mb-1 text-xl font-bold">Ask the coach</h2>
+            <p className="mb-4 text-sm text-muted">It knows this idea, its research, your scores and notes. Both of you see the same chat.</p>
             <CoachChat ideaId={idea.id} />
           </section>
-        </div>
-
-        <aside className="space-y-8">
-          <IdeaTime idea={idea} />
-          <Links idea={idea} onSave={(links) => updateIdea(idea.id, { links })} />
-
-          <section>
-            <h2 className="mb-2 text-sm font-semibold">To-dos</h2>
-            {myActions.length > 0 && <ul className="mb-2 space-y-1">{myActions.map((a) => <ActionItem key={a.id} a={a} />)}</ul>}
-            <form onSubmit={addTodo} className="flex items-center gap-2 rounded-lg border border-dashed border-line px-2.5 py-1.5 focus-within:border-faint">
-              <Plus size={14} className="text-faint" />
-              <input value={todo} onChange={(e) => setTodo(e.target.value)} placeholder="Next step for this idea" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-faint" />
-              <div className="flex gap-0.5">
-                {PEOPLE.map((p) => (
-                  <button type="button" key={p.id} onClick={() => setOwner(p.id)} aria-label={`Assign to ${p.id}`} aria-pressed={(owner ?? person) === p.id}
-                    className={`size-4 rounded-full transition-opacity ${(owner ?? person) === p.id ? 'opacity-100 ring-2 ring-offset-1 ring-offset-card' : 'opacity-30'}`}
-                    style={{ background: p.hex, '--tw-ring-color': p.hex }} />
-                ))}
-              </div>
-            </form>
-          </section>
-
-          <section>
-            <h2 className="mb-2 text-sm font-semibold">Mentioned in</h2>
-            {mentions.length
-              ? <ul className="space-y-1">{mentions.map((m) => (
-                  <li key={m.key}><Link to={m.to} className="flex items-center gap-2 text-sm hover:text-wine">{m.session ? <span className="text-xs text-faint">Session</span> : <StageDot stage={m.stage} />}<span className="truncate">{m.title}</span></Link></li>
-                ))}</ul>
-              : <p className="text-sm text-faint">No other notes link here yet. Write [[{idea.title}]] anywhere to connect it.</p>}
-          </section>
-
-          {!idea.deleted_at && (
-            <Button variant="danger" className="-ml-3" onClick={async () => { await trashIdea(idea.id); flash(`Moved “${idea.title}” to trash`); nav('/board') }}>
-              <Trash2 size={14} /> Move to trash
-            </Button>
-          )}
-        </aside>
-      </div>
+        )
+        const side = (
+          <div className="space-y-8">
+            <IdeaTime idea={idea} />
+            <Links idea={idea} onSave={(links) => updateIdea(idea.id, { links })} />
+            <section>
+              <h2 className="mb-2 text-sm font-bold">To-dos</h2>
+              {myActions.length > 0 && <ul className="mb-2 space-y-1">{myActions.map((a) => <ActionItem key={a.id} a={a} />)}</ul>}
+              <form onSubmit={addTodo} className="flex items-center gap-2 rounded-xl border border-dashed border-line px-2.5 py-1.5 focus-within:border-faint">
+                <Plus size={14} className="text-faint" />
+                <input value={todo} onChange={(e) => setTodo(e.target.value)} placeholder="Next step for this idea" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-faint" />
+                <div className="flex gap-0.5">
+                  {PEOPLE.map((p) => (
+                    <button type="button" key={p.id} onClick={() => setOwner(p.id)} aria-label={`Assign to ${p.id}`} aria-pressed={(owner ?? person) === p.id}
+                      className={`size-4 rounded-full transition-opacity ${(owner ?? person) === p.id ? 'opacity-100 ring-2 ring-offset-1 ring-offset-card' : 'opacity-30'}`}
+                      style={{ background: p.hex, '--tw-ring-color': p.hex }} />
+                  ))}
+                </div>
+              </form>
+            </section>
+            <section>
+              <h2 className="mb-2 text-sm font-bold">Mentioned in</h2>
+              {mentions.length
+                ? <ul className="space-y-1">{mentions.map((m) => (
+                    <li key={m.key}><Link to={m.to} className="flex items-center gap-2 text-sm hover:text-wine">{m.session ? <span className="text-xs text-faint">Session</span> : <StageDot stage={m.stage} />}<span className="truncate">{m.title}</span></Link></li>
+                  ))}</ul>
+                : <p className="text-sm text-faint">No other notes link here yet. Write [[{idea.title}]] anywhere to connect it.</p>}
+            </section>
+            {!idea.deleted_at && (
+              <Button variant="danger" className="-ml-3" onClick={async () => { await trashIdea(idea.id); flash(`Moved “${idea.title}” to trash`); if (panel) onClose?.(); else nav('/board') }}>
+                <Trash2 size={14} /> Move to trash
+              </Button>
+            )}
+          </div>
+        )
+        if (ultra) {
+          return (
+            <div className="mt-10 grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)_260px] gap-10">
+              <div className="min-w-0">{research}</div>
+              <div className="min-w-0 space-y-10">{notes}{score}</div>
+              <div className="min-w-0">{coach}</div>
+              {side}
+            </div>
+          )
+        }
+        if (panel) return <div className="mt-8 space-y-10">{research}{score}{notes}{coach}{side}</div>
+        return (
+          <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <div className="min-w-0 space-y-12">{research}{notes}{score}{coach}</div>
+            {side}
+          </div>
+        )
+      })()}
     </article>
   )
 }

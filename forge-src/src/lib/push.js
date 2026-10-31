@@ -1,8 +1,7 @@
 // Web push helpers: register the service worker, subscribe this device, save it to Supabase.
-import { createClient } from '@supabase/supabase-js'
+import { sb } from './sb'
 
 const VAPID_PUBLIC = 'BEIIqetkSpMuwH8EjzIGC1uBZBLXXP-Umxps4kgsbKYemNewprXTd8LjfjzvDpV6jA2SeSldpDWF81nTNL9u6KY'
-const sb = createClient('https://ibutllgwjgmmlydkcrzi.supabase.co', 'sb_publishable_VdkNDTcxwk0lkWpppf9vtQ_jAq4adZn')
 
 export const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent)
 export const isStandalone = () => window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true

@@ -1,63 +1,58 @@
-import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { DndContext, DragOverlay, PointerSensor, TouchSensor, KeyboardSensor, useDraggable, useDroppable, useSensor, useSensors, closestCorners } from '@dnd-kit/core'
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import { Plus } from 'lucide-react'
 import { useStore } from '../lib/store'
 import { STAGES, KINDS, kindName, personHex } from '../lib/constants'
 import { Button, Modal } from '../components/ui'
 import { ScoreBadge } from '../components/IdeaRow'
 import { ResearchStatus } from '../components/Research'
+import PaperCard from '../components/PaperCard'
+import IdeaPage from './IdeaPage'
+import { useLayout } from '../lib/layout'
 
-function Card({ idea, overlay }) {
+function Card({ idea, overlay, i = 0, selected }) {
   return (
-    <div className={`rounded-xl border bg-card p-3 ${overlay ? 'rotate-[1.5deg] border-faint shadow-[0_18px_40px_-16px_rgba(22,33,31,.45)]' : 'border-line'}`}>
-      <div className="flex items-start gap-2">
-        <span className="min-w-0 flex-1 text-[14px] font-medium leading-snug">{idea.title}</span>
-        <ScoreBadge ideaId={idea.id} />
-      </div>
-      {idea.pitch && <p className="mt-1 line-clamp-2 text-xs text-muted">{idea.pitch}</p>}
-      {idea.stage === 'killed' && idea.kill_reason && <p className="mt-1.5 line-clamp-2 text-xs italic text-faint">{idea.kill_reason}</p>}
-      <div className="mt-2 flex items-center gap-2 text-[11px] text-faint">
-        <span>{kindName(idea.kind)}</span>
-        <ResearchStatus idea={idea} />
-        <span className="ml-auto size-1.5 rounded-full" style={{ background: personHex(idea.created_by) }} title={`Added by ${idea.created_by}`} />
-      </div>
+    <div className={`${overlay ? 'rotate-[2deg] scale-[1.03] drop-shadow-xl' : ''} ${selected ? 'rounded-2xl ring-2 ring-wine ring-offset-2 ring-offset-paper' : ''}`}>
+      <PaperCard idea={idea} i={overlay ? 3 : i} as="div" />
     </div>
   )
 }
 
-function DraggableCard({ idea }) {
-  const nav = useNavigate()
+// Keep the old card helpers referenced elsewhere happy
+void ScoreBadge; void ResearchStatus; void kindName; void personHex
+
+function DraggableCard({ idea, i, onOpen, selected }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: idea.id })
   return (
     <div ref={setNodeRef} {...listeners} {...attributes}
-      onClick={() => nav(`/idea/${idea.id}`)}
-      onKeyDown={(e) => { listeners?.onKeyDown?.(e); if (e.key === 'Enter' && !isDragging) nav(`/idea/${idea.id}`) }}
+      onClick={() => onOpen(idea.id)}
+      onKeyDown={(e) => { listeners?.onKeyDown?.(e); if (e.key === 'Enter' && !isDragging) onOpen(idea.id) }}
       className={`cursor-grab touch-manipulation active:cursor-grabbing ${isDragging ? 'opacity-30' : ''}`}>
-      <Card idea={idea} />
+      <Card idea={idea} i={i} selected={selected} />
     </div>
   )
 }
 
-function Column({ stage, ideas, onAdd }) {
+function Column({ stage, ideas, onAdd, onOpen, openId, tall, flash }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id })
   return (
-    <section ref={setNodeRef} aria-label={stage.name}
-      className={`flex w-[78vw] max-w-[280px] shrink-0 snap-start flex-col rounded-2xl p-2 transition-colors sm:w-auto sm:max-w-none ${isOver ? 'bg-sunk' : 'bg-sunk/45'}`}>
+    <section ref={setNodeRef} id={`col-${stage.id}`} aria-label={stage.name}
+      className={`flex w-[78vw] max-w-[300px] shrink-0 snap-start flex-col rounded-3xl p-2.5 transition-colors sm:w-auto sm:max-w-none ${isOver ? 'bg-sunk' : 'bg-sunk/50'} ${flash ? 'ring-2 ring-wine/50' : ''} ${tall ? 'min-h-0' : ''}`}>
       <header className="flex h-8 items-center gap-2 px-1.5 pt-1">
         <span className="size-2.5 rounded-full" style={{ background: stage.color }} />
-        <h2 className="display text-[15px] font-semibold">{stage.name}</h2>
+        <h2 className="display text-[16px] font-extrabold tracking-[-0.01em]">{stage.name}</h2>
         <span className="text-xs tabular-nums text-faint">{ideas.length}</span>
         {stage.id === 'dump' && (
           <button onClick={onAdd} aria-label="Add an idea" className="ml-auto grid size-6 place-items-center rounded-md text-muted hover:bg-card hover:text-ink"><Plus size={15} /></button>
         )}
       </header>
       <p className="px-1.5 pb-2 text-xs text-faint">{stage.hint}</p>
-      <div className="flex min-h-24 flex-1 flex-col gap-2">
-        {ideas.map((i) => (
+      <div className={`flex min-h-24 flex-1 flex-col gap-3 px-0.5 pb-1 pt-1 ${tall ? 'overflow-y-auto scroll-thin' : ''}`}>
+        {ideas.map((i, k) => (
           <motion.div key={i.id} layout="position" transition={{ type: 'spring', stiffness: 500, damping: 40 }}>
-            <DraggableCard idea={i} />
+            <DraggableCard idea={i} i={k} onOpen={onOpen} selected={openId === i.id} />
           </motion.div>
         ))}
       </div>
@@ -73,6 +68,22 @@ export default function Board() {
   const [adding, setAdding] = useState(false)
   const [draft, setDraft] = useState({ title: '', pitch: '', kind: 'unsure' })
   const [kindFilter, setKindFilter] = useState('all')
+  const { mode } = useLayout()
+  const ultra = mode === 'ultra'
+  const nav = useNavigate()
+  const loc = useLocation()
+  const [openId, setOpenId] = useState(null)
+  const [flashCol, setFlashCol] = useState(null)
+  const onOpen = (id) => (ultra ? setOpenId((cur) => (cur === id ? null : id)) : nav(`/idea/${id}`))
+  // /board#validating scrolls to and briefly highlights that column
+  useEffect(() => {
+    const id = loc.hash.replace('#', '')
+    if (!id) return
+    document.getElementById(`col-${id}`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+    setFlashCol(id); const t = setTimeout(() => setFlashCol(null), 1200)
+    return () => clearTimeout(t)
+  }, [loc.hash])
+  useEffect(() => { if (openId && !ideas.some((i) => i.id === openId)) setOpenId(null) }, [ideas, openId])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -116,7 +127,7 @@ export default function Board() {
     <div>
       <header className="mb-6 flex flex-wrap items-end gap-3">
         <div className="mr-auto">
-          <h1 className="text-4xl font-bold">Board</h1>
+          <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.035em]">Board</h1>
           <p className="mt-1 text-muted">Drag ideas right as they earn it. Everything ends up chosen or killed.</p>
         </div>
         <div className="flex flex-wrap gap-1 rounded-full bg-sunk p-1" role="radiogroup" aria-label="Filter by type">
@@ -130,8 +141,20 @@ export default function Board() {
       </header>
 
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={(e) => setActive(e.active.id)} onDragEnd={onEnd} onDragCancel={() => setActive(null)}>
-        <div className="scroll-thin -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 sm:mx-0 sm:grid sm:grid-cols-5 sm:overflow-visible sm:px-0">
-          {STAGES.map((s) => <Column key={s.id} stage={s} ideas={byStage[s.id]} onAdd={() => setAdding(true)} />)}
+        <div className={ultra ? `grid gap-6 ${openId ? 'grid-cols-[minmax(0,1fr)_minmax(640px,0.75fr)]' : 'grid-cols-1'}` : ''}>
+          <div className={ultra
+            ? 'grid h-[calc(100dvh-190px)] grid-cols-5 gap-4'
+            : 'scroll-thin -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 sm:mx-0 sm:grid sm:grid-cols-5 sm:overflow-visible sm:px-0'}>
+            {STAGES.map((s) => <Column key={s.id} stage={s} ideas={byStage[s.id]} onAdd={() => setAdding(true)} onOpen={onOpen} openId={openId} tall={ultra} flash={flashCol === s.id} />)}
+          </div>
+          <AnimatePresence>
+            {ultra && openId && (
+              <motion.aside key="panel" aria-label="Idea details" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }} transition={{ type: 'spring', stiffness: 380, damping: 36 }}
+                className="paper h-[calc(100dvh-190px)] overflow-y-auto rounded-[28px] bg-card p-7 scroll-thin">
+                <IdeaPage id={openId} panel onClose={() => setOpenId(null)} />
+              </motion.aside>
+            )}
+          </AnimatePresence>
         </div>
         <DragOverlay dropAnimation={{ duration: 180 }}>{activeIdea && <Card idea={activeIdea} overlay />}</DragOverlay>
       </DndContext>

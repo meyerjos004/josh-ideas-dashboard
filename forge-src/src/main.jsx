@@ -4,7 +4,7 @@ import { HashRouter, Route, Routes } from 'react-router-dom'
 import { MotionConfig } from 'motion/react'
 import './index.css'
 import { StoreProvider, useStore } from './lib/store'
-import Shell, { PersonGate } from './components/Shell'
+import Shell, { LoginGate } from './components/Shell'
 import Today from './pages/Today'
 import Board from './pages/Board'
 import IdeaPage from './pages/IdeaPage'
@@ -18,7 +18,7 @@ import { registerSW } from './lib/push'
 
 function App() {
   const { person } = useStore()
-  if (!person) return <PersonGate />
+  if (!person) return <LoginGate />
   return (
     <Routes>
       <Route element={<Shell />}>

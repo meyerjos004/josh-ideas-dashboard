@@ -1,12 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
-
+import { sb } from './sb'
 import { syncPerson } from './push'
-
-const sb = createClient(
-  'https://ibutllgwjgmmlydkcrzi.supabase.co',
-  'sb_publishable_VdkNDTcxwk0lkWpppf9vtQ_jAq4adZn'
-)
+import { celebrate } from './fun'
 
 const Ctx = createContext(null)
 export const useStore = () => useContext(Ctx)
@@ -24,7 +19,10 @@ const upsertBy = (list, row, key = 'id') => {
 const scoreKey = (s) => `${s.idea_id}:${s.person}`
 
 export function StoreProvider({ children }) {
-  const [person, setPersonState] = useState(() => ls.get('forge.person'))
+  // Login: session -> member row -> person ('Josh' | 'Jake')
+  const [auth, setAuth] = useState({ checked: false, userId: null })
+  const [member, setMember] = useState(null)
+  const person = member?.person ?? null
   const [ideas, setIdeas] = useState([])
   const [scores, setScores] = useState([])
   const [sessions, setSessions] = useState([])
@@ -45,9 +43,41 @@ export function StoreProvider({ children }) {
     toastTimer.current = setTimeout(() => setToast(null), 2600)
   }, [])
 
-  const setPerson = (p) => { ls.set('forge.person', p); setPersonState(p); syncPerson(p) }
+  useEffect(() => {
+    sb.auth.getSession().then(({ data }) => setAuth({ checked: true, userId: data.session?.user?.id ?? null }))
+    const { data: sub } = sb.auth.onAuthStateChange((_e, session) => {
+      setAuth((a) => (a.userId === (session?.user?.id ?? null) && a.checked ? a : { checked: true, userId: session?.user?.id ?? null }))
+    })
+    return () => sub.subscription.unsubscribe()
+  }, [])
 
   useEffect(() => {
+    if (!auth.userId) { setMember(null); return }
+    let alive = true
+    sb.from('forge_members').select('person, email, shortcut_token').eq('user_id', auth.userId).maybeSingle()
+      .then(({ data }) => { if (alive) { setMember(data ?? { person: null }); if (data?.person) syncPerson(data.person) } })
+    return () => { alive = false }
+  }, [auth.userId])
+
+  const signIn = useCallback(async (email, password) => {
+    const { error } = await sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
+    if (error) return error.message === 'Invalid login credentials' ? 'Wrong email or password.' : error.message
+    return null
+  }, [])
+  const register = useCallback(async (email, password) => {
+    const { data, error } = await sb.functions.invoke('forge-ai', { body: { action: 'register', email: email.trim().toLowerCase(), password } })
+    if (error) {
+      let msg = error.message
+      try { const j = await error.context?.json?.(); if (j?.error) msg = j.error } catch { /* keep */ }
+      return msg
+    }
+    if (!data?.ok) return 'Could not create the account.'
+    return signIn(email, password)
+  }, [signIn])
+  const signOut = useCallback(async () => { await sb.auth.signOut(); setMember(null) }, [])
+
+  useEffect(() => {
+    if (!person) return
     let alive = true
     ;(async () => {
       const [a, b, c, d, e, f, g] = await Promise.all([
@@ -91,7 +121,7 @@ export function StoreProvider({ children }) {
     sb.functions.invoke('forge-ai', { body: { action: 'status' } })
       .then(({ data }) => alive && setAiReady(!!data?.ai)).catch(() => alive && setAiReady(false))
     return () => { alive = false; sb.removeChannel(ch) }
-  }, [])
+  }, [person])
 
   const fail = useCallback((error, what) => {
     if (error) { console.error(error); flash(`Couldn't ${what}. Check your connection and try again.`) }
@@ -107,7 +137,10 @@ export function StoreProvider({ children }) {
     return data
   }, [person, fail])
 
+  const ideasRef = useRef([])
+  useEffect(() => { ideasRef.current = ideas }, [ideas])
   const updateIdea = useCallback(async (id, patch) => {
+    if (patch.stage === 'chosen' && ideasRef.current.find((x) => x.id === id)?.stage !== 'chosen') celebrate()
     const full = { ...patch, updated_at: new Date().toISOString() }
     setIdeas((l) => l.map((x) => (x.id === id ? { ...x, ...full } : x)))
     const { error } = await sb.from('forge_ideas').update(full).eq('id', id)
@@ -194,7 +227,7 @@ export function StoreProvider({ children }) {
 
   // Quick capture: server saves the idea and researches it in the background
   const forgeIdea = useCallback(async (text, kind = 'unsure') => {
-    const res = await callAI({ action: 'capture', text, person })
+    const res = await callAI({ action: 'capture', text })
     if (res?.error || !res?.id) {
       if (res?.error === 'no_key' || !res) return addIdea({ title: text.slice(0, 120), kind }) // fall back to plain save
       return null
@@ -212,7 +245,7 @@ export function StoreProvider({ children }) {
   }, [callAI])
 
   const askCoach = useCallback(async (message, ideaId = null) => {
-    const res = await callAI({ action: 'chat', message, idea_id: ideaId, person })
+    const res = await callAI({ action: 'chat', message, idea_id: ideaId })
     return !res?.error
   }, [callAI, person])
 
@@ -266,7 +299,7 @@ export function StoreProvider({ children }) {
   const trash = useMemo(() => ideas.filter((i) => i.deleted_at), [ideas])
 
   const value = {
-    person, setPerson, status, toast, flash,
+    person, member, authChecked: auth.checked, signedIn: !!auth.userId, signIn, register, signOut, status, toast, flash,
     ideas: live, allIdeas: ideas, trash, scores, sessions, actions,
     addIdea, updateIdea, trashIdea, restoreIdea, setScore,
     chats, roadmap, aiReady, checkAI, forgeIdea, researchIdea, askCoach, toggleStep,

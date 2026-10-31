@@ -2,32 +2,63 @@
 
 @theme {
   --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Nunito Sans", ui-sans-serif, system-ui, sans-serif;
 
-  --color-paper: #EEF2EE;
-  --color-card: #F9FBF8;
-  --color-sunk: #E3E9E4;
-  --color-ink: #16211F;
-  --color-muted: #5C6A66;
-  --color-faint: #8D9893;
-  --color-line: #D3DBD5;
+  /* Board and paper */
+  --color-paper: #E4EBE5;
+  --color-card: #F7F9F6;
+  --color-sunk: #D8E1DA;
+  --color-ink: #1F2A26;
+  --color-muted: #44514B;
+  --color-faint: #5F6C66;
+  --color-line: #C9D3CB;
 
+  /* Accents */
   --color-wine: #5D2535;
-  --color-wine-soft: #EAD9DD;
-  --color-teal: #122D34;
-  --color-navy: #1E4D6B;
+  --color-wine-soft: #F3DCD7;
+  --color-teal: #123F45;
+  --color-navy: #1E5A78;
   --color-rose: #8C6057;
-  --color-olive: #7A6A2A;
+  --color-olive: #7A6614;
   --color-forest: #2F6B47;
-  --color-stone: #8E9692;
+  --color-stone: #8E9894;
 
-  --color-josh: #5D2535;
-  --color-jake: #2B6C82;
+  /* Paper tints for cards, and the text that sits on them */
+  --color-tint-rose: #F6DEDA;   --color-on-rose: #4A1B28;
+  --color-tint-teal: #D5E8E8;   --color-on-teal: #0E3136;
+  --color-tint-olive: #ECE7C8;  --color-on-olive: #3A320B;
+  --color-tint-lilac: #E6E0F2;  --color-on-lilac: #2C2150;
+
+  /* People */
+  --color-josh: #B04A64;
+  --color-jake: #3A8FA8;
 }
 
 :root {
   color-scheme: light;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Dark mode: follows the device unless the person picks one */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-paper: #19201D; --color-card: #222A27; --color-sunk: #2B3430; --color-ink: #E6ECE8;
+    --color-muted: #B4BFB9; --color-faint: #93A09A; --color-line: #36413C;
+    --color-wine: #E58FA4; --color-wine-soft: #4A2A33; --color-teal: #9ED3D8; --color-navy: #8FC3E0;
+    --color-rose: #C79A90; --color-olive: #D9C46A; --color-forest: #7CCB9C; --color-stone: #7E8A85;
+    --color-tint-rose: #46262E; --color-on-rose: #FBE3E8; --color-tint-teal: #1F3E42; --color-on-teal: #DDF2F3;
+    --color-tint-olive: #3A3720; --color-on-olive: #F4EDC6; --color-tint-lilac: #332B47; --color-on-lilac: #E9E2F8;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: #19201D; --color-card: #222A27; --color-sunk: #2B3430; --color-ink: #E6ECE8;
+  --color-muted: #B4BFB9; --color-faint: #93A09A; --color-line: #36413C;
+  --color-wine: #E58FA4; --color-wine-soft: #4A2A33; --color-teal: #9ED3D8; --color-navy: #8FC3E0;
+  --color-rose: #C79A90; --color-olive: #D9C46A; --color-forest: #7CCB9C; --color-stone: #7E8A85;
+  --color-tint-rose: #46262E; --color-on-rose: #FBE3E8; --color-tint-teal: #1F3E42; --color-on-teal: #DDF2F3;
+  --color-tint-olive: #3A3720; --color-on-olive: #F4EDC6; --color-tint-lilac: #332B47; --color-on-lilac: #E9E2F8;
 }
 
 html, body, #root { min-height: 100%; }
@@ -38,6 +69,7 @@ body {
   font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.55;
+  transition: background-color .25s ease, color .25s ease;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -74,3 +106,9 @@ textarea { resize: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* A small, deliberate tilt for paper cards (kept subtle so lists stay tidy) */
+.paper { box-shadow: 0 1px 0 color-mix(in oklab, var(--color-line) 80%, transparent), 0 10px 24px -20px rgb(0 0 0 / .35); }
+.tilt-l { transform: rotate(-0.5deg); }
+.tilt-r { transform: rotate(0.45deg); }
+@media (prefers-reduced-motion: reduce) { .tilt-l, .tilt-r { transform: none; } }

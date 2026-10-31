@@ -1961,7 +1961,7 @@
                 allIdeas = (ideas || []).map(idea => ({
                     ...idea,
                     fullDescription: idea.full_description,
-                    hexColor: idea.hex_color,
+                    hexColor: safeColor(idea.hex_color),
                     metrics: idea.metrics || {}
                 }));
 
@@ -2020,7 +2020,7 @@
                         const normalized = {
                             ...payload.new,
                             fullDescription: payload.new.full_description,
-                            hexColor: payload.new.hex_color,
+                            hexColor: safeColor(payload.new.hex_color),
                             metrics: payload.new.metrics || {}
                         };
                         // Replace instead of adding if this browser already added it locally
@@ -2033,7 +2033,7 @@
                             const normalized = {
                                 ...payload.new,
                                 fullDescription: payload.new.full_description,
-                                hexColor: payload.new.hex_color,
+                                hexColor: safeColor(payload.new.hex_color),
                                 metrics: payload.new.metrics || {}
                             };
                             allIdeas[idx] = normalized;
@@ -2164,20 +2164,21 @@
             const html = categories.map(category => {
                 const ideas = grouped[category];
                 const cardsHtml = ideas.map((idea, idx) => {
+                    const jsId = escapeHtml(JSON.stringify(String(idea.id)));
                     const isActive = idx === 0;
                     const isPrev = idx === ideas.length - 1;
                     const customStyle = idea.hexColor ? `--card-color: ${idea.hexColor};` : '';
 
                     return `
-                        <div class="idea-card-carousel ${idea.brand} ${isActive ? 'active' : isPrev ? 'prev' : 'next'}" style="${customStyle}" onclick="openModal(event, '${idea.id}')">
+                        <div class="idea-card-carousel ${escapeHtml(idea.brand || '')} ${isActive ? 'active' : isPrev ? 'prev' : 'next'}" style="${customStyle}" onclick="openModal(event, ${jsId})">
                             <div class="idea-card-face">
                                 <div class="card-header">
                                     <div class="card-name">${escapeHtml(idea.name)}</div>
                                     <div class="card-top-buttons">
-                                        <button class="card-btn" onclick="cycleStatus(event, '${idea.id}')" title="Change status">
+                                        <button class="card-btn" onclick="cycleStatus(event, ${jsId})" title="Change status">
                                             ${ideaStatuses[idea.id] || 'IDEATING'}
                                         </button>
-                                        <button class="card-btn favorite-btn" id="fav-${idea.id}" onclick="toggleFavorite(event, '${idea.id}')" title="Add to favorites">
+                                        <button class="card-btn favorite-btn" id="fav-${escapeHtml(idea.id)}" onclick="toggleFavorite(event, ${jsId})" title="Add to favorites">
                                             ${favorites.includes(idea.id) ? 'Favorited' : 'Favorite'}
                                         </button>
                                     </div>
@@ -2193,8 +2194,8 @@
                                 </div>
                                 <div class="card-footer">
                                     <div class="card-expand-hint">Click to expand</div>
-                                    <button class="card-btn" onclick="openEditCardModal(event, '${idea.id}')" title="Edit card">Edit</button>
-                                    <button class="card-btn delete-btn" onclick="confirmDelete(event, '${idea.id}')" title="Delete card">Delete</button>
+                                    <button class="card-btn" onclick="openEditCardModal(event, ${jsId})" title="Edit card">Edit</button>
+                                    <button class="card-btn delete-btn" onclick="confirmDelete(event, ${jsId})" title="Delete card">Delete</button>
                                 </div>
                             </div>
                         </div>
@@ -2733,7 +2734,9 @@
             const description = document.getElementById('cardDescription').value;
             const fullDescription = document.getElementById('cardFullDescription').value || description;
             const priority = parseInt(document.getElementById('cardPriority').value);
-            const hexColor = document.getElementById('cardColor').value || null;
+            const rawColor = document.getElementById('cardColor').value.trim();
+            const hexColor = rawColor ? safeColor(rawColor) : null;
+            if (rawColor && !hexColor) { alert('Color must be a hex code like #6496ff'); return; }
 
             const newCard = {
                 id: `local-${Date.now()}`,
@@ -2879,7 +2882,7 @@
                             <div class="deleted-card-name">${escapeHtml(cat)}</div>
                         </div>
                         <div class="deleted-card-actions">
-                            <button class="permanent-delete-btn" onclick="deleteCategory('${cat}')">Delete</button>
+                            <button class="permanent-delete-btn" onclick="deleteCategory(${escapeHtml(JSON.stringify(cat))})">Delete</button>
                         </div>
                     </div>
                 `).join('');
@@ -3453,7 +3456,7 @@
                 if (key === mp.deviceId) return;
                 const metas = state[key] || [];
                 const m = metas[metas.length - 1] || {};
-                next.set(key, { name: m.name || 'Guest', color: m.color || PROFILE_COLORS[0], view: m.view || '', focus: m.focus || '', card: m.card || null });
+                next.set(key, { name: m.name || 'Guest', color: safeColor(m.color, PROFILE_COLORS[0]), view: m.view || '', focus: m.focus || '', card: m.card || null });
             });
             mp.others = next;
 
@@ -3521,7 +3524,7 @@
         function onRemoteAction(p) {
             if (!p || p.key === mp.deviceId) return;
             window.lavaPulse(p.key);
-            showToast(p.color, `${p.name} ${p.text}`);
+            showToast(safeColor(p.color, PROFILE_COLORS[0]), `${p.name} ${p.text}`);
         }
         function showToast(color, text) {
             const box = document.getElementById('mpToasts');
@@ -3873,9 +3876,14 @@
         }
 
         function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+            return String(text ?? '')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        // Only allow real hex colors (#abc or #aabbcc) into styles
+        function safeColor(c, fallback = null) {
+            return (typeof c === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c.trim())) ? c.trim() : fallback;
         }
 
         document.getElementById('modal').addEventListener('click', (e) => {

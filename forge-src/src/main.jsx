@@ -14,6 +14,7 @@ import Hours from './pages/Hours'
 import CoachPage from './pages/CoachPage'
 import Roadmap from './pages/Roadmap'
 import Setup from './pages/Setup'
+import { registerSW } from './lib/push'
 
 function App() {
   const { person } = useStore()
@@ -37,6 +38,8 @@ function App() {
     </Routes>
   )
 }
+
+registerSW()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

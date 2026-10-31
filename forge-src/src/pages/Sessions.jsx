@@ -8,7 +8,7 @@ import { AutoText, Button, Empty, Modal } from '../components/ui'
 import NotesEditor from '../components/NotesEditor'
 
 export function ActionItem({ a, showSource }) {
-  const { updateAction, deleteAction, allIdeas, sessions } = useStore()
+  const { updateAction, deleteAction, allIdeas, sessions, person } = useStore()
   const src = showSource && (a.idea_id ? allIdeas.find((i) => i.id === a.idea_id) : sessions.find((s) => s.id === a.session_id))
   const srcTo = a.idea_id ? `/idea/${a.idea_id}` : `/sessions/${a.session_id}`
   const next = PEOPLE.find((p) => p.id !== a.owner)?.id ?? PEOPLE[0].id
@@ -22,7 +22,7 @@ export function ActionItem({ a, showSource }) {
         <span className={a.done ? 'text-faint line-through' : ''}>{a.text}</span>
         {src && <Link to={srcTo} className="block truncate text-xs text-faint hover:text-muted">{src.title}</Link>}
       </span>
-      <button onClick={() => updateAction(a.id, { owner: next })} title={`${a.owner || 'Nobody'} — click to hand to ${next}`}
+      <button onClick={() => updateAction(a.id, { owner: next, assigned_by: person })} title={`${a.owner || 'Nobody'} — click to hand to ${next}`}
         className="mt-1 size-3 shrink-0 rounded-full" style={{ background: personHex(a.owner) }} aria-label={`Owner ${a.owner}. Hand to ${next}`} />
       <button onClick={() => deleteAction(a.id)} aria-label="Delete to-do" className="mt-0.5 text-faint opacity-0 hover:text-wine group-hover:opacity-100 focus:opacity-100"><X size={14} /></button>
     </li>

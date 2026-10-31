@@ -10,6 +10,7 @@ import NotesEditor from '../components/NotesEditor'
 import ScorePanel from '../components/Score'
 import ResearchPanel from '../components/Research'
 import CoachChat from '../components/Coach'
+import { IdeaTime } from '../components/Clock'
 import { ActionItem } from './Sessions'
 
 function Stepper({ idea, onMove }) {
@@ -165,6 +166,7 @@ export default function IdeaPage() {
         </div>
 
         <aside className="space-y-8">
+          <IdeaTime idea={idea} />
           <Links idea={idea} onSave={(links) => updateIdea(idea.id, { links })} />
 
           <section>

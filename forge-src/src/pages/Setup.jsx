@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Check, Copy, RefreshCw } from 'lucide-react'
 import { useStore } from '../lib/store'
 import { Button } from '../components/ui'
+import NotifySettings from '../components/NotifySettings'
 
 const FN_URL = 'https://ibutllgwjgmmlydkcrzi.supabase.co/functions/v1/forge-ai'
 const KEY = 'sb_publishable_VdkNDTcxwk0lkWpppf9vtQ_jAq4adZn'
@@ -37,7 +38,7 @@ export default function Setup() {
     <div className="max-w-2xl space-y-14">
       <header>
         <h1 className="text-4xl font-bold">Setup</h1>
-        <p className="mt-1 text-muted">One-time steps to turn on the AI and put Forge on your iPhones.</p>
+        <p className="mt-1 text-muted">Notifications, the AI connection, and putting Forge on your iPhones.</p>
       </header>
 
       <section>
@@ -50,7 +51,7 @@ export default function Setup() {
         </div>
         <ol className="space-y-4">
           <Step n="1" title="Create a Claude API account">
-            <p>Go to <A href="https://console.anthropic.com">console.anthropic.com</A>, sign up, and add a card under Billing. Load $5–10 to start; each researched idea costs a few cents.</p>
+            <p>Go to <A href="https://console.anthropic.com">console.anthropic.com</A>, sign up, and add a card under Billing. Load $5–10 to start. A researched idea costs about 15–20¢; a coach reply about 2–10¢.</p>
           </Step>
           <Step n="2" title="Set a monthly spend limit">
             <p>In the console, open Settings › Limits and set something like $10/month so it can never surprise you. Forge also caps itself at 60 AI calls per hour.</p>
@@ -65,6 +66,8 @@ export default function Setup() {
           </Step>
         </ol>
       </section>
+
+      <NotifySettings />
 
       <section>
         <h2 className="mb-4 text-2xl font-semibold">2. Put Forge on your iPhone</h2>

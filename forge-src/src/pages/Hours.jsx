@@ -4,7 +4,8 @@ import { Plus, X } from 'lucide-react'
 import { useStore } from '../lib/store'
 import { ACTIVITIES, PEOPLE, activityName, entrySecs, fmtDuration, personHex } from '../lib/constants'
 import { AutoText, Button, Empty, Modal } from '../components/ui'
-import { useNow } from '../components/Clock'
+import { useNow, IdeaPicker } from '../components/Clock'
+import { Link } from 'react-router-dom'
 
 const dayKey = (d) => new Date(d).toLocaleDateString('en-CA') // YYYY-MM-DD in local time
 const startOfWeek = () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d } // Monday
@@ -13,14 +14,14 @@ const hhmm = (iso) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', mi
 function AddTime({ open, onClose }) {
   const { addTime, person } = useStore()
   const today = new Date().toLocaleDateString('en-CA')
-  const [f, setF] = useState({ who: person, day: today, from: '18:00', to: '19:00', activity: 'research', note: '' })
+  const [f, setF] = useState({ who: person, day: today, from: '18:00', to: '19:00', activity: 'research', note: '', idea_id: null })
   const set = (k) => (e) => setF({ ...f, [k]: e.target?.value ?? e })
   const start = new Date(`${f.day}T${f.from}`), end = new Date(`${f.day}T${f.to}`)
   if (end <= start) end.setDate(end.getDate() + 1) // past midnight
   const secs = (end - start) / 1000
   const save = async (e) => {
     e.preventDefault()
-    const ok = await addTime({ person: f.who, started_at: start.toISOString(), ended_at: end.toISOString(), activity: f.activity, note: f.note.trim() })
+    const ok = await addTime({ person: f.who, started_at: start.toISOString(), ended_at: end.toISOString(), activity: f.activity, note: f.note.trim(), idea_id: f.idea_id })
     if (ok) onClose()
   }
   const field = 'w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-faint'
@@ -46,6 +47,7 @@ function AddTime({ open, onClose }) {
               className={`rounded-full px-2.5 py-1 text-xs ${f.activity === a.id ? 'bg-ink text-card' : 'bg-sunk text-muted'}`}>{a.name}</button>
           ))}
         </div>
+        <IdeaPicker value={f.idea_id} onChange={(id) => setF({ ...f, idea_id: id })} className="mt-3 w-full py-2 text-sm" />
         <input value={f.note} onChange={set('note')} placeholder="What did you work on? (optional)" className={`${field} mt-3`} />
         <div className="mt-5 flex items-center justify-end gap-2">
           <span className="mr-auto text-sm tabular-nums text-muted">{fmtDuration(secs)}</span>
@@ -58,7 +60,7 @@ function AddTime({ open, onClose }) {
 }
 
 export default function Hours() {
-  const { time, updateTime, deleteTime } = useStore()
+  const { time, updateTime, deleteTime, allIdeas } = useStore()
   const now = useNow(15000)
   const [adding, setAdding] = useState(false)
   const [range, setRange] = useState(14)
@@ -92,6 +94,20 @@ export default function Hours() {
     days.forEach((d) => PEOPLE.forEach((p) => { d[p.id] = Math.round(d[p.id] * 100) / 100 }))
     return days
   }, [time, now, range])
+
+  const byIdea = useMemo(() => {
+    const m = {}
+    time.forEach((t) => {
+      const k = t.idea_id ?? 'general'
+      m[k] ??= { secs: 0, people: Object.fromEntries(PEOPLE.map((p) => [p.id, 0])) }
+      const s = entrySecs(t, now)
+      m[k].secs += s
+      if (m[k].people[t.person] != null) m[k].people[t.person] += s
+    })
+    return Object.entries(m).map(([id, v]) => ({ id, ...v, idea: allIdeas.find((i) => i.id === id) }))
+      .filter((r) => r.id === 'general' || r.idea).sort((a, b) => b.secs - a.secs)
+  }, [time, now, allIdeas])
+  const ideaMax = Math.max(1, ...byIdea.map((r) => r.secs))
 
   const grouped = useMemo(() => {
     const g = {}
@@ -158,6 +174,25 @@ export default function Hours() {
         </div>
       </section>
 
+      {byIdea.length > 0 && (
+        <section className="max-w-3xl">
+          <h2 className="mb-3 text-xl font-semibold">Time by idea</h2>
+          <ul className="space-y-2.5">
+            {byIdea.map((r) => (
+              <li key={r.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1">
+                {r.idea
+                  ? <Link to={`/idea/${r.id}`} className="truncate text-sm font-medium hover:text-wine">{r.idea.title}</Link>
+                  : <span className="text-sm font-medium text-muted">General business</span>}
+                <span className="text-right text-sm font-medium tabular-nums">{fmtDuration(r.secs)}</span>
+                <span className="col-span-2 flex h-2 overflow-hidden rounded-full bg-sunk" style={{ width: `${Math.max(4, (r.secs / ideaMax) * 100)}%` }}>
+                  {PEOPLE.map((p) => r.people[p.id] > 0 && <span key={p.id} title={`${p.id} ${fmtDuration(r.people[p.id])}`} style={{ width: `${(r.people[p.id] / r.secs) * 100}%`, background: p.hex }} />)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="max-w-3xl">
         <h2 className="mb-3 text-xl font-semibold">Log</h2>
         {grouped.length === 0 ? <Empty>No time logged yet. Hit Clock in when you start working, or add time you forgot.</Empty> : (
@@ -178,6 +213,7 @@ export default function Hours() {
                           <select value={t.activity} onChange={(e) => updateTime(t.id, { activity: e.target.value })} className="rounded bg-transparent text-xs text-muted outline-none hover:bg-sunk" aria-label="Activity">
                             {ACTIVITIES.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
                           </select>
+                          <IdeaPicker value={t.idea_id} onChange={(id) => updateTime(t.id, { idea_id: id })} className="max-w-[180px] bg-transparent px-0 hover:bg-sunk" />
                           <span>{hhmm(t.started_at)}–{t.ended_at ? hhmm(t.ended_at) : <b className="font-medium text-forest">now</b>}</span>
                         </div>
                         <AutoText value={t.note} onSave={(v) => updateTime(t.id, { note: v })} placeholder="Add a note" className="text-sm" />

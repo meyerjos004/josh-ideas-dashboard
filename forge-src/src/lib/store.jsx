@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
+import { syncPerson } from './push'
+
 const sb = createClient(
   'https://ibutllgwjgmmlydkcrzi.supabase.co',
   'sb_publishable_VdkNDTcxwk0lkWpppf9vtQ_jAq4adZn'
@@ -43,7 +45,7 @@ export function StoreProvider({ children }) {
     toastTimer.current = setTimeout(() => setToast(null), 2600)
   }, [])
 
-  const setPerson = (p) => { ls.set('forge.person', p); setPersonState(p) }
+  const setPerson = (p) => { ls.set('forge.person', p); setPersonState(p); syncPerson(p) }
 
   useEffect(() => {
     let alive = true
@@ -152,7 +154,7 @@ export function StoreProvider({ children }) {
   }, [fail])
 
   const addAction = useCallback(async (fields) => {
-    const { data, error } = await sb.from('forge_actions').insert({ owner: person ?? '', ...fields }).select().single()
+    const { data, error } = await sb.from('forge_actions').insert({ owner: person ?? '', assigned_by: person ?? '', ...fields }).select().single()
     if (!fail(error, 'add that to-do')) return null
     setActions((l) => upsertBy(l, data))
     return data
@@ -222,10 +224,18 @@ export function StoreProvider({ children }) {
   }, [person, fail])
 
   // ---------- clock in / out ----------
-  const clockIn = useCallback(async (activity = 'research', note = '') => {
+  const clockIn = useCallback(async (activity = 'research', note = '', ideaId = null) => {
     if (!person) return null
-    if (time.some((t) => t.person === person && !t.ended_at)) return null
-    const { data, error } = await sb.from('forge_time').insert({ person, activity, note, started_at: new Date().toISOString() }).select().single()
+    const running = time.find((t) => t.person === person && !t.ended_at)
+    if (running) {
+      if (!ideaId || running.idea_id === ideaId) return null
+      // Switching ideas: close the current entry, start a fresh one
+      const end = new Date().toISOString()
+      setTime((l) => l.map((x) => (x.id === running.id ? { ...x, ended_at: end } : x)))
+      await sb.from('forge_time').update({ ended_at: end }).eq('id', running.id)
+      activity = running.activity
+    }
+    const { data, error } = await sb.from('forge_time').insert({ person, activity, note, idea_id: ideaId, started_at: new Date().toISOString() }).select().single()
     if (!fail(error, 'clock you in')) return null
     setTime((l) => upsertBy(l, data))
     return data

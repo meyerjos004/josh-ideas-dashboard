@@ -177,11 +177,12 @@ Earlier AI research: ${ai ? JSON.stringify(ai).slice(0, 4000) : '(none)'}`
   const allOpen = (openTodos ?? []).map((a) => `- ${a.text} (${a.owner || 'unassigned'}${a.idea_id && titleOf.get(a.idea_id) ? `, for ${titleOf.get(a.idea_id)}` : ''})`).join('\n') || '(none)'
 
   // Time spent on the business
-  const { data: time } = await db.from('forge_time').select('person, started_at, ended_at, activity, note').order('started_at', { ascending: false }).limit(500)
+  const { data: time } = await db.from('forge_time').select('person, started_at, ended_at, activity, note, idea_id').order('started_at', { ascending: false }).limit(500)
   const weekAgo = Date.now() - 7 * 86400_000
   const hrs = (secs: number) => `${(secs / 3600).toFixed(1)}h`
   const per: Record<string, { week: number; all: number }> = {}
   const acts: Record<string, number> = {}
+  const onIdea: Record<string, number> = {}
   let running = ''
   for (const t of time ?? []) {
     const secs = ((t.ended_at ? Date.parse(t.ended_at) : Date.now()) - Date.parse(t.started_at)) / 1000
@@ -189,11 +190,14 @@ Earlier AI research: ${ai ? JSON.stringify(ai).slice(0, 4000) : '(none)'}`
     per[t.person].all += secs
     if (Date.parse(t.started_at) >= weekAgo) per[t.person].week += secs
     acts[t.activity] = (acts[t.activity] ?? 0) + secs
-    if (!t.ended_at) running += `${t.person} is clocked in right now (${t.activity}). `
+    const k = t.idea_id && titleOf.get(t.idea_id) ? titleOf.get(t.idea_id)! : 'general business'
+    onIdea[k] = (onIdea[k] ?? 0) + secs
+    if (!t.ended_at) running += `${t.person} is clocked in right now (${t.activity}, on ${k}). `
   }
   const hoursText = Object.keys(per).length
     ? Object.entries(per).map(([p, v]) => `${p}: ${hrs(v.week)} in the last 7 days, ${hrs(v.all)} total`).join('; ') +
       `\nBy activity: ${Object.entries(acts).map(([a, v]) => `${a} ${hrs(v)}`).join(', ')}` +
+      `\nBy idea: ${Object.entries(onIdea).sort((a, b) => b[1] - a[1]).map(([a, v]) => `${a} ${hrs(v)}`).join(', ')}` +
       (running ? `\n${running}` : '') +
       `\nRecent work notes: ${(time ?? []).filter((t) => t.note).slice(0, 6).map((t) => `${day(t.started_at)} ${t.person}: ${cut(t.note, 120)}`).join(' | ') || '(none)'}`
     : '(no time logged yet)'

@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { Home, Columns3, Radar, NotebookPen, Search, Trash2, Timer, MessageCircle, Map, Settings2, Ellipsis, Sun, Moon, Monitor, LogOut, Gamepad2 } from 'lucide-react'
 import { ArcadeTile, ArcadeWindow } from './Arcade'
-import Scene from './Scene'
+import MarginArt from './MarginArt'
 import { useLayout, getTheme, setTheme } from '../lib/layout'
 import { ClockPanel, ClockPill } from './Clock'
 import { useStore } from '../lib/store'
@@ -222,8 +222,7 @@ export default function Shell() {
   const avail = w - rail
   const stageW = avail >= 2200 ? 1600 : avail >= 1700 ? 1440 : avail
   const margin = Math.max(0, (avail - stageW) / 2)
-  const SCENE_ON = false // ambient art paused until proper monochrome assets are picked
-  const showScene = SCENE_ON && margin >= 170
+  const showScene = margin >= 170
   const framed = margin >= 170
   const clocked = useMemo(() => {
     const out = {}
@@ -234,7 +233,7 @@ export default function Shell() {
 
   return (
     <div className={`min-h-dvh overflow-x-clip ${framed ? 'bg-sunk/60' : ''}`} style={{ paddingLeft: rail, '--rail': `${rail}px` }}>
-      {showScene && <Scene left={margin} right={margin} clocked={clocked} />}
+      {showScene && <MarginArt left={margin} right={margin} />}
       {/* desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden flex-col overflow-y-auto border-r border-line bg-paper px-3 py-5 scroll-thin md:flex" style={{ width: rail }}>
         <NavLink to="/" className="mb-5 flex items-center gap-2 px-2"><Mark /><Wordmark small /></NavLink>

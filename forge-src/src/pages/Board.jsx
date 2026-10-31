@@ -7,6 +7,7 @@ import { useStore } from '../lib/store'
 import { STAGES, KINDS, kindName, personHex } from '../lib/constants'
 import { Button, Modal } from '../components/ui'
 import { ScoreBadge } from '../components/IdeaRow'
+import { ResearchStatus } from '../components/Research'
 
 function Card({ idea, overlay }) {
   return (
@@ -19,6 +20,7 @@ function Card({ idea, overlay }) {
       {idea.stage === 'killed' && idea.kill_reason && <p className="mt-1.5 line-clamp-2 text-xs italic text-faint">{idea.kill_reason}</p>}
       <div className="mt-2 flex items-center gap-2 text-[11px] text-faint">
         <span>{kindName(idea.kind)}</span>
+        <ResearchStatus idea={idea} />
         <span className="ml-auto size-1.5 rounded-full" style={{ background: personHex(idea.created_by) }} title={`Added by ${idea.created_by}`} />
       </div>
     </div>

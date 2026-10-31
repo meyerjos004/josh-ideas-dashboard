@@ -11,6 +11,9 @@ import IdeaPage from './pages/IdeaPage'
 import Compare, { Trash } from './pages/Compare'
 import Sessions, { SessionPage } from './pages/Sessions'
 import Hours from './pages/Hours'
+import CoachPage from './pages/CoachPage'
+import Roadmap from './pages/Roadmap'
+import Setup from './pages/Setup'
 
 function App() {
   const { person } = useStore()
@@ -25,6 +28,9 @@ function App() {
         <Route path="sessions" element={<Sessions />} />
         <Route path="sessions/:id" element={<SessionPage />} />
         <Route path="hours" element={<Hours />} />
+        <Route path="coach" element={<CoachPage />} />
+        <Route path="roadmap" element={<Roadmap />} />
+        <Route path="setup" element={<Setup />} />
         <Route path="trash" element={<Trash />} />
         <Route path="*" element={<Today />} />
       </Route>

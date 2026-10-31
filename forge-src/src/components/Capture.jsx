@@ -7,7 +7,7 @@ import { KINDS, MOD } from '../lib/constants'
 import { loadTranscriber, micError, startRecording, transcribe } from '../lib/voice'
 
 export default function Capture({ big }) {
-  const { addIdea, flash } = useStore()
+  const { forgeIdea, flash, aiReady } = useStore()
   const nav = useNavigate()
   const [text, setText] = useState('')
   const [kind, setKind] = useState('unsure')
@@ -65,19 +65,12 @@ export default function Capture({ big }) {
     const raw = text.trim()
     if (!raw || saving) return
     setSaving(true)
-    // First line (or first sentence) becomes the title, the rest becomes the pitch
-    const [first, ...rest] = raw.split('\n')
-    let title = first, pitch = rest.join('\n').trim()
-    if (!pitch && title.length > 90) {
-      const cut = title.search(/[.!?](\s|$)/)
-      if (cut > 10 && cut < 90) { pitch = title.slice(cut + 1).trim(); title = title.slice(0, cut + 1) }
-    }
-    const idea = await addIdea({ title, pitch, kind })
+    const idea = await forgeIdea(raw, kind)
     setSaving(false)
     if (!idea) return
     setText(''); setKind('unsure')
     if (open) nav(`/idea/${idea.id}`)
-    else flash(`Saved to Dump: ${idea.title}`)
+    else flash(aiReady ? 'Saved. Researching it now…' : `Saved to Dump: ${idea.title}`)
   }
 
   const onKey = (e) => {
@@ -89,7 +82,7 @@ export default function Capture({ big }) {
       <div className="flex items-start gap-2">
         <textarea
           ref={input} rows={big ? 2 : 1} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={onKey}
-          placeholder={listening ? `Listening ${mm}… click the square when you're done` : mic === 'working' ? (progress != null && progress < 100 ? `Setting up voice-to-text (one time) ${progress}%` : 'Turning speech into text…') : 'What could we sell? Type it rough, sort it later.'}
+          placeholder={listening ? `Listening ${mm}… click the square when you're done` : mic === 'working' ? (progress != null && progress < 100 ? `Setting up voice-to-text (one time) ${progress}%` : 'Turning speech into text…') : (aiReady ? 'Type the idea rough, 10–20 words. Forge cleans it up and researches it.' : 'What could we sell? Type it rough, sort it later.')}
           aria-label="New idea"
           className={`min-h-0 flex-1 bg-transparent outline-none focus-visible:outline-none placeholder:text-faint ${big ? 'display text-xl sm:text-2xl leading-snug' : 'text-[15px]'}`}
         />

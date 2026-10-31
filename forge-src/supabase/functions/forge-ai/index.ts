@@ -1,0 +1,259 @@
+// Forge AI: turns a rough idea into a researched one, and powers the coach chat.
+// Runs on Supabase Edge Functions and calls Claude with live web search.
+import { createClient } from 'npm:@supabase/supabase-js@2'
+import { ROADMAP } from './roadmap.ts'
+
+const MODEL = 'claude-sonnet-5-5'
+const PUBLIC_KEY = 'sb_publishable_VdkNDTcxwk0lkWpppf9vtQ_jAq4adZn'
+const HOURLY_LIMIT = 60
+
+const cors = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
+
+const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+const API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
+
+const FOUNDERS = `You are helping Josh and Jake, two first-time founders in Utah, USA, who want to start a business together.
+They are self-taught, move fast, have a small budget, and have never started a company. They might sell a digital product, a physical product, or a service.
+Talk to them like a sharp, honest friend who has started businesses before: plain words, no jargon (or explain it in a few words), concrete and specific.
+Push cheap tests before big spending. Be honest about weak ideas, but always show the way forward.`
+
+// ---------- Claude ----------
+type Block = { type: string; text?: string; citations?: { url: string; title: string }[]; content?: unknown }
+
+async function claude(system: string, messages: unknown[], maxSearches: number, maxTokens = 4000) {
+  const convo = [...messages] as { role: string; content: unknown }[]
+  const blocks: Block[] = []
+  const usage = { input: 0, output: 0, searches: 0 }
+  for (let turn = 0; turn < 4; turn++) {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': API_KEY!, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: MODEL, max_tokens: maxTokens, system, messages: convo,
+        tools: maxSearches > 0 ? [{
+          type: 'web_search_20250305', name: 'web_search', max_uses: maxSearches,
+          user_location: { type: 'approximate', region: 'Utah', country: 'US', timezone: 'America/Denver' },
+        }] : undefined,
+      }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data?.error?.message || `Claude API error ${res.status}`)
+    usage.input += data.usage?.input_tokens ?? 0
+    usage.output += data.usage?.output_tokens ?? 0
+    usage.searches += data.usage?.server_tool_use?.web_search_requests ?? 0
+    blocks.push(...data.content)
+    if (data.stop_reason !== 'pause_turn') break
+    convo.push({ role: 'assistant', content: data.content }) // long search turn: hand it back unchanged
+  }
+  // Only the text after the last search is the final answer
+  const lastTool = blocks.map((b) => b.type).lastIndexOf('web_search_tool_result')
+  const text = blocks.slice(lastTool + 1).filter((b) => b.type === 'text').map((b) => b.text).join('')
+  const sources = new Map<string, string>()
+  blocks.forEach((b) => b.citations?.forEach((c) => c.url && sources.set(c.url, c.title)))
+  if (sources.size === 0) {
+    blocks.filter((b) => b.type === 'web_search_tool_result' && Array.isArray(b.content))
+      .forEach((b) => (b.content as { url: string; title: string }[]).slice(0, 3).forEach((r) => r.url && sources.set(r.url, r.title)))
+  }
+  return { text, sources: [...sources].slice(0, 12).map(([url, title]) => ({ url, title })), usage }
+}
+
+async function log(action: string, usage: { input: number; output: number; searches: number }) {
+  await db.from('forge_ai_log').insert({ action, input_tokens: usage.input, output_tokens: usage.output, searches: usage.searches })
+}
+
+async function underLimit() {
+  const since = new Date(Date.now() - 3600_000).toISOString()
+  const { count } = await db.from('forge_ai_log').select('id', { count: 'exact', head: true }).gte('created_at', since)
+  return (count ?? 0) < HOURLY_LIMIT
+}
+
+function pullJson(text: string) {
+  const start = text.indexOf('{'), end = text.lastIndexOf('}')
+  if (start < 0 || end <= start) throw new Error('The AI reply had no research data in it.')
+  return JSON.parse(text.slice(start, end + 1))
+}
+
+// ---------- research ----------
+const RESEARCH_PROMPT = (raw: string, existing: string[]) => `Here's a rough idea one of them typed in a hurry:
+
+"${raw}"
+
+Their other ideas so far (to avoid duplicates and spot connections): ${existing.length ? existing.join('; ') : 'none yet'}.
+
+Do this:
+1. Work out what they most likely mean. Expand it into a clear idea.
+2. Search the web (a few searches) for: existing competitors or similar products, what they charge, and signs people want this (reviews, forums, search interest, market size if easy to find).
+3. Then reply with ONLY a JSON object, no other text, in exactly this shape:
+{
+  "title": "clear name for the idea, under 8 words",
+  "pitch": "2-3 plain sentences: what it is, who buys it, why they'd pay",
+  "kind": "digital" | "physical" | "service" | "unsure",
+  "tags": ["2-4 short lowercase tags"],
+  "who_buys": "the specific first customer, in one sentence",
+  "competitors": [{"name": "", "url": "", "price": "what they charge, or empty", "note": "one line on them, incl. a weakness if known"}],
+  "market": {"price_range": "what customers typically pay", "demand": "one or two sentences on evidence of demand, honest about how strong it is"},
+  "risks": ["2-3 biggest risks, one line each"],
+  "open_questions": ["3-5 specific things they still need to find out themselves"],
+  "next_steps": [{"step": "concrete action", "why": "one line", "cost": "$0, about $X, etc."}],
+  "verdict": "2 honest sentences: is this worth testing, and what would make it work"
+}
+Give 2-4 competitors and exactly 3 next steps, cheapest tests first. Only use real URLs you found.`
+
+async function research(ideaId: string) {
+  const { data: idea } = await db.from('forge_ideas').select('*').eq('id', ideaId).single()
+  if (!idea) return
+  await db.from('forge_ideas').update({ ai_status: 'working', ai_error: '' }).eq('id', ideaId)
+  try {
+    const { data: others } = await db.from('forge_ideas').select('title').neq('id', ideaId).is('deleted_at', null).limit(40)
+    const raw = idea.raw_input || [idea.title, idea.pitch].filter(Boolean).join('. ')
+    const { text, sources, usage } = await claude(FOUNDERS, [{ role: 'user', content: RESEARCH_PROMPT(raw, (others ?? []).map((o) => o.title)) }], 5, 4000)
+    await log('research', usage)
+    const r = pullJson(text)
+    const kinds = ['digital', 'physical', 'service', 'unsure']
+    // Re-read in case someone edited the idea while research ran
+    const { data: now } = await db.from('forge_ideas').select('title, pitch, kind, raw_input').eq('id', ideaId).single()
+    // Only rename on the first research, and only if nobody renamed it meanwhile
+    const untouchedTitle = !idea.ai && now?.title === idea.title
+    const patch: Record<string, unknown> = {
+      ai: { ...r, sources, researched_at: new Date().toISOString() },
+      ai_status: 'done', ai_error: '', tags: Array.isArray(r.tags) ? r.tags.slice(0, 5) : [],
+      updated_at: new Date().toISOString(),
+    }
+    if (untouchedTitle && r.title) patch.title = String(r.title).slice(0, 120)
+    if (!now?.pitch && r.pitch) patch.pitch = r.pitch
+    if ((now?.kind ?? 'unsure') === 'unsure' && kinds.includes(r.kind)) patch.kind = r.kind
+    await db.from('forge_ideas').update(patch).eq('id', ideaId)
+  } catch (e) {
+    console.error(e)
+    await db.from('forge_ideas').update({ ai_status: 'error', ai_error: String((e as Error).message ?? e).slice(0, 300) }).eq('id', ideaId)
+  }
+}
+
+// ---------- coach ----------
+async function coachContext(ideaId: string | null) {
+  const { data: steps } = await db.from('forge_roadmap').select('step_id, done')
+  const done = new Set((steps ?? []).filter((s) => s.done).map((s) => s.step_id))
+  const roadmap = ROADMAP.map((p) => `${p.phase}:\n` + p.steps.map((s) => `  [${done.has(s.id) ? 'x' : ' '}] ${s.title}`).join('\n')).join('\n')
+  const { data: ideas } = await db.from('forge_ideas').select('id, title, stage, pitch').is('deleted_at', null).limit(60)
+  const board = (ideas ?? []).map((i) => `- ${i.title} (${i.stage})`).join('\n') || '(no ideas yet)'
+  let focus = ''
+  if (ideaId) {
+    const { data: idea } = await db.from('forge_ideas').select('*').eq('id', ideaId).single()
+    const { data: scores } = await db.from('forge_scores').select('person, scores').eq('idea_id', ideaId)
+    const { data: todos } = await db.from('forge_actions').select('text, owner, done').eq('idea_id', ideaId)
+    if (idea) {
+      const ai = idea.ai ? { ...idea.ai, sources: undefined } : null
+      focus = `\n\nTHE IDEA THEY'RE ASKING ABOUT:
+Title: ${idea.title}
+Stage: ${idea.stage}  Type: ${idea.kind}
+What they originally typed: ${idea.raw_input || '(typed directly)'}
+Pitch: ${idea.pitch || '(none)'}
+Their notes: ${idea.notes?.slice(0, 3000) || '(none)'}
+${idea.stage === 'killed' ? `Why they killed it: ${idea.kill_reason}\n` : ''}Scores (1-5: demand, margin, cheap to start, skill fit, excitement): ${JSON.stringify(scores ?? [])}
+To-dos: ${JSON.stringify(todos ?? [])}
+Earlier AI research: ${ai ? JSON.stringify(ai).slice(0, 4000) : '(none)'}`
+    }
+  }
+  return `${FOUNDERS}
+
+You are their business coach inside Forge, the app where they collect and sort ideas. Their founder roadmap (x = done):
+${roadmap}
+
+Their idea board:
+${board}${focus}
+
+How to answer:
+- Short and skimmable: a few sentences or a tight list. No long essays unless they ask.
+- Specific to them and this idea, never generic advice.
+- Search the web when facts would help (prices, competitors, rules, suppliers), and say what you found.
+- For legal or tax questions, give the practical basics, then say when it's worth a quick check with a pro.
+- End with one clear next action, phrased as something they can do this week.`
+}
+
+async function coach(chatId: string, ideaId: string | null) {
+  try {
+    let q = db.from('forge_chats').select('role, person, content, status, id').order('created_at', { ascending: true }).limit(30)
+    q = ideaId ? q.eq('idea_id', ideaId) : q.is('idea_id', null)
+    const { data: history } = await q
+    const msgs = (history ?? []).filter((m) => m.id !== chatId && m.status === 'done' && m.content)
+      .slice(-16)
+      .map((m) => ({ role: m.role, content: m.role === 'user' ? `${m.person || 'One of them'}: ${m.content}` : m.content }))
+    // The API needs alternating turns starting with the user
+    const merged: { role: string; content: string }[] = []
+    for (const m of msgs) {
+      if (merged.length && merged[merged.length - 1].role === m.role) merged[merged.length - 1].content += '\n\n' + m.content
+      else merged.push({ ...m })
+    }
+    while (merged.length && merged[0].role !== 'user') merged.shift()
+    if (!merged.length) throw new Error('No question to answer.')
+    const { text, sources, usage } = await claude(await coachContext(ideaId), merged, 3, 1800)
+    await log('coach', usage)
+    await db.from('forge_chats').update({ content: text.trim() || 'I came up empty on that one. Try asking another way?', sources, status: 'done' }).eq('id', chatId)
+  } catch (e) {
+    console.error(e)
+    await db.from('forge_chats').update({ content: `Something went wrong: ${String((e as Error).message ?? e).slice(0, 200)}`, status: 'error' }).eq('id', chatId)
+  }
+}
+
+// ---------- entry ----------
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+  if (req.method !== 'POST') return json({ error: 'Use POST' }, 405)
+  const key = req.headers.get('apikey') ?? req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+  if (key !== PUBLIC_KEY) return json({ error: 'Not allowed' }, 401)
+
+  let body: Record<string, unknown>
+  try { body = await req.json() } catch { return json({ error: 'Send JSON' }, 400) }
+  const action = body.action
+
+  if (action === 'status') return json({ ai: !!API_KEY, model: MODEL })
+
+  if (action === 'capture' || action === 'research' || action === 'chat') {
+    if (!API_KEY && action !== 'capture') return json({ error: 'no_key' }, 503)
+    if (API_KEY && !(await underLimit())) return json({ error: 'Hourly AI limit reached. Try again in a bit.' }, 429)
+  }
+
+  if (action === 'capture') {
+    // Quick capture: save the raw words now, research in the background
+    const text = String(body.text ?? '').trim().slice(0, 2000)
+    if (!text) return json({ error: 'Empty idea' }, 400)
+    const person = ['Josh', 'Jake'].includes(String(body.person)) ? String(body.person) : ''
+    const title = text.length > 80 ? text.slice(0, 77).replace(/\s+\S*$/, '') + '…' : text
+    const { data, error } = await db.from('forge_ideas').insert({
+      title, raw_input: text, created_by: person, stage: 'dump', position: Date.now() / 1000,
+      ai_status: API_KEY ? 'working' : 'idle',
+    }).select().single()
+    if (error) return json({ error: error.message }, 500)
+    if (API_KEY) EdgeRuntime.waitUntil(research(data.id))
+    return json({ ok: true, id: data.id, title: data.title, researching: !!API_KEY })
+  }
+
+  if (action === 'research') {
+    const id = String(body.idea_id ?? '')
+    if (!id) return json({ error: 'idea_id required' }, 400)
+    await db.from('forge_ideas').update({ ai_status: 'working', ai_error: '' }).eq('id', id)
+    EdgeRuntime.waitUntil(research(id))
+    return json({ ok: true })
+  }
+
+  if (action === 'chat') {
+    const message = String(body.message ?? '').trim().slice(0, 4000)
+    if (!message) return json({ error: 'Empty message' }, 400)
+    const ideaId = body.idea_id ? String(body.idea_id) : null
+    const person = String(body.person ?? '')
+    const { error: e1 } = await db.from('forge_chats').insert({ idea_id: ideaId, role: 'user', person, content: message })
+    if (e1) return json({ error: e1.message }, 500)
+    const { data: reply, error: e2 } = await db.from('forge_chats').insert({ idea_id: ideaId, role: 'assistant', content: '', status: 'working' }).select().single()
+    if (e2) return json({ error: e2.message }, 500)
+    EdgeRuntime.waitUntil(coach(reply.id, ideaId))
+    return json({ ok: true, reply_id: reply.id })
+  }
+
+  return json({ error: 'Unknown action' }, 400)
+})

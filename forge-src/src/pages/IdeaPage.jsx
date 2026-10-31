@@ -8,6 +8,8 @@ import { linkedTitles, timeAgo } from '../lib/notes'
 import { AutoText, Button, PersonChip, StageDot } from '../components/ui'
 import NotesEditor from '../components/NotesEditor'
 import ScorePanel from '../components/Score'
+import ResearchPanel from '../components/Research'
+import CoachChat from '../components/Coach'
 import { ActionItem } from './Sessions'
 
 function Stepper({ idea, onMove }) {
@@ -132,7 +134,11 @@ export default function IdeaPage() {
             ))}
           </div>
           <span className="text-xs text-faint">Added by <PersonChip person={idea.created_by} small /> {timeAgo(idea.created_at)}</span>
+          {idea.tags?.length > 0 && <span className="flex flex-wrap gap-1">{idea.tags.map((t) => <span key={t} className="rounded bg-sunk px-1.5 py-0.5 text-[11px] text-muted">#{t}</span>)}</span>}
         </div>
+        {idea.raw_input && idea.raw_input !== idea.title && (
+          <p className="mt-3 text-xs text-faint">You wrote: “{idea.raw_input}”</p>
+        )}
       </header>
 
       {idea.stage === 'killed' && (
@@ -144,12 +150,18 @@ export default function IdeaPage() {
 
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="min-w-0 space-y-12">
+          <ResearchPanel idea={idea} />
           <section>
             <h2 className="mb-2 text-xl font-semibold">Notes</h2>
             <NotesEditor value={idea.notes} excludeId={idea.id} onSave={(v) => updateIdea(idea.id, { notes: v })}
               placeholder={'Who would buy this? What would it cost to make? Who already sells something like it?\n\n- Bullet points work\n- Type [[ to link another idea'} />
           </section>
           <div className="rounded-2xl border border-line bg-card p-4 sm:p-5"><ScorePanel ideaId={idea.id} /></div>
+          <section>
+            <h2 className="mb-1 text-xl font-semibold">Ask the coach</h2>
+            <p className="mb-4 text-sm text-muted">It knows this idea, its research, your scores and notes. Jake sees the same chat.</p>
+            <CoachChat ideaId={idea.id} />
+          </section>
         </div>
 
         <aside className="space-y-8">

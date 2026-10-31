@@ -3,6 +3,7 @@ import { StageDot } from './ui'
 import { kindName, personHex, avg, isComplete, PEOPLE } from '../lib/constants'
 import { useIdeaScores } from '../lib/store'
 import { timeAgo } from '../lib/notes'
+import { ResearchStatus } from './Research'
 
 export function ScoreBadge({ ideaId }) {
   const s = useIdeaScores(ideaId)
@@ -25,6 +26,7 @@ export default function IdeaRow({ idea, showStage = true }) {
         {idea.pitch && <span className="block truncate text-sm text-muted">{idea.pitch}</span>}
       </span>
       <span className="flex shrink-0 items-center gap-2 pt-0.5 text-xs text-faint">
+        <ResearchStatus idea={idea} />
         <ScoreBadge ideaId={idea.id} />
         <span className="hidden sm:inline">{kindName(idea.kind)}</span>
         <span className="size-1.5 rounded-full" style={{ background: personHex(idea.created_by) }} title={`Added by ${idea.created_by}`} />

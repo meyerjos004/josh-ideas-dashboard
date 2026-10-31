@@ -61,7 +61,9 @@ textarea { resize: none; }
 
 .prose-notes p { margin: 0 0 .7em; }
 .prose-notes ul { margin: 0 0 .7em; padding-left: 1.1em; list-style: disc; }
+.prose-notes ol { margin: 0 0 .7em; padding-left: 1.3em; list-style: decimal; }
 .prose-notes li { margin: .15em 0; }
+.prose-notes > :last-child { margin-bottom: 0; }
 .prose-notes h4 { font-family: var(--font-display); font-weight: 650; font-size: 1.05rem; margin: 1em 0 .35em; }
 .prose-notes a { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--color-line); }
 .prose-notes a:hover { text-decoration-color: currentColor; }

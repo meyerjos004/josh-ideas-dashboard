@@ -28,6 +28,9 @@ export function StoreProvider({ children }) {
   const [sessions, setSessions] = useState([])
   const [actions, setActions] = useState([])
   const [time, setTime] = useState([])
+  const [chats, setChats] = useState([])
+  const [roadmap, setRoadmap] = useState([])
+  const [aiReady, setAiReady] = useState(null) // null = checking
   const [status, setStatus] = useState('loading') // loading | ready | error
   const [toast, setToast] = useState(null)
   const toastTimer = useRef()
@@ -45,17 +48,19 @@ export function StoreProvider({ children }) {
   useEffect(() => {
     let alive = true
     ;(async () => {
-      const [a, b, c, d, e] = await Promise.all([
+      const [a, b, c, d, e, f, g] = await Promise.all([
         sb.from('forge_ideas').select('*'),
         sb.from('forge_scores').select('*'),
         sb.from('forge_sessions').select('*'),
         sb.from('forge_actions').select('*'),
         sb.from('forge_time').select('*').order('started_at', { ascending: false }).limit(2000),
+        sb.from('forge_chats').select('*').order('created_at', { ascending: true }).limit(2000),
+        sb.from('forge_roadmap').select('*'),
       ])
       if (!alive) return
-      const err = a.error || b.error || c.error || d.error || e.error
+      const err = a.error || b.error || c.error || d.error || e.error || f.error || g.error
       if (err) { setStatus('error'); return }
-      setIdeas(a.data); setScores(b.data); setSessions(c.data); setActions(d.data); setTime(e.data)
+      setIdeas(a.data); setScores(b.data); setSessions(c.data); setActions(d.data); setTime(e.data); setChats(f.data); setRoadmap(g.data)
       setStatus('ready')
     })()
 
@@ -78,7 +83,11 @@ export function StoreProvider({ children }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'forge_sessions' }, handle(setSessions))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'forge_actions' }, handle(setActions))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'forge_time' }, handle(setTime))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'forge_chats' }, handle(setChats))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'forge_roadmap' }, handle(setRoadmap, (x) => x.step_id))
       .subscribe()
+    sb.functions.invoke('forge-ai', { body: { action: 'status' } })
+      .then(({ data }) => alive && setAiReady(!!data?.ai)).catch(() => alive && setAiReady(false))
     return () => { alive = false; sb.removeChannel(ch) }
   }, [])
 
@@ -161,6 +170,57 @@ export function StoreProvider({ children }) {
     return fail(error, 'delete that to-do')
   }, [fail])
 
+  // ---------- AI ----------
+  const callAI = useCallback(async (body) => {
+    const { data, error } = await sb.functions.invoke('forge-ai', { body })
+    if (error) {
+      let msg = error.message
+      try { const j = await error.context?.json?.(); if (j?.error) msg = j.error } catch { /* keep */ }
+      if (msg === 'no_key') { setAiReady(false); return { error: 'no_key' } }
+      flash(msg.startsWith('Hourly') ? msg : `The AI couldn't run: ${msg}`)
+      return { error: msg }
+    }
+    return data
+  }, [flash])
+
+  const checkAI = useCallback(async () => {
+    setAiReady(null)
+    const { data } = await sb.functions.invoke('forge-ai', { body: { action: 'status' } })
+    setAiReady(!!data?.ai)
+    return !!data?.ai
+  }, [])
+
+  // Quick capture: server saves the idea and researches it in the background
+  const forgeIdea = useCallback(async (text, kind = 'unsure') => {
+    const res = await callAI({ action: 'capture', text, person })
+    if (res?.error || !res?.id) {
+      if (res?.error === 'no_key' || !res) return addIdea({ title: text.slice(0, 120), kind }) // fall back to plain save
+      return null
+    }
+    if (kind !== 'unsure') await sb.from('forge_ideas').update({ kind }).eq('id', res.id)
+    const { data } = await sb.from('forge_ideas').select('*').eq('id', res.id).single()
+    if (data) setIdeas((l) => upsertBy(l, data))
+    return data ?? { id: res.id, title: res.title }
+  }, [callAI, person, addIdea])
+
+  const researchIdea = useCallback(async (id) => {
+    setIdeas((l) => l.map((x) => (x.id === id ? { ...x, ai_status: 'working', ai_error: '' } : x)))
+    const res = await callAI({ action: 'research', idea_id: id })
+    if (res?.error) setIdeas((l) => l.map((x) => (x.id === id ? { ...x, ai_status: 'idle' } : x)))
+  }, [callAI])
+
+  const askCoach = useCallback(async (message, ideaId = null) => {
+    const res = await callAI({ action: 'chat', message, idea_id: ideaId, person })
+    return !res?.error
+  }, [callAI, person])
+
+  const toggleStep = useCallback(async (stepId, done) => {
+    const row = { step_id: stepId, done, done_by: done ? person : '', done_at: done ? new Date().toISOString() : null }
+    setRoadmap((l) => [...l.filter((x) => x.step_id !== stepId), row])
+    const { error } = await sb.from('forge_roadmap').upsert(row)
+    fail(error, 'update the roadmap')
+  }, [person, fail])
+
   // ---------- clock in / out ----------
   const clockIn = useCallback(async (activity = 'research', note = '') => {
     if (!person) return null
@@ -199,6 +259,7 @@ export function StoreProvider({ children }) {
     person, setPerson, status, toast, flash,
     ideas: live, allIdeas: ideas, trash, scores, sessions, actions,
     addIdea, updateIdea, trashIdea, restoreIdea, setScore,
+    chats, roadmap, aiReady, checkAI, forgeIdea, researchIdea, askCoach, toggleStep,
     time, clockIn, clockOut, updateTime, addTime, deleteTime,
     addSession, updateSession, deleteSession, addAction, updateAction, deleteAction,
   }

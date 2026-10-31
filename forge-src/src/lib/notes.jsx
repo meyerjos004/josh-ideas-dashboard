@@ -34,13 +34,15 @@ export function Notes({ text, ideas }) {
   let list = null
   text.split('\n').forEach((line) => {
     const t = line.trimEnd()
-    if (/^\s*[-*]\s+/.test(t)) {
-      if (!list) { list = []; blocks.push({ type: 'ul', items: list }) }
-      list.push(t.replace(/^\s*[-*]\s+/, ''))
+    const ordered = /^\s*\d+[.)]\s+/.test(t)
+    if (ordered || /^\s*[-*•]\s+/.test(t)) {
+      const type = ordered ? 'ol' : 'ul'
+      if (!list || list.type !== type) { list = { type, items: [] }; blocks.push(list) }
+      list.items.push(t.replace(/^\s*(\d+[.)]|[-*•])\s+/, ''))
       return
     }
     list = null
-    if (/^#{1,3}\s+/.test(t)) blocks.push({ type: 'h', text: t.replace(/^#{1,3}\s+/, '') })
+    if (/^#{1,4}\s+/.test(t)) blocks.push({ type: 'h', text: t.replace(/^#{1,4}\s+/, '') })
     else if (t.trim() === '') blocks.push({ type: 'gap' })
     else {
       const last = blocks[blocks.length - 1]
@@ -52,6 +54,7 @@ export function Notes({ text, ideas }) {
     <div className="prose-notes">
       {blocks.map((b, i) => {
         if (b.type === 'ul') return <ul key={i}>{b.items.map((it, j) => <li key={j}><Inline text={it} ideas={ideas} /></li>)}</ul>
+        if (b.type === 'ol') return <ol key={i}>{b.items.map((it, j) => <li key={j}><Inline text={it} ideas={ideas} /></li>)}</ol>
         if (b.type === 'h') return <h4 key={i}><Inline text={b.text} ideas={ideas} /></h4>
         if (b.type === 'p') return <p key={i}>{b.lines.map((l, j) => <Fragment key={j}>{j > 0 && <br />}<Inline text={l} ideas={ideas} /></Fragment>)}</p>
         return null

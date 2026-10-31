@@ -8,6 +8,8 @@ import IdeaRow from '../components/IdeaRow'
 import { ActionItem } from './Sessions'
 import { Empty } from '../components/ui'
 import { timeAgo } from '../lib/notes'
+import { ROADMAP } from '../lib/roadmap'
+import { Sparkles, Map } from 'lucide-react'
 
 function Funnel({ ideas }) {
   const counts = STAGES.map((s) => ({ ...s, n: ideas.filter((i) => i.stage === s.id).length }))
@@ -33,7 +35,9 @@ function Funnel({ ideas }) {
 }
 
 export default function Today() {
-  const { person, ideas, scores, actions, sessions, status } = useStore()
+  const { person, ideas, scores, actions, sessions, status, aiReady, roadmap } = useStore()
+  const doneSteps = new Set(roadmap.filter((r) => r.done).map((r) => r.step_id))
+  const nextStep = ROADMAP.flatMap((p) => p.steps).find((s) => !doneSteps.has(s.id))
   const other = PEOPLE.find((p) => p.id !== person)?.id
 
   const needsMe = useMemo(() => ideas.filter((i) =>
@@ -53,7 +57,7 @@ export default function Today() {
     if (chosen.length) bits.push(`${chosen.length === 1 ? `“${chosen[0].title}” is` : `${chosen.length} ideas are`} chosen`)
     if (needsMe.length) bits.push(`${needsMe.length} ${needsMe.length === 1 ? 'idea needs' : 'ideas need'} your score`)
     if (myTodos.length) bits.push(`you have ${myTodos.length} open to-do${myTodos.length === 1 ? '' : 's'}`)
-    if (!bits.length) bits.push(`${ideas.length} ideas so far, nothing waiting on you`)
+    if (!bits.length) bits.push(`${ideas.length} idea${ideas.length === 1 ? '' : 's'} so far, nothing waiting on you`)
     const s = bits.join(', ')
     return s[0].toUpperCase() + s.slice(1) + '.'
   })()
@@ -64,6 +68,13 @@ export default function Today() {
         <h1 className="text-4xl font-bold sm:text-5xl">Hey {person}.</h1>
         <p className="mt-2 max-w-xl text-muted">{line}</p>
       </header>
+
+      {aiReady === false && (
+        <Link to="/setup" className="flex items-center gap-3 rounded-2xl border border-wine/25 bg-wine-soft px-4 py-3 text-sm text-wine">
+          <Sparkles size={18} className="shrink-0" />
+          <span><b className="font-semibold">Turn on the AI</b> so Forge can clean up, research and coach every idea. About 5 minutes, one time.</span>
+        </Link>
+      )}
 
       <Capture big />
 
@@ -89,6 +100,13 @@ export default function Today() {
         </div>
 
         <div className="space-y-10">
+          {nextStep && (
+            <Link to="/roadmap" className="block rounded-2xl bg-teal p-5 text-card">
+              <div className="flex items-center gap-1.5 text-xs opacity-75"><Map size={13} /> Roadmap, up next</div>
+              <div className="display mt-1.5 text-xl font-semibold leading-snug">{nextStep.title}</div>
+              <p className="mt-1 text-sm opacity-80">{nextStep.how}</p>
+            </Link>
+          )}
           <section>
             <h2 className="mb-2 text-lg font-semibold">Your to-dos</h2>
             {myTodos.length

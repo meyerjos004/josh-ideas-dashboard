@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { Home, Columns3, Radar, NotebookPen, Search, Trash2, ArrowLeftRight, Timer } from 'lucide-react'
+import { Home, Columns3, Radar, NotebookPen, Search, Trash2, ArrowLeftRight, Timer, MessageCircle, Map, Settings2, Ellipsis } from 'lucide-react'
 import { ClockPanel, ClockPill } from './Clock'
 import { useStore } from '../lib/store'
 import { PEOPLE, personHex, MOD } from '../lib/constants'
@@ -10,10 +10,14 @@ import { Modal, StageDot } from './ui'
 const NAV = [
   { to: '/', label: 'Today', icon: Home, end: true },
   { to: '/board', label: 'Board', icon: Columns3 },
+  { to: '/coach', label: 'Coach', icon: MessageCircle },
+  { to: '/roadmap', label: 'Roadmap', icon: Map },
   { to: '/compare', label: 'Compare', icon: Radar },
   { to: '/sessions', label: 'Sessions', icon: NotebookPen },
   { to: '/hours', label: 'Hours', icon: Timer },
 ]
+const MOBILE_TABS = NAV.slice(0, 4)
+const MOBILE_MORE = [...NAV.slice(4), { to: '/trash', label: 'Trash', icon: Trash2 }, { to: '/setup', label: 'Setup', icon: Settings2 }]
 
 function Mark() {
   return (
@@ -96,8 +100,9 @@ export function PersonGate() {
 }
 
 export default function Shell() {
-  const { person, setPerson, toast, status, trash } = useStore()
+  const { person, setPerson, toast, status, trash, aiReady } = useStore()
   const [searching, setSearching] = useState(false)
+  const [more, setMore] = useState(false)
   const loc = useLocation()
   const main = useRef()
 
@@ -133,6 +138,9 @@ export default function Shell() {
         </nav>
         <div className="mt-auto space-y-1">
           <div className="mb-3"><ClockPanel /></div>
+          <NavLink to="/setup" className={({ isActive }) => `flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm ${isActive ? 'bg-card text-ink' : 'text-faint hover:text-muted'}`}>
+            <Settings2 size={16} strokeWidth={1.8} /> Setup {aiReady === false && <span className="ml-auto size-2 rounded-full bg-wine" title="AI not connected" />}
+          </NavLink>
           <NavLink to="/trash" className={({ isActive }) => `flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm ${isActive ? 'bg-card text-ink' : 'text-faint hover:text-muted'}`}>
             <Trash2 size={16} strokeWidth={1.8} /> Trash {trash.length > 0 && <span className="ml-auto text-xs tabular-nums">{trash.length}</span>}
           </NavLink>
@@ -163,12 +171,34 @@ export default function Shell() {
 
       {/* mobile tabs */}
       <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-        {NAV.map(({ to, label, icon: Icon, end }) => (
+        {MOBILE_TABS.map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} className={({ isActive }) => `flex flex-col items-center gap-0.5 py-2 text-[11px] ${isActive ? 'text-wine' : 'text-faint'}`}>
             <Icon size={20} strokeWidth={1.8} /> {label}
           </NavLink>
         ))}
+        <button onClick={() => setMore(true)} className={`flex flex-col items-center gap-0.5 py-2 text-[11px] ${MOBILE_MORE.some((m) => loc.pathname.startsWith(m.to)) ? 'text-wine' : 'text-faint'}`}>
+          <Ellipsis size={20} strokeWidth={1.8} /> More
+        </button>
       </nav>
+
+      <AnimatePresence>
+        {more && (
+          <motion.div className="fixed inset-0 z-40 bg-ink/25 md:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMore(false)}>
+            <motion.div className="absolute inset-x-0 bottom-0 rounded-t-3xl bg-card px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3"
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 420, damping: 38 }} onClick={(e) => e.stopPropagation()}>
+              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line" />
+              <div className="grid grid-cols-3 gap-2">
+                {MOBILE_MORE.map(({ to, label, icon: Icon }) => (
+                  <NavLink key={to} to={to} onClick={() => setMore(false)}
+                    className={({ isActive }) => `flex flex-col items-center gap-1.5 rounded-2xl py-4 text-sm ${isActive ? 'bg-wine-soft text-wine' : 'bg-sunk text-ink'}`}>
+                    <Icon size={22} strokeWidth={1.8} /> {label}
+                  </NavLink>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <SearchBox open={searching} onClose={() => setSearching(false)} />
 

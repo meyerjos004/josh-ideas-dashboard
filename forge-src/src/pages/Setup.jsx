@@ -38,7 +38,7 @@ export default function Setup() {
   return (
     <div className="max-w-2xl space-y-14">
       <header>
-        <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.035em]">Setup</h1>
+        <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.02em]">Setup</h1>
         <p className="mt-1 text-muted">Notifications, the AI connection, and putting Forge on your iPhones.</p>
       </header>
 

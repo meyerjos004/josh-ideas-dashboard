@@ -1,15 +1,14 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Sparkles, Map, ArrowUpRight } from 'lucide-react'
+import { Sparkles, Map } from 'lucide-react'
 import { useStore } from '../lib/store'
-import { STAGES, PEOPLE, isComplete, entrySecs, fmtDuration } from '../lib/constants'
+import { PEOPLE, isComplete, entrySecs, fmtDuration } from '../lib/constants'
 import { useLayout } from '../lib/layout'
 import { ROADMAP } from '../lib/roadmap'
 import { timeAgo } from '../lib/notes'
 import Capture from '../components/Capture'
 import IdeaRow from '../components/IdeaRow'
 import PaperCard from '../components/PaperCard'
-import CoachChat from '../components/Coach'
 import { ActionItem } from './Sessions'
 import { Empty } from '../components/ui'
 import { useNow } from '../components/Clock'
@@ -119,92 +118,16 @@ function Wall({ list, empty }) {
   return <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3">{list.map((i, k) => <PaperCard key={i.id} idea={i} i={k} note={undefined} />)}</div>
 }
 
-function MiniBoard({ ideas }) {
-  return (
-    <div className="flex flex-col gap-5">
-      {STAGES.filter((s) => s.id !== 'killed').map((st) => {
-        const list = ideas.filter((i) => i.stage === st.id).sort((a, b) => b.position - a.position)
-        return (
-          <section key={st.id} className="min-h-0">
-            <Link to={`/board#${st.id}`} className="mb-1.5 flex items-center gap-2 text-sm font-bold">
-              <span className="size-2.5 rounded-[3px]" style={{ background: st.color }} />{st.name}<span className="font-normal text-faint">{list.length}</span>
-            </Link>
-            <div className="space-y-1.5">
-              {list.slice(0, 5).map((i) => (
-                <Link key={i.id} to={`/idea/${i.id}`} className="block truncate rounded-xl px-3 py-2 text-[13px] font-semibold" style={{ background: st.tint, color: st.on }}>{i.title}</Link>
-              ))}
-              {list.length > 5 && <Link to={`/board#${st.id}`} className="block px-3 text-xs text-faint">+{list.length - 5} more</Link>}
-              {!list.length && <p className="px-3 text-xs text-faint">Empty</p>}
-            </div>
-          </section>
-        )
-      })}
-    </div>
-  )
-}
 
-function Pane({ title, action, children, className = '' }) {
-  return (
-    <section className={`flex min-h-0 min-w-0 flex-col rounded-[28px] bg-paper ${className}`}>
-      <div className="mb-3 flex items-baseline justify-between px-1">
-        <h2 className="display text-xl font-extrabold tracking-[-0.02em]">{title}</h2>
-        {action}
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto pr-1 scroll-thin">{children}</div>
-    </section>
-  )
-}
 
 export default function Today() {
   const t = useToday()
   const { mode } = useLayout()
 
-  // Ultrawide: four live panes side by side, each scrolling on its own
-  if (mode === 'ultra') {
-    return (
-      <div className="flex h-[calc(100dvh-72px)] flex-col gap-5">
-        <header className="flex items-end gap-6">
-          <h1 className="text-[44px] font-extrabold leading-none tracking-[-0.035em]">What are we building, {t.person}?</h1>
-          <p className="pb-1 text-muted">{t.line}</p>
-        </header>
-        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1.25fr)_minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(0,0.9fr)] gap-7">
-          <Pane title="Inbox" action={<Link to="/board" className="text-sm text-muted hover:text-ink">Board <ArrowUpRight size={13} className="inline" /></Link>}>
-            <div className="space-y-6 pt-2">
-              <AiBanner />
-              <Capture big />
-              {t.needsMe.length > 0 && (
-                <div>
-                  <h3 className="mb-2.5 text-sm font-bold">Needs your score</h3>
-                  <div className="grid grid-cols-1 gap-3 2xl:grid-cols-2">{t.needsMe.map((i, k) => <PaperCard key={i.id} idea={i} i={k} dense />)}</div>
-                </div>
-              )}
-              <div>
-                <h3 className="mb-1 text-sm font-bold">Fresh in the dump</h3>
-                {t.fresh.length ? <div className="divide-y divide-line">{t.fresh.map((i) => <IdeaRow key={i.id} idea={i} showStage={false} />)}</div> : <p className="text-sm text-muted">Empty. Anything you pin lands here first.</p>}
-              </div>
-            </div>
-          </Pane>
-          <Pane title="Board"><MiniBoard ideas={t.ideas} /></Pane>
-          <Pane title="Coach" action={<Link to="/coach" className="text-sm text-muted hover:text-ink">Open <ArrowUpRight size={13} className="inline" /></Link>}>
-            <CoachChat compact={false} />
-          </Pane>
-          <Pane title="This week">
-            <div className="space-y-4">
-              <RoadmapCard t={t} />
-              <TodosCard t={t} />
-              <HoursCard t={t} />
-              <SessionCard t={t} />
-            </div>
-          </Pane>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-9">
       <header>
-        <h1 className="text-[40px] font-extrabold leading-[0.98] tracking-[-0.035em] sm:text-[52px]">What are we<br className="sm:hidden" /> building, {t.person}?</h1>
+        <h1 className="text-[40px] font-extrabold leading-[0.98] tracking-[-0.02em] sm:text-[52px]">What are we<br className="sm:hidden" /> building, {t.person}?</h1>
         <p className="mt-3 max-w-xl text-muted">{t.line}</p>
       </header>
 

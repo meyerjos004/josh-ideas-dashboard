@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { Home, Columns3, Radar, NotebookPen, Search, Trash2, Timer, MessageCircle, Map, Settings2, Ellipsis, Sun, Moon, Monitor, LogOut, Gamepad2 } from 'lucide-react'
 import { ArcadeTile, ArcadeWindow } from './Arcade'
+import Scene from './Scene'
 import { useLayout, getTheme, setTheme } from '../lib/layout'
 import { ClockPanel, ClockPill } from './Clock'
 import { useStore } from '../lib/store'
@@ -31,7 +32,7 @@ function Mark({ size = 26 }) {
 }
 
 function Wordmark({ small }) {
-  return <span className={`display font-extrabold tracking-[-0.04em] ${small ? 'text-lg' : 'text-[22px]'}`}>forge<span className="text-wine">.</span></span>
+  return <span className={`display font-extrabold tracking-[-0.02em] ${small ? 'text-lg' : 'text-[22px]'}`}>forge<span className="text-wine">.</span></span>
 }
 
 function ThemeSwitch({ compact }) {
@@ -131,7 +132,7 @@ export function LoginGate() {
     <div className="grid min-h-dvh place-items-center px-5 py-10">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
         <div className="flex items-center gap-2.5"><Mark size={30} /><Wordmark /></div>
-        <h1 className="mt-8 text-[44px] font-extrabold leading-[0.95] tracking-[-0.035em]">What are we building?</h1>
+        <h1 className="mt-8 text-[44px] font-extrabold leading-[0.95] tracking-[-0.02em]">What are we building?</h1>
         <p className="mt-3 text-muted">The idea board for Josh and Jake. {mode === 'in' ? 'Sign in to continue.' : 'Set a password for your invited email.'}</p>
         <form onSubmit={submit} className="paper tilt-l mt-8 rounded-2xl bg-card p-5">
           <label className="block text-sm font-semibold">Email
@@ -199,12 +200,12 @@ function AccountRow() {
 }
 
 export default function Shell() {
-  const { person, toast, status, trash, aiReady, signOut } = useStore()
+  const { person, toast, status, trash, aiReady, signOut, time } = useStore()
   const [searching, setSearching] = useState(false)
   const [more, setMore] = useState(false)
   const [arcade, setArcade] = useState(false)
   const loc = useLocation()
-  const { mode, h } = useLayout()
+  const { mode, h, w } = useLayout()
 
   useEffect(() => {
     const k = (e) => {
@@ -216,11 +217,24 @@ export default function Shell() {
   }, [])
   useEffect(() => { window.scrollTo(0, 0) }, [loc.pathname])
 
-  const rail = mode === 'ultra' ? 248 : 228
-  const mainW = mode === 'ultra' ? 'max-w-none px-8 2xl:px-10' : mode === 'wide' ? 'max-w-[1480px] px-6 lg:px-10' : 'max-w-[1180px] px-4 sm:px-6'
+  const rail = mode === 'phone' ? 0 : mode === 'ultra' ? 248 : 228
+  // Layout B: a centered stage; on big screens the margins become a living scene
+  const avail = w - rail
+  const stageW = avail >= 2200 ? 1600 : avail >= 1700 ? 1440 : avail
+  const margin = Math.max(0, (avail - stageW) / 2)
+  const SCENE_ON = false // ambient art paused until proper monochrome assets are picked
+  const showScene = SCENE_ON && margin >= 170
+  const framed = margin >= 170
+  const clocked = useMemo(() => {
+    const out = {}
+    for (const t of time) if (!t.ended_at) out[t.person] = true
+    return out
+  }, [time])
+  const mainW = framed ? 'px-10 2xl:px-12' : mode === 'wide' ? 'max-w-[1480px] px-6 lg:px-10' : 'max-w-[1180px] px-4 sm:px-6'
 
   return (
-    <div className="min-h-dvh overflow-x-clip" style={{ paddingLeft: mode === 'phone' ? 0 : rail }}>
+    <div className={`min-h-dvh overflow-x-clip ${framed ? 'bg-sunk/60' : ''}`} style={{ paddingLeft: rail, '--rail': `${rail}px` }}>
+      {showScene && <Scene left={margin} right={margin} clocked={clocked} />}
       {/* desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden flex-col overflow-y-auto border-r border-line bg-paper px-3 py-5 scroll-thin md:flex" style={{ width: rail }}>
         <NavLink to="/" className="mb-5 flex items-center gap-2 px-2"><Mark /><Wordmark small /></NavLink>
@@ -264,7 +278,8 @@ export default function Shell() {
         </button>
       </header>
 
-      <main className={`mx-auto w-full pb-28 pt-6 md:pb-16 md:pt-9 ${mainW}`}>
+      <main className={`relative z-10 mx-auto w-full pb-28 pt-6 md:pb-16 md:pt-9 ${mainW} ${framed ? 'min-h-dvh border-x border-line bg-paper shadow-[0_0_60px_-30px_rgb(0_0_0/.18)]' : ''}`}
+        style={framed ? { maxWidth: stageW } : undefined}>
         {status === 'error'
           ? <p className="rounded-xl border border-wine/30 bg-wine-soft px-4 py-3 text-sm text-wine">Couldn't reach the database. Check your connection and reload.</p>
           : <Outlet />}

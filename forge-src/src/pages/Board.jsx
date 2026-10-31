@@ -127,7 +127,7 @@ export default function Board() {
     <div>
       <header className="mb-6 flex flex-wrap items-end gap-3">
         <div className="mr-auto">
-          <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.035em]">Board</h1>
+          <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.02em]">Board</h1>
           <p className="mt-1 text-muted">Drag ideas right as they earn it. Everything ends up chosen or killed.</p>
         </div>
         <div className="flex flex-wrap gap-1 rounded-full bg-sunk p-1" role="radiogroup" aria-label="Filter by type">
@@ -141,7 +141,7 @@ export default function Board() {
       </header>
 
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={(e) => setActive(e.active.id)} onDragEnd={onEnd} onDragCancel={() => setActive(null)}>
-        <div className={ultra ? `grid gap-6 ${openId ? 'grid-cols-[minmax(0,1fr)_minmax(640px,0.75fr)]' : 'grid-cols-1'}` : ''}>
+        <div className={ultra ? 'relative' : ''}>
           <div className={ultra
             ? 'grid h-[calc(100dvh-190px)] grid-cols-5 gap-4'
             : 'scroll-thin -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 sm:mx-0 sm:grid sm:grid-cols-5 sm:overflow-visible sm:px-0'}>
@@ -150,7 +150,7 @@ export default function Board() {
           <AnimatePresence>
             {ultra && openId && (
               <motion.aside key="panel" aria-label="Idea details" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }} transition={{ type: 'spring', stiffness: 380, damping: 36 }}
-                className="paper h-[calc(100dvh-190px)] overflow-y-auto rounded-[28px] bg-card p-7 scroll-thin">
+                className="absolute right-0 top-0 z-20 h-[calc(100dvh-190px)] w-[min(680px,60%)] overflow-y-auto rounded-[28px] border border-line bg-card p-7 shadow-[0_30px_80px_-30px_rgb(0_0_0/.45)] scroll-thin">
                 <IdeaPage id={openId} panel onClose={() => setOpenId(null)} />
               </motion.aside>
             )}

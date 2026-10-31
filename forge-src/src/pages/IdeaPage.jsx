@@ -136,7 +136,7 @@ export default function IdeaPage({ id: idProp, panel = false, onClose }) {
 
       <header className="mt-5 max-w-3xl">
         <AutoText multiline rows={1} value={idea.title} onSave={(v) => v.trim() && updateIdea(idea.id, { title: v.replace(/\n/g, ' ').trim() })}
-          className={`display font-extrabold leading-[1.02] tracking-[-0.03em] ${panel ? 'text-3xl' : 'text-4xl sm:text-[52px]'}`} placeholder="Name this idea" />
+          className={`display font-extrabold leading-[1.02] tracking-[-0.015em] ${panel ? 'text-3xl' : 'text-4xl sm:text-[52px]'}`} placeholder="Name this idea" />
         <AutoText multiline rows={1} value={idea.pitch} onSave={(v) => updateIdea(idea.id, { pitch: v })}
           className="mt-2 text-lg text-muted" placeholder="One-line pitch: who buys it and why" />
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">

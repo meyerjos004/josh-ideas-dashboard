@@ -17,7 +17,7 @@ export default function Roadmap() {
   return (
     <div className="max-w-3xl">
       <header>
-        <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.035em]">Roadmap</h1>
+        <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.02em]">Roadmap</h1>
         <p className="mt-1 text-muted">The path from “we have ideas” to a real company, in order. Check steps off together.</p>
       </header>
 

@@ -116,7 +116,7 @@ export default function Hours() {
     <div className="space-y-12">
       <header className="flex flex-wrap items-end gap-3">
         <div className="mr-auto">
-          <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.035em]">Hours</h1>
+          <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.02em]">Hours</h1>
           <p className="mt-1 max-w-xl text-muted">
             {stats.total ? `You two have put ${fmtDuration(stats.total)} into the business, ${fmtDuration(stats.weekTotal)} of it this week.` : 'Clock in from the sidebar whenever you work on the business. Research counts.'}
           </p>

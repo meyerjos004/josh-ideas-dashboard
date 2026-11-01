@@ -90,6 +90,9 @@ Deno.serve(async (req) => {
       targets = subs.filter((s) => s.person === d.owner && s.person !== d.by && s.prefs?.todo !== false)
       const url = d.idea_id ? `${APP}#/idea/${d.idea_id}` : d.session_id ? `${APP}#/sessions/${d.session_id}` : APP
       msg = { title: `${d.by} gave you a to-do`, body: short(d.text ?? ''), url, tag: `todo-${d.id}` }
+    } else if (body.kind === 'joined') {
+      targets = subs.filter((s) => s.person !== d.by)
+      msg = { title: `${d.by} joined Forge 🎉`, body: `${d.by} just created an account and is starting the tour.`, url: APP, tag: `joined-${d.by}` }
     } else return json({ error: 'Unknown kind' }, 400)
 
     const sent = targets.length && msg ? await send(targets, msg) : 0

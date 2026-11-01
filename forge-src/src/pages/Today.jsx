@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { AppChecklist } from '../components/Onboarding'
 import { Link } from 'react-router-dom'
 import { Sparkles, Map } from 'lucide-react'
 import { useStore } from '../lib/store'
@@ -152,6 +153,7 @@ export default function Today() {
           </section>
         </div>
         <div className="space-y-5">
+          <AppChecklist />
           <RoadmapCard t={t} />
           <TodosCard t={t} />
           <HoursCard t={t} />

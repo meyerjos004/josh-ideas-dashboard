@@ -21,7 +21,7 @@ function Toggle({ on, onChange, label }) {
 }
 
 export default function NotifySettings() {
-  const { person, flash } = useStore()
+  const { person, flash, markOnboard } = useStore()
   const [device, setDevice] = useState(undefined) // undefined = loading, null = off
   const [busy, setBusy] = useState(false)
   const other = PEOPLE.find((p) => p.id !== person)?.id
@@ -36,6 +36,7 @@ export default function NotifySettings() {
     try {
       const d = await enablePush(person)
       setDevice(d)
+      markOnboard({ notify: true })
       if (d) await sendTest(d.endpoint)
       flash('Notifications on. A test one is on its way.')
     } catch (e) {

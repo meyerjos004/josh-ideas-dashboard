@@ -31,7 +31,7 @@ function Step({ n, title, children }) {
 const A = (p) => <a {...p} target="_blank" rel="noreferrer" className="font-medium text-wine underline underline-offset-2" />
 
 export default function Setup() {
-  const { aiReady, checkAI, member } = useStore()
+  const { aiReady, checkAI, member, markOnboard } = useStore()
   const token = member?.shortcut_token ?? ''
   const body = JSON.stringify({ action: 'capture', token: 'your key', text: '(Provided Input)' })
 
@@ -40,6 +40,8 @@ export default function Setup() {
       <header>
         <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.02em]">Setup</h1>
         <p className="mt-1 text-muted">Notifications, the AI connection, and putting Forge on your iPhones.</p>
+        <button onClick={() => markOnboard({ welcomed: false, checklist_hidden: false, tip_board: false, tip_hours: false, tip_coach: false, tip_roadmap: false })}
+          className="mt-3 rounded-full bg-sunk px-3 py-1 text-sm text-muted hover:text-ink">Replay the welcome tour</button>
       </header>
 
       <section>

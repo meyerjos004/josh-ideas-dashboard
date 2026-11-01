@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { PageTip } from '../components/Onboarding'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { DndContext, DragOverlay, PointerSensor, TouchSensor, KeyboardSensor, useDraggable, useDroppable, useSensor, useSensors, closestCorners } from '@dnd-kit/core'
 import { motion, AnimatePresence } from 'motion/react'
@@ -125,6 +126,7 @@ export default function Board() {
 
   return (
     <div>
+      <PageTip id="board" />
       <header className="mb-6 flex flex-wrap items-end gap-3">
         <div className="mr-auto">
           <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.02em]">Board</h1>

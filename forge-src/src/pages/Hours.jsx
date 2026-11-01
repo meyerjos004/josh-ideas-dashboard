@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { PageTip } from '../components/Onboarding'
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Plus, X } from 'lucide-react'
 import { useStore } from '../lib/store'
@@ -114,6 +115,7 @@ export default function Hours() {
 
   return (
     <div className="space-y-12">
+      <PageTip id="hours" />
       <header className="flex flex-wrap items-end gap-3">
         <div className="mr-auto">
           <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.02em]">Hours</h1>

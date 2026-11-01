@@ -54,7 +54,7 @@ export function StoreProvider({ children }) {
   useEffect(() => {
     if (!auth.userId) { setMember(null); return }
     let alive = true
-    sb.from('forge_members').select('person, email, shortcut_token').eq('user_id', auth.userId).maybeSingle()
+    sb.from('forge_members').select('person, email, shortcut_token, onboarding').eq('user_id', auth.userId).maybeSingle()
       .then(({ data }) => { if (alive) { setMember(data ?? { person: null }); if (data?.person) syncPerson(data.person) } })
     return () => { alive = false }
   }, [auth.userId])
@@ -74,6 +74,12 @@ export function StoreProvider({ children }) {
     if (!data?.ok) return 'Could not create the account.'
     return signIn(email, password)
   }, [signIn])
+  // First-login progress (welcome seen, checklist hidden, page tips seen), saved per account
+  const onboarding = member?.onboarding ?? {}
+  const markOnboard = useCallback(async (patch) => {
+    setMember((m) => (m ? { ...m, onboarding: { ...(m.onboarding ?? {}), ...patch } } : m))
+    await sb.rpc('forge_onboarding_set', { patch })
+  }, [])
   const signOut = useCallback(async () => { await sb.auth.signOut(); setMember(null) }, [])
 
   useEffect(() => {
@@ -299,7 +305,7 @@ export function StoreProvider({ children }) {
   const trash = useMemo(() => ideas.filter((i) => i.deleted_at), [ideas])
 
   const value = {
-    person, member, authChecked: auth.checked, signedIn: !!auth.userId, signIn, register, signOut, status, toast, flash,
+    person, member, onboarding, markOnboard, authChecked: auth.checked, signedIn: !!auth.userId, signIn, register, signOut, status, toast, flash,
     ideas: live, allIdeas: ideas, trash, scores, sessions, actions,
     addIdea, updateIdea, trashIdea, restoreIdea, setScore,
     chats, roadmap, aiReady, checkAI, forgeIdea, researchIdea, askCoach, toggleStep,

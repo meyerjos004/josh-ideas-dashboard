@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { PageTip } from '../components/Onboarding'
 import { motion } from 'motion/react'
 import { Check, MessageCircle } from 'lucide-react'
 import { useStore } from '../lib/store'
@@ -16,6 +17,7 @@ export default function Roadmap() {
 
   return (
     <div className="max-w-3xl">
+      <PageTip id="roadmap" />
       <header>
         <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.02em]">Roadmap</h1>
         <p className="mt-1 text-muted">The path from “we have ideas” to a real company, in order. Check steps off together.</p>

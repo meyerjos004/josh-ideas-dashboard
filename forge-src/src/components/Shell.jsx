@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { Home, Columns3, Radar, NotebookPen, Search, Trash2, Timer, MessageCircle, Map, Settings2, Ellipsis, Sun, Moon, Monitor, LogOut, Gamepad2 } from 'lucide-react'
+import { Home, Columns3, Radar, NotebookPen, Search, Trash2, Timer, MessageCircle, Map, Settings2, Ellipsis, LogOut, Gamepad2, Wrench } from 'lucide-react'
 import { ArcadeTile, ArcadeWindow } from './Arcade'
 import { AppWelcome } from './Onboarding'
-import { useLayout, getTheme, setTheme } from '../lib/layout'
+import { useLayout } from '../lib/layout'
+import { usePrefs } from '../lib/prefs'
 import { ClockPanel, ClockPill } from './Clock'
 import { useStore } from '../lib/store'
 import { personHex, MOD, STAGES } from '../lib/constants'
@@ -20,7 +21,7 @@ const NAV = [
   { to: '/hours', label: 'Hours', icon: Timer },
 ]
 const MOBILE_TABS = NAV.slice(0, 4)
-const MOBILE_MORE = [...NAV.slice(4), { to: '/trash', label: 'Trash', icon: Trash2 }, { to: '/setup', label: 'Setup', icon: Settings2 }]
+const MOBILE_MORE = [...NAV.slice(4), { to: '/trash', label: 'Trash', icon: Trash2 }, { to: '/setup', label: 'Setup', icon: Wrench }, { to: '/settings', label: 'Settings', icon: Settings2 }]
 
 function Mark({ size = 26 }) {
   return (
@@ -33,22 +34,6 @@ function Mark({ size = 26 }) {
 
 function Wordmark({ small }) {
   return <span className={`display font-extrabold tracking-[-0.02em] ${small ? 'text-lg' : 'text-[22px]'}`}>forge<span className="text-wine">.</span></span>
-}
-
-function ThemeSwitch({ compact }) {
-  const [t, setT] = useState(getTheme)
-  const opts = [['light', Sun, 'Light'], ['system', Monitor, 'Match device'], ['dark', Moon, 'Dark']]
-  return (
-    <div className={`flex gap-0.5 rounded-full bg-sunk p-0.5 ${compact ? '' : 'w-full'}`} role="radiogroup" aria-label="Color theme">
-      {opts.map(([id, Icon, label]) => (
-        <button key={id} role="radio" aria-checked={t === id} aria-label={label} title={label}
-          onClick={() => { setTheme(id); setT(id) }}
-          className={`grid h-7 flex-1 place-items-center rounded-full px-2 transition-colors ${t === id ? 'bg-card text-ink shadow-sm' : 'text-faint hover:text-muted'}`}>
-          <Icon size={14} />
-        </button>
-      ))}
-    </div>
-  )
 }
 
 function SearchBox({ open, onClose }) {
@@ -190,7 +175,7 @@ function AccountRow() {
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
             className="absolute bottom-full left-0 right-0 z-40 mb-2 space-y-2 rounded-2xl border border-line bg-card p-3 shadow-xl">
             <div className="truncate px-1 text-xs text-muted">{member?.email}</div>
-            <ThemeSwitch />
+            <NavLink to="/settings" onClick={() => setOpen(false)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted hover:bg-sunk hover:text-ink"><Settings2 size={14} /> Settings</NavLink>
             <button onClick={signOut} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted hover:bg-sunk hover:text-ink"><LogOut size={14} /> Sign out</button>
           </motion.div>
         )}
@@ -220,7 +205,8 @@ export default function Shell() {
   const rail = mode === 'phone' ? 0 : mode === 'ultra' ? 248 : 228
   // Layout B: a centered stage; on big screens the margins become a living scene
   const avail = w - rail
-  const stageW = avail >= 2200 ? 1600 : avail >= 1700 ? 1440 : avail
+  const prefs = usePrefs()
+  const stageW = prefs.width === 'full' ? avail : avail >= 2200 ? 1600 : avail >= 1700 ? 1440 : avail
   const margin = Math.max(0, (avail - stageW) / 2)
   const framed = margin >= 170
   const clocked = useMemo(() => {
@@ -254,10 +240,13 @@ export default function Shell() {
           {h >= 960 && <ArcadeTile onOpen={() => setArcade(true)} className="mb-3 w-full" />}
           <div className="mb-3"><ClockPanel /></div>
           <NavLink to="/setup" className={({ isActive }) => `flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] ${isActive ? 'bg-card text-ink' : 'text-faint hover:text-muted'}`}>
-            <Settings2 size={15} strokeWidth={1.8} /> Setup {aiReady === false && <span className="ml-auto size-2 rounded-full bg-wine" title="AI not connected" />}
+            <Wrench size={15} strokeWidth={1.8} /> Setup {aiReady === false && <span className="ml-auto size-2 rounded-full bg-wine" title="AI not connected" />}
           </NavLink>
           <NavLink to="/trash" className={({ isActive }) => `flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] ${isActive ? 'bg-card text-ink' : 'text-faint hover:text-muted'}`}>
             <Trash2 size={15} strokeWidth={1.8} /> Trash {trash.length > 0 && <span className="ml-auto text-xs tabular-nums">{trash.length}</span>}
+          </NavLink>
+          <NavLink to="/settings" className={({ isActive }) => `flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] ${isActive ? 'bg-card text-ink' : 'text-faint hover:text-muted'}`}>
+            <Settings2 size={15} strokeWidth={1.8} /> Settings
           </NavLink>
           {h < 960 && (
             <button onClick={() => setArcade(true)} className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] text-faint hover:text-muted"><Gamepad2 size={15} strokeWidth={1.8} /> Arcade</button>
@@ -313,8 +302,7 @@ export default function Shell() {
               <div className="mt-4 flex items-center gap-3">
                 <span className="size-7 rounded-full" style={{ background: personHex(person) }} />
                 <span className="font-semibold">{person}</span>
-                <div className="ml-auto w-32"><ThemeSwitch /></div>
-                <button onClick={signOut} aria-label="Sign out" className="grid size-9 place-items-center rounded-full bg-sunk text-muted"><LogOut size={16} /></button>
+                <button onClick={signOut} aria-label="Sign out" className="ml-auto grid size-9 place-items-center rounded-full bg-sunk text-muted"><LogOut size={16} /></button>
               </div>
             </motion.div>
           </motion.div>

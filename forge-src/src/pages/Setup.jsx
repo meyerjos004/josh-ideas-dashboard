@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Check, Copy, RefreshCw } from 'lucide-react'
 import { useStore } from '../lib/store'
 import { Button } from '../components/ui'
-import NotifySettings from '../components/NotifySettings'
+import { Link } from 'react-router-dom'
 
 const FN_URL = 'https://ibutllgwjgmmlydkcrzi.supabase.co/functions/v1/forge-ai'
 const KEY = 'sb_publishable_VdkNDTcxwk0lkWpppf9vtQ_jAq4adZn'
@@ -39,7 +39,7 @@ export default function Setup() {
     <div className="max-w-2xl space-y-14">
       <header>
         <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.02em]">Setup</h1>
-        <p className="mt-1 text-muted">Notifications, the AI connection, and putting Forge on your iPhones.</p>
+        <p className="mt-1 text-muted">One-time setup: the AI connection, putting Forge on your iPhones, and the Siri Shortcut.</p>
         <button onClick={() => markOnboard({ welcomed: false, checklist_hidden: false, tip_board: false, tip_hours: false, tip_coach: false, tip_roadmap: false })}
           className="mt-3 rounded-full bg-sunk px-3 py-1 text-sm text-muted hover:text-ink">Replay the welcome tour</button>
       </header>
@@ -70,7 +70,9 @@ export default function Setup() {
         </ol>
       </section>
 
-      <NotifySettings />
+      <Link to="/settings/notifications" className="flex items-center gap-3 rounded-2xl border border-dashed border-line px-5 py-4 text-sm text-muted hover:text-ink">
+        <span className="flex-1">Notifications moved to <b className="font-semibold text-ink">Settings › Notifications</b>.</span><span aria-hidden>→</span>
+      </Link>
 
       <section>
         <h2 className="mb-4 text-2xl font-semibold">2. Put Forge on your iPhone</h2>

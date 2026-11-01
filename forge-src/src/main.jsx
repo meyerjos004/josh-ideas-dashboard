@@ -14,6 +14,8 @@ import Hours from './pages/Hours'
 import CoachPage from './pages/CoachPage'
 import Roadmap from './pages/Roadmap'
 import Setup from './pages/Setup'
+import Settings from './pages/Settings'
+import { applyPrefs } from './lib/prefs'
 import { registerSW } from './lib/push'
 
 function App() {
@@ -32,6 +34,8 @@ function App() {
         <Route path="coach" element={<CoachPage />} />
         <Route path="roadmap" element={<Roadmap />} />
         <Route path="setup" element={<Setup />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="settings/:section" element={<Settings />} />
         <Route path="trash" element={<Trash />} />
         <Route path="*" element={<Today />} />
       </Route>
@@ -40,6 +44,7 @@ function App() {
 }
 
 registerSW()
+applyPrefs()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

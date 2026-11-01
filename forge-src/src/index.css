@@ -61,6 +61,20 @@
   --color-tint-olive: #3A3720; --color-on-olive: #F4EDC6; --color-tint-lilac: #332B47; --color-on-lilac: #E9E2F8;
 }
 
+
+/* Color palettes (Settings › Appearance). Sage is the default above. */
+:root[data-palette="sand"] { --color-paper: #EFE8DC; --color-card: #FBF8F2; --color-sunk: #E4DACB; --color-ink: #2A241C; --color-muted: #554B3F; --color-faint: #6E6455; --color-line: #D7CBB8; --color-wine: #9A4A2A; --color-wine-soft: #F3DDD0; }
+:root[data-palette="slate"] { --color-paper: #E3E8EE; --color-card: #F7F9FB; --color-sunk: #D6DDE6; --color-ink: #1D2733; --color-muted: #45525F; --color-faint: #5E6B78; --color-line: #C6D0DB; --color-wine: #2D5B8A; --color-wine-soft: #D9E4F0; }
+:root[data-palette="blush"] { --color-paper: #F1E6E6; --color-card: #FCF7F7; --color-sunk: #E7D8D9; --color-ink: #2C2124; --color-muted: #5A4A4E; --color-faint: #725F64; --color-line: #DCC8CA; --color-wine: #7A3B5C; --color-wine-soft: #F1DCE6; }
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="sand"]:not([data-theme="light"]) { --color-paper: #1E1A15; --color-card: #28231D; --color-sunk: #332C25; --color-ink: #EFE7DA; --color-muted: #C2B6A4; --color-faint: #A0937F; --color-line: #3E362D; --color-wine: #E9A07F; --color-wine-soft: #4A3024; }
+  :root[data-palette="slate"]:not([data-theme="light"]) { --color-paper: #161B22; --color-card: #1F252E; --color-sunk: #29303A; --color-ink: #E4EAF1; --color-muted: #AEB8C4; --color-faint: #8C97A4; --color-line: #333B46; --color-wine: #8DB8E8; --color-wine-soft: #23354A; }
+  :root[data-palette="blush"]:not([data-theme="light"]) { --color-paper: #1F181A; --color-card: #2A2124; --color-sunk: #342A2E; --color-ink: #F1E6E8; --color-muted: #C6B3B8; --color-faint: #A48F95; --color-line: #40343A; --color-wine: #E4A1C2; --color-wine-soft: #4A2A3B; }
+}
+:root[data-palette="sand"][data-theme="dark"] { --color-paper: #1E1A15; --color-card: #28231D; --color-sunk: #332C25; --color-ink: #EFE7DA; --color-muted: #C2B6A4; --color-faint: #A0937F; --color-line: #3E362D; --color-wine: #E9A07F; --color-wine-soft: #4A3024; }
+:root[data-palette="slate"][data-theme="dark"] { --color-paper: #161B22; --color-card: #1F252E; --color-sunk: #29303A; --color-ink: #E4EAF1; --color-muted: #AEB8C4; --color-faint: #8C97A4; --color-line: #333B46; --color-wine: #8DB8E8; --color-wine-soft: #23354A; }
+:root[data-palette="blush"][data-theme="dark"] { --color-paper: #1F181A; --color-card: #2A2124; --color-sunk: #342A2E; --color-ink: #F1E6E8; --color-muted: #C6B3B8; --color-faint: #A48F95; --color-line: #40343A; --color-wine: #E4A1C2; --color-wine-soft: #4A2A3B; }
+
 html, body, #root { min-height: 100%; }
 
 body {

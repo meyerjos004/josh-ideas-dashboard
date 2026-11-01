@@ -135,7 +135,7 @@ export const STARTER = [
   { id: 'score', label: (p) => `Score one of ${p}'s ideas`, hint: 'Open any idea and rate it' },
   { id: 'clock', label: 'Clock in once', hint: 'Bottom of the sidebar' },
   { id: 'coach', label: 'Ask the Coach a question', hint: 'Try “which idea should we test first?”' },
-  { id: 'notify', label: 'Turn on notifications', hint: 'In Setup' },
+  { id: 'notify', label: 'Turn on notifications', hint: 'In Settings › Notifications' },
 ]
 
 export function Checklist({ done = {}, partner = 'Josh', onHide }) {

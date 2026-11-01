@@ -54,7 +54,7 @@ export function StoreProvider({ children }) {
   useEffect(() => {
     if (!auth.userId) { setMember(null); return }
     let alive = true
-    sb.from('forge_members').select('person, email, shortcut_token, onboarding').eq('user_id', auth.userId).maybeSingle()
+    sb.from('forge_members').select('person, email, shortcut_token, onboarding, settings').eq('user_id', auth.userId).maybeSingle()
       .then(({ data }) => { if (alive) { setMember(data ?? { person: null }); if (data?.person) syncPerson(data.person) } })
     return () => { alive = false }
   }, [auth.userId])
@@ -79,6 +79,12 @@ export function StoreProvider({ children }) {
   const markOnboard = useCallback(async (patch) => {
     setMember((m) => (m ? { ...m, onboarding: { ...(m.onboarding ?? {}), ...patch } } : m))
     await sb.rpc('forge_onboarding_set', { patch })
+  }, [])
+  // Account-level settings (follow you to every device)
+  const settings = member?.settings ?? {}
+  const saveSettings = useCallback(async (patch) => {
+    setMember((m) => (m ? { ...m, settings: { ...(m.settings ?? {}), ...patch } } : m))
+    await sb.rpc('forge_settings_set', { patch })
   }, [])
   const signOut = useCallback(async () => { await sb.auth.signOut(); setMember(null) }, [])
 
@@ -233,7 +239,7 @@ export function StoreProvider({ children }) {
 
   // Quick capture: server saves the idea and researches it in the background
   const forgeIdea = useCallback(async (text, kind = 'unsure') => {
-    const res = await callAI({ action: 'capture', text })
+    const res = await callAI({ action: 'capture', text, research: member?.settings?.auto_research !== false })
     if (res?.error || !res?.id) {
       if (res?.error === 'no_key' || !res) return addIdea({ title: text.slice(0, 120), kind }) // fall back to plain save
       return null
@@ -242,7 +248,7 @@ export function StoreProvider({ children }) {
     const { data } = await sb.from('forge_ideas').select('*').eq('id', res.id).single()
     if (data) setIdeas((l) => upsertBy(l, data))
     return data ?? { id: res.id, title: res.title }
-  }, [callAI, person, addIdea])
+  }, [callAI, person, addIdea, member])
 
   const researchIdea = useCallback(async (id) => {
     setIdeas((l) => l.map((x) => (x.id === id ? { ...x, ai_status: 'working', ai_error: '' } : x)))
@@ -305,7 +311,7 @@ export function StoreProvider({ children }) {
   const trash = useMemo(() => ideas.filter((i) => i.deleted_at), [ideas])
 
   const value = {
-    person, member, onboarding, markOnboard, authChecked: auth.checked, signedIn: !!auth.userId, signIn, register, signOut, status, toast, flash,
+    person, member, onboarding, markOnboard, settings, saveSettings, authChecked: auth.checked, signedIn: !!auth.userId, signIn, register, signOut, status, toast, flash,
     ideas: live, allIdeas: ideas, trash, scores, sessions, actions,
     addIdea, updateIdea, trashIdea, restoreIdea, setScore,
     chats, roadmap, aiReady, checkAI, forgeIdea, researchIdea, askCoach, toggleStep,

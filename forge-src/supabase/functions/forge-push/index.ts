@@ -46,6 +46,9 @@ async function send(subs: Sub[], msg: { title: string; body: string; url: string
   return sent
 }
 
+// Quiet hours: 10pm–7am Utah time, per device
+const quietNow = () => { const h = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: 'America/Denver' }).format(new Date())); return h >= 22 || h < 7 }
+
 const short = (t: string, n = 90) => (t.length > n ? t.slice(0, n - 1) + '…' : t)
 
 Deno.serve(async (req) => {
@@ -76,7 +79,7 @@ Deno.serve(async (req) => {
     // Claude's hidden test login never pings anyone
     if (d.by === 'Tester' || d.owner === 'Tester') return json({ ok: true, sent: 0 })
     const { data: all } = await db.from('forge_push').select('*')
-    const subs = (all ?? []) as Sub[]
+    const subs = ((all ?? []) as Sub[]).filter((s) => !(s.prefs?.quiet && quietNow()))
     let targets: Sub[] = []
     let msg: { title: string; body: string; url: string; tag?: string } | null = null
 
@@ -91,7 +94,7 @@ Deno.serve(async (req) => {
       const url = d.idea_id ? `${APP}#/idea/${d.idea_id}` : d.session_id ? `${APP}#/sessions/${d.session_id}` : APP
       msg = { title: `${d.by} gave you a to-do`, body: short(d.text ?? ''), url, tag: `todo-${d.id}` }
     } else if (body.kind === 'joined') {
-      targets = subs.filter((s) => s.person !== d.by)
+      targets = subs.filter((s) => s.person !== d.by && s.prefs?.joined !== false)
       msg = { title: `${d.by} joined Forge 🎉`, body: `${d.by} just created an account and is starting the tour.`, url: APP, tag: `joined-${d.by}` }
     } else return json({ error: 'Unknown kind' }, 400)
 

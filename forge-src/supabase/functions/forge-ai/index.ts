@@ -319,14 +319,15 @@ Deno.serve(async (req) => {
     // Quick capture: save the raw words now, research in the background
     const text = String(body.text ?? '').trim().slice(0, 2000)
     if (!text) return json({ error: 'Empty idea' }, 400)
+    const auto = !!API_KEY && body.research !== false // the person can turn auto-research off in Settings
     const title = text.length > 80 ? text.slice(0, 77).replace(/\s+\S*$/, '') + '…' : text
     const { data, error } = await db.from('forge_ideas').insert({
       title, raw_input: text, created_by: person, stage: 'dump', position: Date.now() / 1000,
-      ai_status: API_KEY ? 'working' : 'idle',
+      ai_status: auto ? 'working' : 'idle',
     }).select().single()
     if (error) return json({ error: error.message }, 500)
-    if (API_KEY) EdgeRuntime.waitUntil(research(data.id))
-    return json({ ok: true, id: data.id, title: data.title, researching: !!API_KEY })
+    if (auto) EdgeRuntime.waitUntil(research(data.id))
+    return json({ ok: true, id: data.id, title: data.title, researching: auto })
   }
 
   if (action === 'research') {

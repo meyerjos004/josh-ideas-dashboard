@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'motion/react'
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer } from 'recharts'
 import { Lock } from 'lucide-react'
-import { CRITERIA, PEOPLE, avg, isComplete, personHex } from '../lib/constants'
+import { ADVISOR, CRITERIA, PEOPLE, avg, isComplete, personHex } from '../lib/constants'
 import { useStore, useIdeaScores } from '../lib/store'
 
 export function ScoreRadar({ series, height = 260 }) {
@@ -52,6 +52,7 @@ export default function ScorePanel({ ideaId }) {
   const theyDone = isComplete(theirs)
   const revealed = iDone && theyDone
   const myColor = personHex(person)
+  const advisor = person !== ADVISOR.id && isComplete(byPerson[ADVISOR.id]) ? byPerson[ADVISOR.id] : null
 
   return (
     <section aria-labelledby="score-h">
@@ -77,7 +78,7 @@ export default function ScorePanel({ ideaId }) {
           <AnimatePresence mode="wait">
             {revealed ? (
               <motion.div key="rev" initial={{ opacity: 0, scale: .94 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 22 }}>
-                <ScoreRadar height={230} series={PEOPLE.map((p) => ({ key: p.id, color: p.hex, scores: byPerson[p.id] }))} />
+                <ScoreRadar height={230} series={[...PEOPLE.map((p) => ({ key: p.id, color: p.hex, scores: byPerson[p.id] })), ...(advisor ? [{ key: ADVISOR.id, color: ADVISOR.hex, scores: advisor }] : [])]} />
                 <div className="flex items-center justify-center gap-4 text-sm">
                   {PEOPLE.map((p) => (
                     <span key={p.id} className="inline-flex items-center gap-1.5">
@@ -85,6 +86,12 @@ export default function ScorePanel({ ideaId }) {
                       <b className="tabular-nums">{avg(byPerson[p.id]).toFixed(1)}</b>
                     </span>
                   ))}
+                  {advisor && (
+                    <span className="inline-flex items-center gap-1.5 text-muted" title="Claude's take. Not counted in your averages.">
+                      <span className="size-2.5 rounded-full" style={{ background: ADVISOR.hex }} />Claude
+                      <b className="tabular-nums">{avg(advisor).toFixed(1)}</b>
+                    </span>
+                  )}
                 </div>
               </motion.div>
             ) : (

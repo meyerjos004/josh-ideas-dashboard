@@ -2,7 +2,10 @@ export const PEOPLE = [
   { id: 'Josh', color: 'var(--color-josh)', hex: '#B04A64' },
   { id: 'Jake', color: 'var(--color-jake)', hex: '#3A8FA8' },
 ]
-export const personHex = (p) => PEOPLE.find((x) => x.id === p)?.hex ?? '#5C6A66'
+// Claude can sit in as a third voice: adds ideas and gives its own score, but never counts toward the founders' averages
+export const ADVISOR = { id: 'Claude', color: '#B8743A', hex: '#B8743A' }
+// 'Tester' is Claude's hidden test login; it never shows up as a person
+export const personHex = (p) => (p === ADVISOR.id ? ADVISOR.hex : PEOPLE.find((x) => x.id === p)?.hex ?? '#5C6A66')
 
 // The funnel. Order matters: an idea moves left to right.
 export const STAGES = [

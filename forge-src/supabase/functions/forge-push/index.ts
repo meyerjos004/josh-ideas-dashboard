@@ -73,6 +73,8 @@ Deno.serve(async (req) => {
     // Everything else must come from the database trigger
     if (req.headers.get('x-forge-hook') !== cfg.hook) return json({ error: 'Not allowed' }, 401)
     const d = body.data ?? {}
+    // Claude's hidden test login never pings anyone
+    if (d.by === 'Tester' || d.owner === 'Tester') return json({ ok: true, sent: 0 })
     const { data: all } = await db.from('forge_push').select('*')
     const subs = (all ?? []) as Sub[]
     let targets: Sub[] = []

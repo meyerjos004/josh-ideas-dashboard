@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Bell, BellOff, Check, Download, FileSpreadsheet, ChevronLeft, ChevronRight, KeyRound, LogOut, Monitor, Moon, Palette, Send, SlidersHorizontal, Sun, UserRound, Wrench } from 'lucide-react'
+import { Bell, BellOff, Bot, Check, Copy, Download, FileSpreadsheet, RefreshCw, ChevronLeft, ChevronRight, KeyRound, LogOut, Monitor, Moon, Palette, Send, SlidersHorizontal, Sun, UserRound, Wrench } from 'lucide-react'
 import { useStore } from '../lib/store'
 import { useLayout, getTheme, setTheme, isDark } from '../lib/layout'
 import { PALETTES, setPref, usePrefs } from '../lib/prefs'
@@ -343,12 +343,44 @@ function Account() {
         <PasswordRow />
       </Group>
       <YourData />
+      {person === 'Josh' && <Connector />}
       <Group>
         <Row nowrap label="Sign out" hint="You'll need your email and password to get back in on this device.">
           <button onClick={signOut} className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] text-wine hover:bg-wine-soft"><LogOut size={14} /> Sign out</button>
         </Row>
       </Group>
     </SubPage>
+  )
+}
+
+function Connector() {
+  const { flash } = useStore()
+  const [key, setKey] = useState(null)
+  const [copied, setCopied] = useState(false)
+  useEffect(() => { sb.rpc('forge_mcp_key').then(({ data }) => setKey(data ?? '')) }, [])
+  const url = key ? `https://ibutllgwjgmmlydkcrzi.supabase.co/functions/v1/forge-mcp?key=${key}` : ''
+  const copy = async () => { try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch { flash('Copy failed. Select the link and copy it by hand.') } }
+  const reset = async () => {
+    if (!confirm('Make a new link? The old one stops working, so you\'ll need to update the connector in Claude.')) return
+    const { data } = await sb.rpc('forge_mcp_key', { reset: true }); setKey(data ?? ''); flash('New link made. Update it in Claude.')
+  }
+  return (
+    <Group title="Claude connector" note="Only you">
+      <Row label={<span className="inline-flex items-center gap-2"><Bot size={16} /> Use Forge from Claude</span>} hint="Lets any Claude chat (phone, web, desktop) read and add to Forge. Treat this link like a password." stack>
+        <div className="w-full space-y-3">
+          <div className="flex items-center gap-2 rounded-xl border border-line bg-paper px-3 py-2">
+            <code className="min-w-0 flex-1 truncate text-xs">{key == null ? 'Loading…' : url ? url.replace(key, '•'.repeat(12) + key.slice(-4)) : 'Not available'}</code>
+            <button onClick={copy} disabled={!url} className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-muted hover:text-ink">{copied ? <Check size={14} className="text-forest" /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy'}</button>
+          </div>
+          <ol className="list-decimal space-y-1 pl-5 text-[13px] text-muted">
+            <li>In Claude, open <b className="text-ink">Customize › Connectors</b> and choose <b className="text-ink">Add custom connector</b>.</li>
+            <li>Name it <b className="text-ink">Forge</b>, paste the link as the server URL, leave sign-in off, and add it.</li>
+            <li>In any chat, try “what's on the Forge board?” or “add an idea to Forge: …”.</li>
+          </ol>
+          <button onClick={reset} className="inline-flex items-center gap-1 text-xs text-muted hover:text-wine"><RefreshCw size={12} /> Make a new link (stops the old one)</button>
+        </div>
+      </Row>
+    </Group>
   )
 }
 

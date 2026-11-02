@@ -15,6 +15,7 @@ import CoachPage from './pages/CoachPage'
 import Roadmap from './pages/Roadmap'
 import Setup from './pages/Setup'
 import Settings from './pages/Settings'
+import KillLog from './pages/KillLog'
 import { applyPrefs } from './lib/prefs'
 import { registerSW } from './lib/push'
 
@@ -36,6 +37,7 @@ function App() {
         <Route path="setup" element={<Setup />} />
         <Route path="settings" element={<Settings />} />
         <Route path="settings/:section" element={<Settings />} />
+        <Route path="kill-log" element={<KillLog />} />
         <Route path="trash" element={<Trash />} />
         <Route path="*" element={<Today />} />
       </Route>

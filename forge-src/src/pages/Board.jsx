@@ -130,7 +130,7 @@ export default function Board() {
       <header className="mb-6 flex flex-wrap items-end gap-3">
         <div className="mr-auto">
           <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.02em]">Board</h1>
-          <p className="mt-1 text-muted">Drag ideas right as they earn it. Everything ends up chosen or killed.</p>
+          <p className="mt-1 text-muted">Drag ideas right as they earn it. Everything ends up chosen or killed. <Link to="/kill-log" className="text-ink underline decoration-line underline-offset-4 hover:decoration-current">See the kill log</Link></p>
         </div>
         <div className="flex flex-wrap gap-1 rounded-full bg-sunk p-1" role="radiogroup" aria-label="Filter by type">
           {[{ id: 'all', name: 'All' }, ...KINDS].map((k) => (

@@ -86,18 +86,30 @@ function TodosCard({ t }) {
 }
 
 function HoursCard({ t }) {
+  const { goals } = useStore()
   const now = useNow(30000)
-  const week = Date.now() - 7 * 86400000
+  // This week = since Monday, local time
+  const start = new Date(); start.setHours(0, 0, 0, 0); start.setDate(start.getDate() - ((start.getDay() + 6) % 7))
   const per = Object.fromEntries(PEOPLE.map((p) => [p.id, 0]))
-  t.time.forEach((e) => { if (per[e.person] != null && new Date(e.started_at).getTime() >= week) per[e.person] += entrySecs(e, now) })
+  t.time.forEach((e) => { if (per[e.person] != null && new Date(e.started_at) >= start) per[e.person] += entrySecs(e, now) })
   return (
-    <Link to="/hours" className="paper grid grid-cols-2 gap-2 rounded-3xl bg-card p-5">
-      {PEOPLE.map((p) => (
-        <div key={p.id}>
-          <div className="display text-[26px] font-extrabold tabular-nums leading-none" style={{ color: p.color }}>{fmtDuration(per[p.id])}</div>
-          <div className="mt-1 text-xs text-muted">{p.id}, last 7 days</div>
-        </div>
-      ))}
+    <Link to="/hours" className="paper block space-y-4 rounded-3xl bg-card p-5">
+      <div className="flex items-baseline justify-between text-xs text-muted"><span className="font-semibold">Hours this week</span><span>Goal set in Settings</span></div>
+      {PEOPLE.map((p) => {
+        const goal = goals[p.id] ?? 5
+        const pct = Math.min(100, (per[p.id] / 3600 / Math.max(goal, 0.1)) * 100)
+        return (
+          <div key={p.id}>
+            <div className="flex items-baseline justify-between">
+              <span className="display text-[22px] font-extrabold tabular-nums leading-none" style={{ color: p.color }}>{fmtDuration(per[p.id])}</span>
+              <span className="text-xs text-muted">{p.id} · goal {goal}h{pct >= 100 ? ' ✓' : ''}</span>
+            </div>
+            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-sunk" role="progressbar" aria-label={`${p.id} hours this week`} aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
+              <div className="h-full rounded-full transition-[width]" style={{ width: `${pct}%`, background: p.color }} />
+            </div>
+          </div>
+        )
+      })}
     </Link>
   )
 }

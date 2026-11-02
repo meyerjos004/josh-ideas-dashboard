@@ -82,10 +82,16 @@ export function StoreProvider({ children }) {
   }, [])
   // Account-level settings (follow you to every device)
   const settings = member?.settings ?? {}
+  const [goals, setGoals] = useState({}) // weekly hours goal per founder
+  const loadGoals = useCallback(async () => {
+    const { data } = await sb.rpc('forge_goals')
+    if (data) setGoals(Object.fromEntries(data.map((g) => [g.person, Number(g.goal)])))
+  }, [])
   const saveSettings = useCallback(async (patch) => {
     setMember((m) => (m ? { ...m, settings: { ...(m.settings ?? {}), ...patch } } : m))
     await sb.rpc('forge_settings_set', { patch })
-  }, [])
+    if ('hours_goal' in patch) loadGoals()
+  }, [loadGoals])
   const signOut = useCallback(async () => { await sb.auth.signOut(); setMember(null) }, [])
 
   useEffect(() => {
@@ -106,6 +112,7 @@ export function StoreProvider({ children }) {
       if (err) { setStatus('error'); return }
       setIdeas(a.data); setScores(b.data); setSessions(c.data); setActions(d.data); setTime(e.data); setChats(f.data); setRoadmap(g.data)
       setStatus('ready')
+      loadGoals()
     })()
 
     const handle = (setter, key) => (p) => {
@@ -311,7 +318,7 @@ export function StoreProvider({ children }) {
   const trash = useMemo(() => ideas.filter((i) => i.deleted_at), [ideas])
 
   const value = {
-    person, member, onboarding, markOnboard, settings, saveSettings, authChecked: auth.checked, signedIn: !!auth.userId, signIn, register, signOut, status, toast, flash,
+    person, member, onboarding, markOnboard, settings, saveSettings, goals, authChecked: auth.checked, signedIn: !!auth.userId, signIn, register, signOut, status, toast, flash,
     ideas: live, allIdeas: ideas, trash, scores, sessions, actions,
     addIdea, updateIdea, trashIdea, restoreIdea, setScore,
     chats, roadmap, aiReady, checkAI, forgeIdea, researchIdea, askCoach, toggleStep,

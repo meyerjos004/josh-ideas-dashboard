@@ -149,7 +149,7 @@ function StageCounts() {
       {STAGES.map((st) => {
         const n = ideas.filter((i) => i.stage === st.id).length
         return (
-          <NavLink key={st.id} to={`/board#${st.id}`} className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] text-muted hover:bg-card/60 hover:text-ink">
+          <NavLink key={st.id} to={st.id === 'killed' ? '/kill-log' : `/board#${st.id}`} className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] text-muted hover:bg-card/60 hover:text-ink">
             <span className="size-2 rounded-[3px]" style={{ background: st.color }} />
             {st.name}
             <span className="ml-auto tabular-nums text-faint">{n}</span>

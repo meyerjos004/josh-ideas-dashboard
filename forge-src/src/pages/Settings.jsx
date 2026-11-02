@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Bell, BellOff, Check, ChevronLeft, ChevronRight, KeyRound, LogOut, Monitor, Moon, Palette, Send, SlidersHorizontal, Sun, UserRound, Wrench } from 'lucide-react'
+import { Bell, BellOff, Check, Download, FileSpreadsheet, ChevronLeft, ChevronRight, KeyRound, LogOut, Monitor, Moon, Palette, Send, SlidersHorizontal, Sun, UserRound, Wrench } from 'lucide-react'
 import { useStore } from '../lib/store'
 import { useLayout, getTheme, setTheme, isDark } from '../lib/layout'
 import { PALETTES, setPref, usePrefs } from '../lib/prefs'
 import { PEOPLE, personHex } from '../lib/constants'
 import { sb } from '../lib/sb'
+import { downloadBackup, exportSpreadsheet, listBackups } from '../lib/exporter'
 import { currentDevice, disablePush, enablePush, isIOS, isStandalone, pushSupported, sendTest, setPref as setPushPref } from '../lib/push'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -254,7 +255,12 @@ function Notifications() {
 // ── Behavior ────────────────────────────────────────────────────────────────
 function Behavior() {
   const p = usePrefs()
-  const { settings, saveSettings } = useStore()
+  const { settings, saveSettings, goals, person } = useStore()
+  const [spend, setSpend] = useState(null)
+  useEffect(() => { sb.rpc('forge_ai_spend').then(({ data }) => setSpend(data?.[0] ?? null)) }, [])
+  const goal = goals[person] ?? settings.hours_goal ?? 5
+  const setGoal = (g) => saveSettings({ hours_goal: Math.max(1, Math.min(80, g)) })
+  const usd = (n) => `$${Number(n ?? 0).toFixed(2)}`
   return (
     <SubPage title="Behavior" lede="How Forge acts when you use it.">
       <Group title="Opening the app" note="This device">
@@ -262,7 +268,19 @@ function Behavior() {
           <Segmented label="Start page" value={p.start} onChange={(v) => setPref('start', v)} options={[['/', 'Today'], ['/board', 'Board'], ['/coach', 'Coach']]} />
         </Row>
       </Group>
+      <Group title="Hours" note="Your account">
+        <Row nowrap label="Weekly hours goal" hint="Shown as a progress bar on Today. Weeks start Monday.">
+          <div className="flex shrink-0 items-center gap-1 rounded-full bg-sunk p-0.5">
+            <button onClick={() => setGoal(goal - 1)} aria-label="One hour less" className="grid size-8 place-items-center rounded-full text-lg text-muted hover:bg-card hover:text-ink">−</button>
+            <span className="w-14 text-center text-[15px] font-semibold tabular-nums">{goal} h</span>
+            <button onClick={() => setGoal(goal + 1)} aria-label="One hour more" className="grid size-8 place-items-center rounded-full text-lg text-muted hover:bg-card hover:text-ink">+</button>
+          </div>
+        </Row>
+      </Group>
       <Group title="AI" note="Your account, every device">
+        <Row nowrap label="AI spend this month" hint={spend ? `${spend.month_calls} AI call${spend.month_calls === 1 ? '' : 's'} this month · ${usd(spend.all_usd)} since you started. Estimated from Claude's published prices; your Anthropic billing page is the exact number.` : 'Checking…'}>
+          <span className="display shrink-0 text-2xl font-bold tabular-nums">{spend ? usd(spend.month_usd) : '—'}</span>
+        </Row>
         <Row nowrap label="Research new ideas automatically" hint="On: every idea you pin gets looked into right away (about 15–20¢ each). Off: it's saved as-is, and you hit Research on the ideas you care about.">
           <Toggle label="Research new ideas automatically" on={settings.auto_research !== false} onChange={(v) => saveSettings({ auto_research: v })} />
         </Row>
@@ -323,12 +341,43 @@ function Account() {
       <Group title="Security">
         <PasswordRow />
       </Group>
+      <YourData />
       <Group>
         <Row nowrap label="Sign out" hint="You'll need your email and password to get back in on this device.">
           <button onClick={signOut} className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] text-wine hover:bg-wine-soft"><LogOut size={14} /> Sign out</button>
         </Row>
       </Group>
     </SubPage>
+  )
+}
+
+function YourData() {
+  const store = useStore()
+  const [busy, setBusy] = useState(false)
+  const [backups, setBackups] = useState(null)
+  useEffect(() => { listBackups().then(setBackups).catch(() => setBackups([])) }, [])
+  const exp = async () => {
+    setBusy(true)
+    try { await exportSpreadsheet(store); store.flash('Spreadsheet downloaded.') } catch (e) { store.flash(`Export failed: ${e.message}`) }
+    setBusy(false)
+  }
+  const day = (iso) => new Date(iso).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+  return (
+    <Group title="Your data">
+      <Row nowrap label="Export everything" hint="One spreadsheet with a tab each for ideas, scores, sessions, to-dos, hours and the roadmap.">
+        <button onClick={exp} disabled={busy} className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line px-3.5 py-1.5 text-[13px] hover:border-faint disabled:opacity-50"><FileSpreadsheet size={14} /> {busy ? 'Building…' : 'Export'}</button>
+      </Row>
+      <Row label="Weekly backups" hint="Forge saves a full copy of everything every Sunday night. Download one if you ever need to restore." stack={backups?.length > 0}>
+        {backups == null ? <span className="text-sm text-faint">Checking…</span> : !backups.length ? <span className="text-sm text-faint">First one this Sunday</span> : (
+          <div className="flex flex-wrap gap-2">
+            {backups.map((b) => (
+              <button key={b.id} onClick={() => downloadBackup(b.id).catch((e) => store.flash(`Download failed: ${e.message}`))}
+                className="inline-flex items-center gap-1.5 rounded-full bg-sunk px-3 py-1.5 text-[13px] text-muted hover:text-ink"><Download size={13} /> {day(b.made_at)}</button>
+            ))}
+          </div>
+        )}
+      </Row>
+    </Group>
   )
 }
 

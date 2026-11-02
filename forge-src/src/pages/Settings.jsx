@@ -173,6 +173,7 @@ const ALERTS = [
   { id: 'research', label: () => 'Research finished', hint: 'When the AI is done looking into an idea you added' },
   { id: 'todo', label: (o) => `${o} gave you a to-do`, hint: 'From a session or an idea page' },
   { id: 'joined', label: () => 'Someone joined Forge', hint: 'When a new partner creates their account' },
+  { id: 'weekly', label: () => 'Weekly review is ready', hint: "Sunday evening: the week's hours, new ideas and Claude's brief" },
 ]
 
 function Notifications() {

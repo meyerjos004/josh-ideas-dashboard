@@ -96,6 +96,9 @@ Deno.serve(async (req) => {
     } else if (body.kind === 'joined') {
       targets = subs.filter((s) => s.person !== d.by && s.prefs?.joined !== false)
       msg = { title: `${d.by} joined Forge 🎉`, body: `${d.by} just created an account and is starting the tour.`, url: APP, tag: `joined-${d.by}` }
+    } else if (body.kind === 'weekly') {
+      targets = subs.filter((s) => ['Josh', 'Jake'].includes(s.person) && s.prefs?.weekly !== false)
+      msg = { title: 'Your week in Forge', body: short(d.body ?? "Claude's weekly review is ready."), url: `${APP}#/week`, tag: 'weekly' }
     } else return json({ error: 'Unknown kind' }, 400)
 
     const sent = targets.length && msg ? await send(targets, msg) : 0

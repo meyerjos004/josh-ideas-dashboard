@@ -12,6 +12,15 @@ export function registerSW() {
   navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL }).catch(() => {})
 }
 
+// Opening Forge clears the red number on the app icon
+export function clearBadge() {
+  try { navigator.clearAppBadge?.() } catch { /* not supported */ }
+  navigator.serviceWorker?.ready.then((r) => r.active?.postMessage('clear-badge')).catch(() => {})
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') clearBadge() })
+}
+
 const toKey = (b64) => {
   const pad = '='.repeat((4 - (b64.length % 4)) % 4)
   const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'))

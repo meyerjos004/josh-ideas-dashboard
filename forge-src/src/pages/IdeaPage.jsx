@@ -9,6 +9,7 @@ import { AutoText, Button, PersonChip, StageDot } from '../components/ui'
 import NotesEditor from '../components/NotesEditor'
 import ScorePanel from '../components/Score'
 import ResearchPanel from '../components/Research'
+import Photos from '../components/Photos'
 import CoachChat from '../components/Coach'
 import { IdeaTime } from '../components/Clock'
 import { useLayout } from '../lib/layout'
@@ -182,6 +183,7 @@ export default function IdeaPage({ id: idProp, panel = false, onClose }) {
           <div className="space-y-8">
             <IdeaTime idea={idea} />
             <Links idea={idea} onSave={(links) => updateIdea(idea.id, { links })} />
+            <Photos ideaId={idea.id} />
             <section>
               <h2 className="mb-2 text-sm font-bold">To-dos</h2>
               {myActions.length > 0 && <ul className="mb-2 space-y-1">{myActions.map((a) => <ActionItem key={a.id} a={a} />)}</ul>}

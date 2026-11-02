@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { Home, Columns3, Radar, NotebookPen, Search, Trash2, Timer, MessageCircle, Map, Settings2, Ellipsis, LogOut, Gamepad2, Wrench } from 'lucide-react'
+import { Home, Columns3, Radar, NotebookPen, Search, Trash2, Timer, MessageCircle, Map, Settings2, Ellipsis, LogOut, Gamepad2, Wrench, CalendarCheck } from 'lucide-react'
 import { ArcadeTile, ArcadeWindow } from './Arcade'
 import { AppWelcome } from './Onboarding'
+import { flushOutbox } from '../lib/outbox'
 import { useLayout } from '../lib/layout'
 import { usePrefs } from '../lib/prefs'
 import { ClockPanel, ClockPill } from './Clock'
@@ -19,6 +20,7 @@ const NAV = [
   { to: '/compare', label: 'Compare', icon: Radar },
   { to: '/sessions', label: 'Sessions', icon: NotebookPen },
   { to: '/hours', label: 'Hours', icon: Timer },
+  { to: '/week', label: 'Your week', icon: CalendarCheck },
 ]
 const MOBILE_TABS = NAV.slice(0, 4)
 const MOBILE_MORE = [...NAV.slice(4), { to: '/trash', label: 'Trash', icon: Trash2 }, { to: '/setup', label: 'Setup', icon: Wrench }, { to: '/settings', label: 'Settings', icon: Settings2 }]
@@ -185,7 +187,15 @@ function AccountRow() {
 }
 
 export default function Shell() {
-  const { person, toast, status, trash, aiReady, signOut, time } = useStore()
+  const { person, toast, status, trash, aiReady, signOut, time, forgeIdea, flash } = useStore()
+  // Send any ideas that were saved with no signal
+  useEffect(() => {
+    if (!person) return
+    const go = async () => { const n = await flushOutbox((t, k) => forgeIdea(t, k)); if (n) flash(`Sent ${n} idea${n === 1 ? '' : 's'} saved while offline.`) }
+    go()
+    window.addEventListener('online', go)
+    return () => window.removeEventListener('online', go)
+  }, [person, forgeIdea, flash])
   const [searching, setSearching] = useState(false)
   const [more, setMore] = useState(false)
   const [arcade, setArcade] = useState(false)

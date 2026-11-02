@@ -79,11 +79,32 @@ function pullJson(text: string) {
   return JSON.parse(text.slice(start, end + 1))
 }
 
+// ---------- links ----------
+// If the idea includes a link, read the page so the research starts from what's actually there.
+async function readLinks(raw: string) {
+  const urls = [...new Set(raw.match(/https?:\/\/[^\s<>"')]+/gi) ?? [])].slice(0, 2)
+  const out: string[] = []
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000), redirect: 'follow', headers: { 'user-agent': 'Mozilla/5.0 (compatible; ForgeBot/1.0; idea research)', accept: 'text/html,*/*' } })
+      if (!res.ok || !(res.headers.get('content-type') ?? '').includes('html')) { out.push(`${url}: (couldn't read the page, status ${res.status})`); continue }
+      const html = (await res.text()).slice(0, 400_000)
+      const pick = (re: RegExp) => html.match(re)?.[1]?.replace(/\s+/g, ' ').trim() ?? ''
+      const title = pick(/<title[^>]*>([\s\S]*?)<\/title>/i)
+      const desc = pick(/<meta[^>]+(?:name|property)=["'](?:og:)?description["'][^>]+content=["']([^"']*)/i)
+      const body = html.replace(/<(script|style|noscript|svg|nav|footer)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim().slice(0, 5000)
+      out.push(`${url}\nTitle: ${title}\nDescription: ${desc}\nPage text: ${body}`)
+    } catch (e) { out.push(`${url}: (couldn't read the page: ${(e as Error).message})`) }
+  }
+  return out.join('\n\n')
+}
+
 // ---------- research ----------
-const RESEARCH_PROMPT = (raw: string, existing: string[]) => `Here's a rough idea one of them typed in a hurry:
+const RESEARCH_PROMPT = (raw: string, existing: string[], pages = '') => `Here's a rough idea one of them typed in a hurry:
 
 "${raw}"
-
+${pages ? `\nThey included a link. Here's what's on that page; treat it as the main source for what the idea is (it may be a product they want to copy, improve on, or sell):\n${pages}\n` : ''}
 Their other ideas so far (to avoid duplicates and spot connections): ${existing.length ? existing.join('; ') : 'none yet'}.
 
 Do this:
@@ -112,7 +133,8 @@ async function research(ideaId: string) {
   try {
     const { data: others } = await db.from('forge_ideas').select('title').neq('id', ideaId).is('deleted_at', null).limit(40)
     const raw = idea.raw_input || [idea.title, idea.pitch].filter(Boolean).join('. ')
-    const { text, sources, usage } = await claude(FOUNDERS, [{ role: 'user', content: RESEARCH_PROMPT(raw, (others ?? []).map((o) => o.title)) }], 5, 4000)
+    const pages = /https?:\/\//i.test(raw) ? await readLinks(raw) : ''
+    const { text, sources, usage } = await claude(FOUNDERS, [{ role: 'user', content: RESEARCH_PROMPT(raw, (others ?? []).map((o) => o.title), pages) }], 5, 4000)
     await log('research', usage)
     const r = pullJson(text)
     const kinds = ['digital', 'physical', 'service', 'unsure']
@@ -267,6 +289,76 @@ async function coach(chatId: string, ideaId: string | null) {
   }
 }
 
+// ---------- weekly review (Sunday evening, from pg_cron) ----------
+const CRITERIA = ['demand', 'margin', 'cheap', 'fit', 'hype']
+const FOUNDER_IDS = ['Josh', 'Jake']
+
+async function weekly() {
+  const since = new Date(Date.now() - 7 * 86400_000)
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Denver' })
+  const [{ data: ideas }, { data: time }, { data: members }, { data: todos }, { data: steps }, { data: scores }] = await Promise.all([
+    db.from('forge_ideas').select('id, title, pitch, stage, kind, created_by, created_at, updated_at, killed_at, ai, ai_status').is('deleted_at', null),
+    db.from('forge_time').select('person, started_at, ended_at').gte('started_at', since.toISOString()),
+    db.from('forge_members').select('person, settings').in('person', FOUNDER_IDS),
+    db.from('forge_actions').select('text, owner, done, created_at'),
+    db.from('forge_roadmap').select('step_id, done'),
+    db.from('forge_scores').select('idea_id, person'),
+  ])
+  const hrs: Record<string, number> = { Josh: 0, Jake: 0 }
+  for (const t of time ?? []) if (t.person in hrs) hrs[t.person] += ((t.ended_at ? Date.parse(t.ended_at) : Date.now()) - Date.parse(t.started_at)) / 3600_000
+  const goals = Object.fromEntries((members ?? []).map((m) => [m.person, Number(m.settings?.hours_goal ?? 5)]))
+  const all = ideas ?? []
+  const fresh = all.filter((i) => Date.parse(i.created_at) >= +since)
+  const stale = all.filter((i) => ['exploring', 'validating'].includes(i.stage) && Date.parse(i.updated_at ?? i.created_at) < Date.now() - 14 * 86400_000)
+  const done = new Set((steps ?? []).filter((s) => s.done).map((s) => s.step_id))
+  const next = ROADMAP.flatMap((p) => p.steps).find((s) => !done.has(s.id))
+  const stats = {
+    hours: FOUNDER_IDS.map((p) => ({ person: p, hours: Math.round(hrs[p] * 10) / 10, goal: goals[p] ?? 5 })),
+    new_ideas: fresh.map((i) => ({ id: i.id, title: i.title, by: i.created_by })),
+    killed: all.filter((i) => i.killed_at && Date.parse(i.killed_at) >= +since).map((i) => ({ id: i.id, title: i.title })),
+    chosen: all.filter((i) => i.stage === 'chosen').map((i) => ({ id: i.id, title: i.title })),
+    stale: stale.map((i) => ({ id: i.id, title: i.title, stage: i.stage })),
+    open_todos: FOUNDER_IDS.map((p) => ({ person: p, count: (todos ?? []).filter((t) => !t.done && t.owner === p).length })),
+    next_step: next ? next.title : null,
+    total_ideas: all.length,
+  }
+
+  // Claude scores researched ideas it hasn't scored yet (no web search: cheap)
+  const scored: { id: string; title: string; scores: Record<string, number>; why: string }[] = []
+  const mine = new Set((scores ?? []).filter((s) => s.person === 'Claude').map((s) => s.idea_id))
+  const toScore = all.filter((i) => i.stage !== 'killed' && i.ai_status === 'done' && !mine.has(i.id)).slice(0, 6)
+  if (toScore.length) {
+    try {
+      const list = toScore.map((i) => ({ id: i.id, title: i.title, pitch: i.pitch, verdict: i.ai?.verdict, market: i.ai?.market, risks: i.ai?.risks }))
+      const { text, usage } = await claude(FOUNDERS, [{ role: 'user', content: `Score each of these ideas 1-5 on: demand (do people already want it), margin (money per sale), cheap (cheap to start), fit (can two self-taught 20-somethings build it), hype (would they stay excited for years). Be honest and spread your scores; 3 is average.\n\n${JSON.stringify(list)}\n\nReply with ONLY JSON: {"<id>": {"demand":n,"margin":n,"cheap":n,"fit":n,"hype":n,"why":"one short line"}}` }], 0, 1500)
+      await log('weekly-score', usage)
+      const r = pullJson(text)
+      for (const i of toScore) {
+        const s = r[i.id]; if (!s) continue
+        const clean = Object.fromEntries(CRITERIA.map((c) => [c, Math.max(1, Math.min(5, Math.round(Number(s[c]) || 3)))]))
+        await db.from('forge_scores').upsert({ idea_id: i.id, person: 'Claude', scores: clean, updated_at: new Date().toISOString() })
+        scored.push({ id: i.id, title: i.title, scores: clean, why: String(s.why ?? '').slice(0, 200) })
+      }
+    } catch (e) { console.error('weekly scoring', e) }
+  }
+
+  // The brief itself
+  let brief = ''
+  try {
+    const { text, usage } = await claude(await coachContext(null), [{ role: 'user', content: `It's Sunday evening. Write Josh and Jake's weekly review from you, Claude, their third partner on Forge.\nThis week's numbers: ${JSON.stringify(stats)}\n${scored.length ? `You just scored: ${JSON.stringify(scored)}` : ''}\nFormat: 3 to 5 short bullet lines ("- ") on what happened, what's stuck or stale, and anything they're avoiding. Then one line starting "This week:" with the single most useful thing to do next. Under 140 words total. Plain words, no headings, no fluff, be direct.` }], 0, 700)
+    await log('weekly', usage)
+    brief = text.trim()
+  } catch (e) { console.error('weekly brief', e); brief = '' }
+
+  await db.from('forge_weekly').upsert({ week_of: today, stats, brief, scored }, { onConflict: 'week_of' })
+
+  // Push: "Josh 3.5h · Jake 2h · 4 new ideas"
+  const line = [...stats.hours.map((h) => `${h.person} ${h.hours}h`), `${fresh.length} new idea${fresh.length === 1 ? '' : 's'}`].join(' · ')
+  const { data: cfg } = await db.rpc('forge_push_config')
+  const hook = (Array.isArray(cfg) ? cfg[0] : cfg)?.hook
+  await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/forge-push`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-forge-hook': hook }, body: JSON.stringify({ kind: 'weekly', data: { body: line } }) })
+}
+
 // ---------- who is calling ----------
 // Logged-in app users send their session token; the iPhone Shortcut sends a personal token.
 async function whoIs(req: Request, body: Record<string, unknown>): Promise<string | null> {
@@ -307,6 +399,16 @@ Deno.serve(async (req) => {
     return json({ ok: true, person: m.person })
   }
 
+  // Weekly review: only the database's scheduled job (it knows the shared hook secret) can start it
+  if (action === 'weekly') {
+    const { data: cfg } = await db.rpc('forge_push_config')
+    const hook = (Array.isArray(cfg) ? cfg[0] : cfg)?.hook
+    if (!hook || req.headers.get('x-forge-hook') !== hook) return json({ error: 'Not allowed' }, 401)
+    if (!API_KEY) return json({ error: 'no_key' }, 503)
+    EdgeRuntime.waitUntil(weekly())
+    return json({ ok: true })
+  }
+
   const person = await whoIs(req, body)
   if (!person) return json({ error: 'Sign in to Forge first.' }, 401)
 
@@ -320,7 +422,9 @@ Deno.serve(async (req) => {
     const text = String(body.text ?? '').trim().slice(0, 2000)
     if (!text) return json({ error: 'Empty idea' }, 400)
     const auto = !!API_KEY && body.research !== false // the person can turn auto-research off in Settings
-    const title = text.length > 80 ? text.slice(0, 77).replace(/\s+\S*$/, '') + '…' : text
+    const onlyLink = /^https?:\/\/\S+$/i.test(text)
+    let host = ''; try { host = new URL(text).hostname.replace(/^www\./, '') } catch { /* not a lone link */ }
+    const title = onlyLink && host ? `Link from ${host}` : text.length > 80 ? text.slice(0, 77).replace(/\s+\S*$/, '') + '…' : text
     const { data, error } = await db.from('forge_ideas').insert({
       title, raw_input: text, created_by: person, stage: 'dump', position: Date.now() / 1000,
       ai_status: auto ? 'working' : 'idle',

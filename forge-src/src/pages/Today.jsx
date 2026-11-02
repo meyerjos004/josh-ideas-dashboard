@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { AppChecklist } from '../components/Onboarding'
+import SinceLast from '../components/SinceLast'
 import { Link } from 'react-router-dom'
 import { Sparkles, Map } from 'lucide-react'
 import { useStore } from '../lib/store'
@@ -146,6 +147,7 @@ export default function Today() {
 
       <div className={`grid grid-cols-1 gap-9 ${mode === 'phone' ? '' : 'lg:grid-cols-[minmax(0,1fr)_340px]'} ${mode === 'wide' ? 'lg:grid-cols-[minmax(0,1fr)_380px]' : ''}`}>
         <div className="min-w-0 space-y-9">
+          <SinceLast />
           <AiBanner />
           <Capture big />
           {t.needsMe.length > 0 && (

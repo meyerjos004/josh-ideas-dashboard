@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Mic, CornerDownLeft, Square, LoaderCircle } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Mic, CornerDownLeft, Square, LoaderCircle, CloudOff, Link2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useStore } from '../lib/store'
-import { KINDS, MOD } from '../lib/constants'
+import { KINDS, MOD, stageOf } from '../lib/constants'
+import { findSimilar, getOutbox, queueIdea } from '../lib/outbox'
 import { loadTranscriber, micError, startRecording, transcribe } from '../lib/voice'
 
 export default function Capture({ big }) {
-  const { forgeIdea, flash, aiReady } = useStore()
+  const { forgeIdea, flash, aiReady, ideas } = useStore()
   const nav = useNavigate()
   const [text, setText] = useState('')
   const [kind, setKind] = useState('unsure')
@@ -19,6 +20,14 @@ export default function Capture({ big }) {
   const [pinned, setPinned] = useState(0) // bumps on each save to replay the pin drop
   const rec = useRef(null)
   const input = useRef()
+  const [waiting, setWaiting] = useState(() => getOutbox().length)
+  useEffect(() => { const on = (e) => setWaiting(e.detail); window.addEventListener('forge:outbox', on); return () => window.removeEventListener('forge:outbox', on) }, [])
+  const [skipDup, setSkipDup] = useState(null)
+  const [quiet, setQuiet] = useState('') // text the duplicate check runs on, updated after a short pause
+  useEffect(() => { const t = setTimeout(() => setQuiet(text), 350); return () => clearTimeout(t) }, [text])
+  const dup = useMemo(() => (quiet.trim() ? findSimilar(quiet, ideas) : null), [quiet, ideas])
+  const showDup = dup && skipDup !== dup.id
+  const hasLink = /https?:\/\/\S+|\bwww\.\S+\.\S+/i.test(text)
 
   useEffect(() => () => rec.current?.cancel(), [])
 
@@ -66,9 +75,12 @@ export default function Capture({ big }) {
     const raw = text.trim()
     if (!raw || saving) return
     setSaving(true)
-    const idea = await forgeIdea(raw, kind)
+    const offline = () => { queueIdea(raw, kind); setText(''); setKind('unsure'); setPinned((n) => n + 1); flash("No signal. It's saved on this device and will send when you're back online.") }
+    if (!navigator.onLine) { setSaving(false); offline(); return }
+    const idea = await forgeIdea(raw, kind).catch(() => null)
     setSaving(false)
-    if (!idea) return
+    if (!idea) { if (!navigator.onLine) offline(); return }
+    setSkipDup(null)
     setText(''); setKind('unsure'); setPinned((n) => n + 1)
     if (open) nav(`/idea/${idea.id}`)
     else flash(aiReady ? 'Saved. Researching it now…' : `Saved to Dump: ${idea.title}`)
@@ -96,6 +108,19 @@ export default function Capture({ big }) {
           <span className="relative">{listening ? <Square size={14} fill="currentColor" /> : mic === 'working' ? <LoaderCircle size={18} className="animate-spin" /> : <Mic size={18} />}</span>
         </button>
       </div>
+      {showDup && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-tint-olive/70 px-3 py-2 text-[13px] text-on-olive" role="status">
+          <span className="min-w-0 flex-1">Looks like <b>{dup.title}</b> ({dup.created_by}'s, in {stageOf(dup.stage).name}).</span>
+          <Link to={`/idea/${dup.id}`} className="font-semibold underline underline-offset-2">Open it</Link>
+          <button onClick={() => setSkipDup(dup.id)} className="font-semibold opacity-75 hover:opacity-100">Not the same</button>
+        </div>
+      )}
+      {(hasLink || waiting > 0) && (
+        <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted">
+          {hasLink && <span className="inline-flex items-center gap-1"><Link2 size={12} /> Forge will read that page when it researches.</span>}
+          {waiting > 0 && <span className="inline-flex items-center gap-1 text-wine"><CloudOff size={12} /> {waiting} idea{waiting === 1 ? '' : 's'} waiting to send</span>}
+        </div>
+      )}
       <AnimatePresence initial={false}>
         {(text || big) && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">

@@ -213,7 +213,8 @@ export function AppWelcome() {
     isIphone={isIOS()} installed={isIOS() && isStandalone()} onDone={() => markOnboard({ welcomed: true })} />
 }
 
-export function AppChecklist() {
+// Starter steps still left for this person (empty once all done or hidden)
+export function useStarter() {
   const { person, onboarding, markOnboard, ideas, scores, time, chats } = useStore()
   const [notifyOn] = useNotifyOn()
   const partner = partnerOf(person)
@@ -227,8 +228,19 @@ export function AppChecklist() {
       notify: !!onboarding.notify || notifyOn,
     }
   }, [ideas, scores, time, chats, person, partner, onboarding.notify, notifyOn])
-  if (!person || onboarding.checklist_hidden || STARTER.every((s) => done[s.id])) return null
-  return <Checklist done={done} partner={partner} onHide={() => markOnboard({ checklist_hidden: true })} />
+  const off = !person || onboarding.checklist_hidden || STARTER.every((s) => done[s.id])
+  return {
+    done, partner,
+    left: off ? [] : STARTER.filter((s) => !done[s.id]).map((s) => ({ ...s, label: typeof s.label === 'function' ? s.label(partner) : s.label })),
+    count: STARTER.filter((s) => done[s.id]).length,
+    hide: () => markOnboard({ checklist_hidden: true }),
+  }
+}
+
+export function AppChecklist() {
+  const st = useStarter()
+  if (!st.left.length) return null
+  return <Checklist done={st.done} partner={st.partner} onHide={st.hide} />
 }
 
 export function PageTip({ id }) {

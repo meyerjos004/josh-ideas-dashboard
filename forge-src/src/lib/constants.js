@@ -1,7 +1,22 @@
 export const PEOPLE = [
   { id: 'Josh', color: 'var(--color-josh)', hex: '#B04A64' },
   { id: 'Jake', color: 'var(--color-jake)', hex: '#3A8FA8' },
+  { id: 'Collin', color: 'var(--color-collin)', hex: '#6F5BA8' },
 ]
+export const PEOPLE_IDS = PEOPLE.map((p) => p.id)
+// Everyone except this person
+export const othersOf = (p) => PEOPLE_IDS.filter((x) => x !== p)
+// ['Josh'] -> "Josh", ['Josh','Jake'] -> "Josh and Jake", 3+ -> "Josh, Jake and Collin"
+export const namesList = (ids) => (ids.length < 2 ? ids[0] ?? '' : `${ids.slice(0, -1).join(', ')} and ${ids[ids.length - 1]}`)
+// An idea's combined score is ready once at least 2 people have fully scored it
+export const MIN_SCORERS = 2
+export function combine(byPerson) {
+  const done = PEOPLE.filter((p) => isComplete(byPerson?.[p.id]))
+  const ready = done.length >= MIN_SCORERS
+  const merged = ready ? Object.fromEntries(CRITERIA.map((c) => [c.id, done.reduce((sum, p) => sum + byPerson[p.id][c.id], 0) / done.length])) : null
+  const gap = ready ? Math.max(...CRITERIA.map((c) => { const v = done.map((p) => byPerson[p.id][c.id]); return Math.max(...v) - Math.min(...v) })) : 0
+  return { done, ready, merged, total: merged ? avg(merged) : null, gap }
+}
 // Claude can sit in as a third voice: adds ideas and gives its own score, but never counts toward the founders' averages
 export const ADVISOR = { id: 'Claude', color: '#B8743A', hex: '#B8743A' }
 // 'Tester' is Claude's hidden test login; it never shows up as a person
@@ -30,7 +45,7 @@ export const CRITERIA = [
   { id: 'demand', name: 'Demand', ask: 'Do people already want this?' },
   { id: 'margin', name: 'Margin', ask: 'Can we make good money per sale?' },
   { id: 'cheap', name: 'Cheap to start', ask: 'Can we start without much money?' },
-  { id: 'fit', name: 'Skill fit', ask: 'Can the two of us actually build it?' },
+  { id: 'fit', name: 'Skill fit', ask: 'Can we actually build it ourselves?' },
   { id: 'hype', name: 'Excitement', ask: 'Would we work on this for years?' },
 ]
 

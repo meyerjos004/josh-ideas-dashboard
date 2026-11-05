@@ -46,11 +46,13 @@ export default function ScorePanel({ ideaId }) {
   const { person, setScore } = useStore()
   const byPerson = useIdeaScores(ideaId)
   const mine = byPerson[person] ?? {}
-  const other = PEOPLE.find((p) => p.id !== person)?.id
-  const theirs = byPerson[other]
+  const others = PEOPLE.filter((p) => p.id !== person)
+  const othersDone = others.filter((p) => isComplete(byPerson[p.id]))
+  const other = othersDone.length ? othersDone.map((p) => p.id).join(' & ') : others.map((p) => p.id).join(' or ')
   const iDone = isComplete(mine)
-  const theyDone = isComplete(theirs)
+  const theyDone = othersDone.length > 0
   const revealed = iDone && theyDone
+  const shownPeople = PEOPLE.filter((p) => isComplete(byPerson[p.id]))
   const myColor = personHex(person)
   const advisor = person !== ADVISOR.id && isComplete(byPerson[ADVISOR.id]) ? byPerson[ADVISOR.id] : null
 
@@ -58,7 +60,7 @@ export default function ScorePanel({ ideaId }) {
     <section aria-labelledby="score-h">
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <h2 id="score-h" className="text-xl font-semibold">Score it</h2>
-        <p className="text-xs text-muted">Scores stay hidden until you've both rated.</p>
+        <p className="text-xs text-muted">Scores stay hidden until you and at least one other person have rated.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_minmax(0,300px)]">
@@ -78,9 +80,9 @@ export default function ScorePanel({ ideaId }) {
           <AnimatePresence mode="wait">
             {revealed ? (
               <motion.div key="rev" initial={{ opacity: 0, scale: .94 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 22 }}>
-                <ScoreRadar height={230} series={[...PEOPLE.map((p) => ({ key: p.id, color: p.hex, scores: byPerson[p.id] })), ...(advisor ? [{ key: ADVISOR.id, color: ADVISOR.hex, scores: advisor }] : [])]} />
+                <ScoreRadar height={230} series={[...shownPeople.map((p) => ({ key: p.id, color: p.hex, scores: byPerson[p.id] })), ...(advisor ? [{ key: ADVISOR.id, color: ADVISOR.hex, scores: advisor }] : [])]} />
                 <div className="flex items-center justify-center gap-4 text-sm">
-                  {PEOPLE.map((p) => (
+                  {shownPeople.map((p) => (
                     <span key={p.id} className="inline-flex items-center gap-1.5">
                       <span className="size-2.5 rounded-full" style={{ background: p.hex }} />{p.id}
                       <b className="tabular-nums">{avg(byPerson[p.id]).toFixed(1)}</b>
@@ -100,7 +102,7 @@ export default function ScorePanel({ ideaId }) {
                 <p className="flex items-center justify-center gap-1.5 pb-1 text-center text-xs text-muted">
                   <Lock size={12} />
                   {!iDone
-                    ? (theyDone ? `${other} has scored. Finish yours to see both.` : 'Rate all five to lock in your score.')
+                    ? (theyDone ? `${other} scored. Finish yours to see the scores.` : 'Rate all five to lock in your score.')
                     : `Waiting on ${other}.`}
                 </p>
               </motion.div>

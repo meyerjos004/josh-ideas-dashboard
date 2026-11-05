@@ -120,7 +120,7 @@ export function LoginGate() {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
         <div className="flex items-center gap-2.5"><Mark size={30} /><Wordmark /></div>
         <h1 className="mt-8 text-[44px] font-extrabold leading-[0.95] tracking-[-0.02em]">What are we building?</h1>
-        <p className="mt-3 text-muted">The idea board for Josh and Jake. {mode === 'in' ? 'Sign in to continue.' : 'Set a password for your invited email.'}</p>
+        <p className="mt-3 text-muted">The idea board for Josh, Jake and Collin. {mode === 'in' ? 'Sign in to continue.' : 'Set a password for your invited email.'}</p>
         <form onSubmit={submit} className="paper tilt-l mt-8 rounded-2xl bg-card p-5">
           <label className="block text-sm font-semibold">Email
             <input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={field} />

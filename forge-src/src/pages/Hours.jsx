@@ -120,7 +120,7 @@ export default function Hours() {
         <div className="mr-auto">
           <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.02em]">Hours</h1>
           <p className="mt-1 max-w-xl text-muted">
-            {stats.total ? `You two have put ${fmtDuration(stats.total)} into the business, ${fmtDuration(stats.weekTotal)} of it this week.` : 'Clock in from the sidebar whenever you work on the business. Research counts.'}
+            {stats.total ? `You've put ${fmtDuration(stats.total)} into the business, ${fmtDuration(stats.weekTotal)} of it this week.` : 'Clock in from the sidebar whenever you work on the business. Research counts.'}
           </p>
         </div>
         <Button onClick={() => setAdding(true)}><Plus size={15} /> Add time</Button>

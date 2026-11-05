@@ -153,7 +153,7 @@ export default function Today() {
     <div className="mx-auto max-w-[860px] space-y-10">
       <header>
         <h1 className="text-[36px] font-extrabold leading-[1.02] tracking-[-0.02em] sm:text-[44px]">{greet()}, {person}.</h1>
-        <p className="mt-2 text-muted">{status === 'loading' ? 'Loading…' : ideas.length ? 'Drop a new idea, or pick something from Up next.' : 'Start by dumping every idea you two have had, good or bad.'}</p>
+        <p className="mt-2 text-muted">{status === 'loading' ? 'Loading…' : ideas.length ? 'Drop a new idea, or pick something from Up next.' : 'Start by dumping every idea you have had, good or bad.'}</p>
       </header>
 
       <Capture big />

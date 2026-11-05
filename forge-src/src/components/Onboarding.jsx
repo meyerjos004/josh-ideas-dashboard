@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useStore } from '../lib/store'
-import { PEOPLE } from '../lib/constants'
+import { PEOPLE, othersOf, namesList } from '../lib/constants'
 import { currentDevice, enablePush, isIOS, isStandalone } from '../lib/push'
 import { ArrowLeft, ArrowRight, Bell, Bot, Check, Clock, Lightbulb, Map, Smartphone, Sparkles, X } from 'lucide-react'
 
@@ -52,19 +52,31 @@ function HelperTile({ icon: Icon, title, line, tint }) {
   )
 }
 
+// A personal first slide (and extra tour slide) per person. Anyone not listed gets the default.
+const INTROS = {
+  Collin: {
+    body: "Josh brought you in. This is where Josh, Jake and now you dump business ideas, figure out which one is actually worth doing, and track the work to start it. Your honest take is the whole point.",
+    extra: {
+      title: 'How your vote counts',
+      body: 'Every idea gets scored 1 to 5 on five things. Scores stay hidden until you rate it yourself, so nobody copies anybody. Once two people score an idea it gets a combined number and shows up in Compare.',
+    },
+  },
+}
+
 export function Welcome({ open, person = 'Jake', partner = 'Josh', notifyOn, onNotify, isIphone, installed, onDone }) {
   const [i, setI] = useState(0)
   useEffect(() => { if (open) setI(0) }, [open])
+  const intro = INTROS[person]
   const slides = [
     {
       art: <Mark />,
       title: `Welcome to Forge, ${person}`,
-      body: `This is where you and ${partner} dump business ideas, work out which one is worth doing, and track the work to actually start it.`,
+      body: intro?.body ?? `This is where you and ${partner} dump business ideas, work out which one is worth doing, and track the work to actually start it.`,
     },
     {
       art: <FlowArt />,
       title: 'Ideas go in rough',
-      body: 'Type 10 to 20 words, or say them out loud. Forge cleans it up, looks into it, and pins it to the board. Then you both score it and move the good ones forward.',
+      body: 'Type 10 to 20 words, or say them out loud. Forge cleans it up, looks into it, and pins it to the board. Then everyone scores it and the good ones move forward.',
     },
     {
       art: (
@@ -77,6 +89,18 @@ export function Welcome({ open, person = 'Jake', partner = 'Josh', notifyOn, onN
       title: 'Help along the way',
       body: 'You never have to guess what to do next.',
     },
+    ...(intro?.extra ? [{
+      art: (
+        <div className="flex items-center gap-2" aria-hidden>
+          {[3, 5, 4, 2, 5].map((n, k) => (
+            <div key={k} className="flex flex-col items-center gap-1">
+              <div className="flex flex-col-reverse gap-0.5">{[1, 2, 3, 4, 5].map((v) => <span key={v} className={`h-2.5 w-7 rounded-sm ${v <= n ? 'bg-wine' : 'bg-sunk'}`} />)}</div>
+            </div>
+          ))}
+        </div>
+      ),
+      ...intro.extra,
+    }] : []),
     {
       art: (
         <div className="mx-auto grid max-w-sm gap-2.5 text-left">
@@ -132,7 +156,7 @@ export function Welcome({ open, person = 'Jake', partner = 'Josh', notifyOn, onN
 
 export const STARTER = [
   { id: 'idea', label: 'Pin your first idea', hint: 'Use the box at the top of this page' },
-  { id: 'score', label: (p) => `Score one of ${p}'s ideas`, hint: 'Open any idea and rate it' },
+  { id: 'score', label: (p) => `Score an idea from ${p}`, hint: 'Open any idea and rate it' },
   { id: 'clock', label: 'Clock in once', hint: 'Bottom of the sidebar' },
   { id: 'coach', label: 'Ask the Coach a question', hint: 'Try “which idea should we test first?”' },
   { id: 'notify', label: 'Turn on notifications', hint: 'In Settings › Notifications' },
@@ -189,7 +213,7 @@ export function Tip({ children, onClose }) {
 }
 
 // ── Wired-up versions used by the app ───────────────────────────────────────
-const partnerOf = (p) => PEOPLE.find((x) => x.id !== p)?.id ?? 'your partner'
+const partnerOf = (p) => namesList(othersOf(p)) || 'your partners'
 const notifyMsg = (m) => (m === 'denied' ? 'Notifications were blocked. Allow them in your browser settings, then try again.'
   : m === 'ios-browser' ? 'Add Forge to your Home Screen first, then turn notifications on from Setup.'
   : m === 'unsupported' ? "This browser can't do notifications." : `Couldn't turn on notifications: ${m}`)
@@ -219,7 +243,8 @@ export function useStarter() {
   const [notifyOn] = useNotifyOn()
   const partner = partnerOf(person)
   const done = useMemo(() => {
-    const partnerIdeas = new Set(ideas.filter((i) => i.created_by === partner).map((i) => i.id))
+    const others = othersOf(person)
+    const partnerIdeas = new Set(ideas.filter((i) => others.includes(i.created_by)).map((i) => i.id))
     return {
       idea: ideas.some((i) => i.created_by === person),
       score: scores.some((s) => s.person === person && partnerIdeas.has(s.idea_id) && Object.keys(s.scores ?? {}).length),

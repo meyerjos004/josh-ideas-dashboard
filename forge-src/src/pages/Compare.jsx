@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../lib/store'
-import { CRITERIA, PEOPLE, avg, isComplete } from '../lib/constants'
+import { CRITERIA, PEOPLE, isComplete, combine } from '../lib/constants'
 import { ScoreRadar } from '../components/Score'
 import { Empty, StageDot, Button } from '../components/ui'
 import { timeAgo } from '../lib/notes'
@@ -14,10 +14,8 @@ export default function Compare() {
 
   const rows = useMemo(() => ideas.map((i) => {
     const by = Object.fromEntries(PEOPLE.map((p) => [p.id, scores.find((s) => s.idea_id === i.id && s.person === p.id)?.scores]))
-    const both = PEOPLE.every((p) => isComplete(by[p.id]))
-    const merged = both ? Object.fromEntries(CRITERIA.map((c) => [c.id, PEOPLE.reduce((sum, p) => sum + by[p.id][c.id], 0) / PEOPLE.length])) : null
-    const gap = both ? Math.max(...CRITERIA.map((c) => Math.abs(by.Josh[c.id] - by.Jake[c.id]))) : 0
-    return { idea: i, by, both, merged, total: merged ? avg(merged) : null, gap }
+    const { done, ready, merged, total, gap } = combine(by)
+    return { idea: i, by, done, both: ready, merged, total, gap }
   }), [ideas, scores])
 
   const ranked = rows.filter((r) => r.both).sort((a, b) => b.total - a.total)
@@ -34,11 +32,11 @@ export default function Compare() {
     <div className="space-y-12">
       <header>
         <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.02em]">Compare</h1>
-        <p className="mt-1 max-w-xl text-muted">Ideas you've both scored, best first. Pick up to three to overlay.</p>
+        <p className="mt-1 max-w-xl text-muted">Ideas at least two of you have scored, best first. Pick up to three to overlay.</p>
       </header>
 
       {ranked.length === 0 ? (
-        <Empty>Nothing to compare yet. Move ideas into Exploring and both of you score them. They show up here once both scores are in.</Empty>
+        <Empty>Nothing to compare yet. Move ideas into Exploring and score them. They show up here once at least two of you have scored.</Empty>
       ) : (
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="scroll-thin overflow-x-auto">
@@ -59,7 +57,7 @@ export default function Compare() {
                         <div className="flex items-center gap-2">
                           <span className="size-3 shrink-0 rounded-[4px] border" style={k >= 0 ? { background: PICK_COLORS[k], borderColor: PICK_COLORS[k] } : { borderColor: 'var(--color-faint)' }} />
                           <Link to={`/idea/${r.idea.id}`} onClick={(e) => e.stopPropagation()} className="truncate font-medium hover:text-wine">{r.idea.title}</Link>
-                          {r.gap >= 3 && <span className="shrink-0 rounded bg-wine-soft px-1.5 text-[11px] text-wine" title="You two disagree a lot on at least one thing">Talk it out</span>}
+                          {r.gap >= 3 && <span className="shrink-0 rounded bg-wine-soft px-1.5 text-[11px] text-wine" title="You disagree a lot on at least one thing">Talk it out</span>}
                         </div>
                       </td>
                       {CRITERIA.map((c) => {
@@ -67,7 +65,7 @@ export default function Compare() {
                         return (
                           <td key={c.id} className="border-t border-line text-center tabular-nums">
                             <span className="inline-block min-w-8 rounded px-1 py-0.5" style={{ background: `color-mix(in oklab, var(--color-forest) ${Math.round((v - 1) / 4 * 38)}%, transparent)` }}
-                              title={`Josh ${r.by.Josh[c.id]} · Jake ${r.by.Jake[c.id]}`}>{v.toFixed(1)}</span>
+                              title={r.done.map((p) => `${p.id} ${r.by[p.id][c.id]}`).join(' · ')}>{v.toFixed(1)}</span>
                           </td>
                         )
                       })}
@@ -77,7 +75,7 @@ export default function Compare() {
                 })}
               </tbody>
             </table>
-            <p className="mt-3 text-xs text-faint">Hover a number to see each person's score. “Talk it out” means you're 3+ points apart on something.</p>
+            <p className="mt-3 text-xs text-faint">Hover a number to see each person's score. “Talk it out” means two of you are 3+ points apart on something.</p>
           </div>
 
           <div className="rounded-2xl border border-line bg-card p-4">
@@ -96,7 +94,7 @@ export default function Compare() {
 
       {partial.length > 0 && (
         <section>
-          <h2 className="mb-2 text-lg font-semibold">Waiting on one score</h2>
+          <h2 className="mb-2 text-lg font-semibold">Waiting on scores</h2>
           <ul className="divide-y divide-line">
             {partial.map((r) => {
               const missing = PEOPLE.filter((p) => !isComplete(r.by[p.id])).map((p) => p.id).join(' & ')

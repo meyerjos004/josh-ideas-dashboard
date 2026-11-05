@@ -48,14 +48,14 @@ export default function Sessions() {
       <header className="mb-8 flex flex-wrap items-end gap-3">
         <div className="mr-auto">
           <h1 className="text-[40px] font-extrabold leading-none tracking-[-0.02em]">Sessions</h1>
-          <p className="mt-1 text-muted">Every time you two sit down, log what you talked about and what you decided.</p>
+          <p className="mt-1 text-muted">Every time you sit down together, log what you talked about and what you decided.</p>
         </div>
         <Button variant="primary" onClick={() => setOpen(true)}><Plus size={15} /> Start a session</Button>
       </header>
 
       {sorted.length === 0 ? (
         <Empty action={<Button variant="primary" onClick={() => setOpen(true)}>Start your first session</Button>}>
-          No sessions yet. Start one next time you and Jake talk business, even if it's 10 minutes.
+          No sessions yet. Start one next time you all talk business, even if it's 10 minutes.
         </Empty>
       ) : (
         <ol className="relative space-y-3 border-l border-line pl-6">

@@ -18,7 +18,7 @@ const json = (body: unknown, status = 200) =>
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 const API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 
-const FOUNDERS = `You are helping Josh and Jake, two first-time founders in Utah, USA, who want to start a business together.
+const FOUNDERS = `You are helping Josh and Jake, two first-time founders in Utah, USA, who want to start a business together. Their friend Collin is on Forge too: he adds ideas and scores them alongside them.
 They are self-taught, move fast, have a small budget, and have never started a company. They might sell a digital product, a physical product, or a service.
 Talk to them like a sharp, honest friend who has started businesses before: plain words, no jargon (or explain it in a few words), concrete and specific.
 Push cheap tests before big spending. Be honest about weak ideas, but always show the way forward.`
@@ -291,7 +291,7 @@ async function coach(chatId: string, ideaId: string | null) {
 
 // ---------- weekly review (Sunday evening, from pg_cron) ----------
 const CRITERIA = ['demand', 'margin', 'cheap', 'fit', 'hype']
-const FOUNDER_IDS = ['Josh', 'Jake']
+const FOUNDER_IDS = ['Josh', 'Jake', 'Collin']
 
 async function weekly() {
   const since = new Date(Date.now() - 7 * 86400_000)
@@ -304,7 +304,7 @@ async function weekly() {
     db.from('forge_roadmap').select('step_id, done'),
     db.from('forge_scores').select('idea_id, person'),
   ])
-  const hrs: Record<string, number> = { Josh: 0, Jake: 0 }
+  const hrs: Record<string, number> = Object.fromEntries(FOUNDER_IDS.map((p) => [p, 0]))
   for (const t of time ?? []) if (t.person in hrs) hrs[t.person] += ((t.ended_at ? Date.parse(t.ended_at) : Date.now()) - Date.parse(t.started_at)) / 3600_000
   const goals = Object.fromEntries((members ?? []).map((m) => [m.person, Number(m.settings?.hours_goal ?? 5)]))
   const all = ideas ?? []
@@ -345,7 +345,7 @@ async function weekly() {
   // The brief itself
   let brief = ''
   try {
-    const { text, usage } = await claude(await coachContext(null), [{ role: 'user', content: `It's Sunday evening. Write Josh and Jake's weekly review from you, Claude, their third partner on Forge.\nThis week's numbers: ${JSON.stringify(stats)}\n${scored.length ? `You just scored: ${JSON.stringify(scored)}` : ''}\nFormat: 3 to 5 short bullet lines ("- ") on what happened, what's stuck or stale, and anything they're avoiding. Then one line starting "This week:" with the single most useful thing to do next. Under 140 words total. Plain words, no headings, no fluff, be direct.` }], 0, 700)
+    const { text, usage } = await claude(await coachContext(null), [{ role: 'user', content: `It's Sunday evening. Write the weekly review for Josh, Jake and Collin from you, Claude, their third partner on Forge.\nThis week's numbers: ${JSON.stringify(stats)}\n${scored.length ? `You just scored: ${JSON.stringify(scored)}` : ''}\nFormat: 3 to 5 short bullet lines ("- ") on what happened, what's stuck or stale, and anything they're avoiding. Then one line starting "This week:" with the single most useful thing to do next. Under 140 words total. Plain words, no headings, no fluff, be direct.` }], 0, 700)
     await log('weekly', usage)
     brief = text.trim()
   } catch (e) { console.error('weekly brief', e); brief = '' }

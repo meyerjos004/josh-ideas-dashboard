@@ -43,11 +43,11 @@ const TOOLS = [
   { name: 'update_idea', description: "Change an idea: rename it, rewrite the pitch, move its stage (killing needs a kill_reason), change its type, or append to its notes.", inputSchema: { type: 'object', properties: { idea: { type: 'string' }, title: { type: 'string' }, pitch: { type: 'string' }, stage: { type: 'string', enum: STAGES }, kill_reason: { type: 'string' }, kind: { type: 'string', enum: KINDS }, append_notes: { type: 'string', description: 'Text added to the end of the notes' } }, required: ['idea'] } },
   { name: 'score_idea', description: "Score an idea 1-5 on demand, margin, cheap (cheap to start), fit (skill fit), hype (excitement). By default the score is Claude's own (shown separately, never counted in Josh and Jake's averages). Use as: 'Josh' only when Josh tells you his own scores.", inputSchema: { type: 'object', properties: { idea: { type: 'string' }, demand: { type: 'number' }, margin: { type: 'number' }, cheap: { type: 'number' }, fit: { type: 'number' }, hype: { type: 'number' }, as: { type: 'string', enum: ['Claude', 'Josh'], default: 'Claude' } }, required: ['idea', 'demand', 'margin', 'cheap', 'fit', 'hype'] } },
   { name: 'research_idea', description: 'Run (or re-run) the AI research on an idea. Takes 30-90 seconds in the background; costs about 10 cents.', inputSchema: { type: 'object', properties: { idea: { type: 'string' } }, required: ['idea'] } },
-  { name: 'list_todos', description: 'Open to-dos, optionally for one person.', inputSchema: { type: 'object', properties: { owner: { type: 'string', enum: ['Josh', 'Jake'] }, include_done: { type: 'boolean', default: false } } } },
-  { name: 'add_todo', description: 'Add a to-do for Josh or Jake, optionally tied to an idea. Jake gets a notification if it is his.', inputSchema: { type: 'object', properties: { text: { type: 'string' }, owner: { type: 'string', enum: ['Josh', 'Jake'] }, idea: { type: 'string', description: 'Optional idea id or title' } }, required: ['text', 'owner'] } },
+  { name: 'list_todos', description: 'Open to-dos, optionally for one person.', inputSchema: { type: 'object', properties: { owner: { type: 'string', enum: ['Josh', 'Jake', 'Collin'] }, include_done: { type: 'boolean', default: false } } } },
+  { name: 'add_todo', description: 'Add a to-do for Josh, Jake or Collin, optionally tied to an idea. The owner gets a notification unless it is Josh.', inputSchema: { type: 'object', properties: { text: { type: 'string' }, owner: { type: 'string', enum: ['Josh', 'Jake', 'Collin'] }, idea: { type: 'string', description: 'Optional idea id or title' } }, required: ['text', 'owner'] } },
   { name: 'complete_todo', description: 'Mark a to-do done, matched by id or by its text.', inputSchema: { type: 'object', properties: { todo: { type: 'string' } }, required: ['todo'] } },
   { name: 'log_session', description: 'Save a brainstorm session: what was discussed and what was decided. Dated today.', inputSchema: { type: 'object', properties: { title: { type: 'string' }, notes: { type: 'string' }, decisions: { type: 'string' } }, required: ['title'] } },
-  { name: 'hours', description: 'Time Josh and Jake logged, by person, activity and idea, for the last N days.', inputSchema: { type: 'object', properties: { days: { type: 'number', default: 7 } } } },
+  { name: 'hours', description: 'Time Josh, Jake and Collin logged, by person, activity and idea, for the last N days.', inputSchema: { type: 'object', properties: { days: { type: 'number', default: 7 } } } },
 ]
 
 async function run(name: string, a: Args, me: string) {
@@ -60,13 +60,13 @@ async function run(name: string, a: Args, me: string) {
       const [{ data: ideas }, { data: time }, { data: goals }, { data: steps }, { data: todos }, { data: week }] = await Promise.all([
         db.from('forge_ideas').select('stage').is('deleted_at', null),
         db.from('forge_time').select('person, started_at, ended_at').gte('started_at', since.toISOString()),
-        db.from('forge_members').select('person, settings').in('person', ['Josh', 'Jake']),
+        db.from('forge_members').select('person, settings').in('person', ['Josh', 'Jake', 'Collin']),
         db.from('forge_roadmap').select('step_id, done'),
         db.from('forge_actions').select('owner, done').eq('done', false),
         db.from('forge_weekly').select('week_of, brief').order('week_of', { ascending: false }).limit(1),
       ])
       const counts = Object.fromEntries(STAGES.map((s) => [s, (ideas ?? []).filter((i) => i.stage === s).length]))
-      const hrs: Record<string, number> = { Josh: 0, Jake: 0 }
+      const hrs: Record<string, number> = { Josh: 0, Jake: 0, Collin: 0 }
       for (const t of time ?? []) if (t.person in hrs) hrs[t.person] += ((t.ended_at ? Date.parse(t.ended_at) : Date.now()) - Date.parse(t.started_at)) / 3600_000
       const done = new Set((steps ?? []).filter((s) => s.done).map((s) => s.step_id))
       const all = ROADMAP.flatMap((p) => p.steps)
@@ -75,7 +75,7 @@ async function run(name: string, a: Args, me: string) {
         ideas_by_stage: counts,
         hours_this_week: Object.fromEntries(Object.entries(hrs).map(([p, h]) => [p, { hours: Math.round(h * 10) / 10, goal: Number((goals ?? []).find((g) => g.person === p)?.settings?.hours_goal ?? 5) }])),
         roadmap: { done: done.size, total: all.length, next_step: next ? { title: next.title, how: next.how } : null },
-        open_todos: { Josh: (todos ?? []).filter((t) => t.owner === 'Josh').length, Jake: (todos ?? []).filter((t) => t.owner === 'Jake').length },
+        open_todos: Object.fromEntries(['Josh', 'Jake', 'Collin'].map((p) => [p, (todos ?? []).filter((t) => t.owner === p).length])),
         latest_weekly_review: week?.[0] ?? null,
         app: APP,
       }
@@ -199,7 +199,7 @@ async function handle(msg: { jsonrpc: string; id?: number | string; method: stri
         protocolVersion: String(msg.params?.protocolVersion ?? '2025-06-18'),
         capabilities: { tools: { listChanged: false } },
         serverInfo: { name: 'forge', title: 'Forge', version: '1.0.0' },
-        instructions: "Forge is Josh and Jake's business-idea board (Utah, first-time founders). Use board_summary for an overview, list_ideas/get_idea to read, add_idea to pin ideas as Josh. Your own scores go in as 'Claude' and never count toward their averages.",
+        instructions: "Forge is Josh and Jake's business-idea board (their friend Collin is on it too) (Utah, first-time founders). Use board_summary for an overview, list_ideas/get_idea to read, add_idea to pin ideas as Josh. Your own scores go in as 'Claude' and never count toward their averages.",
       })
     case 'ping': return ok({})
     case 'tools/list': return ok({ tools: TOOLS })

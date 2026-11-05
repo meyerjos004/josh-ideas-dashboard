@@ -19,7 +19,7 @@ const upsertBy = (list, row, key = 'id') => {
 const scoreKey = (s) => `${s.idea_id}:${s.person}`
 
 export function StoreProvider({ children }) {
-  // Login: session -> member row -> person ('Josh' | 'Jake')
+  // Login: session -> member row -> person ('Josh' | 'Jake' | 'Collin')
   const [auth, setAuth] = useState({ checked: false, userId: null })
   const [member, setMember] = useState(null)
   const person = member?.person ?? null

@@ -4,7 +4,7 @@ import { Bell, BellOff, Bot, Check, Copy, Download, FileSpreadsheet, RefreshCw, 
 import { useStore } from '../lib/store'
 import { useLayout, getTheme, setTheme, isDark } from '../lib/layout'
 import { PALETTES, setPref, usePrefs } from '../lib/prefs'
-import { PEOPLE, personHex } from '../lib/constants'
+import { PEOPLE, personHex, othersOf, namesList } from '../lib/constants'
 import { sb } from '../lib/sb'
 import { downloadBackup, exportSpreadsheet, listBackups } from '../lib/exporter'
 import { currentDevice, disablePush, enablePush, isIOS, isStandalone, pushSupported, sendTest, setPref as setPushPref } from '../lib/push'
@@ -178,7 +178,7 @@ const ALERTS = [
 
 function Notifications() {
   const { person, flash, markOnboard } = useStore()
-  const other = PEOPLE.find((p) => p.id !== person)?.id ?? 'Your partner'
+  const other = namesList(othersOf(person)) || 'Your partners'
   const [device, setDevice] = useState(undefined) // undefined = checking, null = off
   const [busy, setBusy] = useState(false)
   useEffect(() => { currentDevice().then(setDevice).catch(() => setDevice(null)) }, [person])

@@ -1,20 +1,18 @@
 import { Link } from 'react-router-dom'
 import { StageDot } from './ui'
-import { kindName, personHex, avg, isComplete, PEOPLE } from '../lib/constants'
+import { kindName, personHex, combine } from '../lib/constants'
 import { useIdeaScores } from '../lib/store'
 import { timeAgo } from '../lib/notes'
 import { ResearchStatus } from './Research'
 
 export function ScoreBadge({ ideaId }) {
   const s = useIdeaScores(ideaId)
-  const both = PEOPLE.every((p) => isComplete(s[p.id]))
-  if (!both) {
-    const who = PEOPLE.filter((p) => isComplete(s[p.id]))
+  const { done: who, ready, total } = combine(s)
+  if (!ready) {
     if (!who.length) return null
     return <span className="flex gap-0.5" title={`${who.map((w) => w.id).join(', ')} scored`}>{who.map((w) => <span key={w.id} className="size-1.5 rounded-full" style={{ background: w.hex }} />)}</span>
   }
-  const v = (avg(s.Josh) + avg(s.Jake)) / 2
-  return <span className="rounded bg-sunk px-1.5 py-px text-xs font-semibold tabular-nums text-ink" title="Combined score">{v.toFixed(1)}</span>
+  return <span className="rounded bg-sunk px-1.5 py-px text-xs font-semibold tabular-nums text-ink" title={`Combined score (${who.map((w) => w.id).join(', ')})`}>{total.toFixed(1)}</span>
 }
 
 export default function IdeaRow({ idea, showStage = true }) {

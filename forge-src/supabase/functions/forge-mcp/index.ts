@@ -8,7 +8,8 @@ const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SE
 const FN = `${Deno.env.get('SUPABASE_URL')}/functions/v1`
 const PUBLIC_KEY = 'sb_publishable_VdkNDTcxwk0lkWpppf9vtQ_jAq4adZn'
 const STAGES = ['dump', 'exploring', 'validating', 'chosen', 'killed']
-const KINDS = ['digital', 'physical', 'service', 'unsure']
+// download = files/PDFs/templates, community = paid membership, course = online course, digital = software/app
+const KINDS = ['download', 'community', 'course', 'digital', 'physical', 'service', 'unsure']
 const CRITERIA = ['demand', 'margin', 'cheap', 'fit', 'hype']
 const APP = 'https://meyerjos004.github.io/josh-ideas-dashboard/forge/'
 
@@ -96,7 +97,7 @@ async function run(name: string, a: Args, me: string) {
         db.from('forge_scores').select('person, scores').eq('idea_id', i.id),
         db.from('forge_actions').select('id, text, owner, done').eq('idea_id', i.id),
       ])
-      return { id: i.id, title: i.title, stage: i.stage, kind: i.kind, added_by: i.created_by, added: i.created_at, original_words: i.raw_input, pitch: i.pitch, notes: i.notes, kill_reason: i.kill_reason || undefined, tags: i.tags, links: i.links, research: i.ai, research_status: i.ai_status, scores: scores ?? [], todos: todos ?? [], link: `${APP}#/idea/${i.id}` }
+      return { id: i.id, title: i.title, stage: i.stage, kind: i.kind, playbook_done: i.playbook, added_by: i.created_by, added: i.created_at, original_words: i.raw_input, pitch: i.pitch, notes: i.notes, kill_reason: i.kill_reason || undefined, tags: i.tags, links: i.links, research: i.ai, research_status: i.ai_status, scores: scores ?? [], todos: todos ?? [], link: `${APP}#/idea/${i.id}` }
     }
     case 'add_idea': {
       const { data: m } = await db.from('forge_members').select('shortcut_token').eq('person', me).single()

@@ -19,7 +19,7 @@ const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SE
 const API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 
 const FOUNDERS = `You are helping Josh and Jake, two first-time founders in Utah, USA, who want to start a business together. Their friend Collin is on Forge too: he adds ideas and scores them alongside them.
-They are self-taught, move fast, have a small budget, and have never started a company. They might sell a digital product, a physical product, or a service.
+They are self-taught, move fast, have a small budget, and have never started a company. They might sell a digital download (files, PDFs, templates), a paid subscription community, an online course, software, a physical product, or a service.
 Talk to them like a sharp, honest friend who has started businesses before: plain words, no jargon (or explain it in a few words), concrete and specific.
 Push cheap tests before big spending. Be honest about weak ideas, but always show the way forward.`
 
@@ -110,11 +110,12 @@ Their other ideas so far (to avoid duplicates and spot connections): ${existing.
 Do this:
 1. Work out what they most likely mean. Expand it into a clear idea.
 2. Search the web (a few searches) for: existing competitors or similar products, what they charge, and signs people want this (reviews, forums, search interest, market size if easy to find).
+If it's a download, community or course, include the platforms creators use to sell it (e.g. Gumroad, Lemon Squeezy, Skool, Whop, Teachable, Podia) with their current fees if you find them, and what similar creators charge.
 3. Then reply with ONLY a JSON object, no other text, in exactly this shape:
 {
   "title": "clear name for the idea, under 8 words",
   "pitch": "2-3 plain sentences: what it is, who buys it, why they'd pay",
-  "kind": "digital" | "physical" | "service" | "unsure",
+  "kind": "download" | "community" | "course" | "digital" | "physical" | "service" | "unsure",  // download = files/PDFs/templates sold once; community = paid monthly membership; course = online course; digital = software/app
   "tags": ["2-4 short lowercase tags"],
   "who_buys": "the specific first customer, in one sentence",
   "competitors": [{"name": "", "url": "", "price": "what they charge, or empty", "note": "one line on them, incl. a weakness if known"}],
@@ -137,7 +138,7 @@ async function research(ideaId: string) {
     const { text, sources, usage } = await claude(FOUNDERS, [{ role: 'user', content: RESEARCH_PROMPT(raw, (others ?? []).map((o) => o.title), pages) }], 5, 4000)
     await log('research', usage)
     const r = pullJson(text)
-    const kinds = ['digital', 'physical', 'service', 'unsure']
+    const kinds = ['download', 'community', 'course', 'digital', 'physical', 'service', 'unsure']
     // Re-read in case someone edited the idea while research ran
     const { data: now } = await db.from('forge_ideas').select('title, pitch, kind, raw_input').eq('id', ideaId).single()
     // Only rename on the first research, and only if nobody renamed it meanwhile

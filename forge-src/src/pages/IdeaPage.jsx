@@ -9,6 +9,7 @@ import { AutoText, Button, PersonChip, StageDot } from '../components/ui'
 import NotesEditor from '../components/NotesEditor'
 import ScorePanel from '../components/Score'
 import ResearchPanel from '../components/Research'
+import Playbook from '../components/Playbook'
 import Photos from '../components/Photos'
 import CoachChat from '../components/Coach'
 import { IdeaTime } from '../components/Clock'
@@ -164,6 +165,7 @@ export default function IdeaPage({ id: idProp, panel = false, onClose }) {
 
       {(() => {
         const research = <ResearchPanel idea={idea} />
+        const playbook = <Playbook idea={idea} />
         const notes = (
           <section>
             <h2 className="mb-2 text-xl font-bold">Notes</h2>
@@ -218,16 +220,16 @@ export default function IdeaPage({ id: idProp, panel = false, onClose }) {
           return (
             <div className="mt-10 grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)_260px] gap-10">
               <div className="min-w-0">{research}</div>
-              <div className="min-w-0 space-y-10">{notes}{score}</div>
+              <div className="min-w-0 space-y-10">{playbook}{notes}{score}</div>
               <div className="min-w-0">{coach}</div>
               {side}
             </div>
           )
         }
-        if (panel) return <div className="mt-8 space-y-10">{research}{score}{notes}{coach}{side}</div>
+        if (panel) return <div className="mt-8 space-y-10">{playbook}{research}{score}{notes}{coach}{side}</div>
         return (
           <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_280px]">
-            <div className="min-w-0 space-y-12">{research}{notes}{score}{coach}</div>
+            <div className="min-w-0 space-y-12">{playbook}{research}{notes}{score}{coach}</div>
             {side}
           </div>
         )

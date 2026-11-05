@@ -34,7 +34,10 @@ export const stageOf = (id) => STAGES.find((s) => s.id === id) ?? STAGES[0]
 
 export const KINDS = [
   { id: 'unsure', name: 'Not sure yet' },
-  { id: 'digital', name: 'Digital' },
+  { id: 'download', name: 'Download', hint: 'Files, PDFs, templates' },
+  { id: 'community', name: 'Community', hint: 'Paid monthly membership' },
+  { id: 'course', name: 'Course', hint: 'Teach a skill' },
+  { id: 'digital', name: 'Software / app', hint: 'Apps, tools, websites' },
   { id: 'physical', name: 'Physical' },
   { id: 'service', name: 'Service' },
 ]
